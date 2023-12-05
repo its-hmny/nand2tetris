@@ -10,6 +10,12 @@ CHIP Xor {
     IN a, b;
     OUT out;
 
-    PARTS:
-    //// Replace this comment with your code.
+    PARTS: // Available gate(s): Nand, Not, And, Or
+    Not(in=a, out=NotA);
+    Nand(a=NotA, b=b, out=NotANandB);
+
+    Not(in=b, out=NotB);
+    Nand(a=a, b=NotB, out=ANandNotB);
+
+    Nand(a=NotANandB, b=ANandNotB, out=out);
 }

@@ -10,6 +10,8 @@ CHIP Or {
     IN a, b;
     OUT out;
 
-    PARTS:
-    //// Replace this comment with your code.
+    PARTS: // Available gate(s): Nand, Not, And
+    Not(in=a, out=NotA);
+    Not(in=b, out=NotB);
+    Nand(a=NotA, b=NotB, out=out);
 }

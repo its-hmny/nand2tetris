@@ -10,6 +10,6 @@ CHIP Not {
     IN in;
     OUT out;
 
-    PARTS:
-    //// Replace this comment with your code.
+    PARTS: // Available gate(s): Nand
+    Nand(a=in, b=in, out=out);
 }
