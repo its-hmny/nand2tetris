@@ -10,6 +10,7 @@ CHIP HalfAdder {
     OUT sum,    // Right bit of a + b 
         carry;  // Left bit of a + b
 
-    PARTS:
-    //// Replace this comment with your code.
+    PARTS: // Available gate(s): Logic gates from '01 - Logic Gates'
+    Xor(a=a, b=b, out=sum);
+    And(a=a, b=b, out=carry);
 }
