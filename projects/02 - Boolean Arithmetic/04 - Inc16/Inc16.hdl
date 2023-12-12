@@ -10,6 +10,7 @@ CHIP Inc16 {
     IN in[16];
     OUT out[16];
 
-    PARTS:
-    //// Replace this comment with your code.
+    PARTS: // Available gate(s): Logic gates + HalfAdder + FullAdder
+    // With this syntax we can assign the first bit to '1' and the others to '0'
+    Add16(a=in,  b[0]=true, b[1..15]=false, out=out);
 }
