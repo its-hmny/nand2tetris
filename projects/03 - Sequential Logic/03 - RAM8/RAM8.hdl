@@ -1,0 +1,35 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/RAM8.hdl
+/**
+ * Memory of eight 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM8 {
+    IN in[16], load, address[3];
+    OUT out[16];
+
+    PARTS: // Available gate(s): Logic and arithmetic gates + DFF + Bit + Register
+    // Entrypoint, handles the 'address to register' translation, it basically
+    // routes the 'in' and 'load' bit stream to the one of the 8 stacked registers.
+    DMux8Way(in=load, sel=address, a=RegLoad0, b=RegLoad1, c=RegLoad2, d=RegLoad3, e=RegLoad4, f=RegLoad5, g=RegLoad6, h=RegLoad7);
+    
+    // Since the DMux above will set all 'load' bits to 0 except (eventually) the one
+    // register that has to effectively update the value all other registers are always
+    // read and don't present any side effect to the value memorized inside it.
+    Register(in=in, load=RegLoad0, out=RegOut0);
+    Register(in=in, load=RegLoad1, out=RegOut1);
+    Register(in=in, load=RegLoad2, out=RegOut2);
+    Register(in=in, load=RegLoad3, out=RegOut3);
+    Register(in=in, load=RegLoad4, out=RegOut4);
+    Register(in=in, load=RegLoad5, out=RegOut5);
+    Register(in=in, load=RegLoad6, out=RegOut6);
+    Register(in=in, load=RegLoad7, out=RegOut7);
+    
+    // Exit point, handles the redirection of the 'requested' output.
+    // By requested output we mean the one memorized at the 'address' location
+    Mux8Way16(a=RegOut0, b=RegOut1, c=RegOut2, d=RegOut3, e=RegOut4, f=RegOut5, g=RegOut6, h=RegOut7, sel=address, out=out);
+}
