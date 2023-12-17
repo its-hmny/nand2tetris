@@ -13,6 +13,6 @@ CHIP Bit {
     OUT out;
 
     PARTS: // Available gate(s): Logic and arithmetic gates + DFF
-    Mux(a=Prev, b=in, sel=load, out= ToSave);
+    Mux(a=Prev, b=in, sel=load, out=ToSave);
     DFF(in=ToSave, out=out, out=Prev);
 }
