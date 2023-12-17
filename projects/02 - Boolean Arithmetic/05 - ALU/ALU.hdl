@@ -39,6 +39,36 @@ CHIP ALU {
         zr,      // (out == 0, 1, 0)
         ng;      // (out < 0,  1, 0)
 
-    PARTS:
-    //// Replace this comment with your code.
+    PARTS: // Available gate(s): Logic gates + HalfAdder + FullAdder + Add16 + Inc16
+    // 'zx' and 'nx' bits management for the 'x' input manipulation 
+    Mux16(a=x, b[0..15]=false, sel=zx, out=OutZX);
+    Not16(in=OutZX, out=NotOutZX);
+    Mux16(a=OutZX, b=NotOutZX, sel=nx, out=OutNX);
+
+    // 'zy' and 'ny' bits management for the 'y' input manipulation 
+    Mux16(a=y, b[0..15]=false, sel=zy, out=OutZY);
+    Not16(in=OutZY, out=NotOutZY);
+    Mux16(a=OutZY, b=NotOutZY, sel=ny, out=OutNY);
+
+    // Compute either the addition or the binary and on the x, y inputs
+    And16(a=OutNX, b=OutNY, out=AndXY);
+    Add16(a=OutNX, b=OutNY, out=PlusXY);
+    Mux16(a=AndXY, b=PlusXY, sel=f, out=Result);
+
+    // 'no' bit management for final result negation
+    Not16(in=Result, out=NotResult);
+
+    // Sends to 'out' either the negated or normal result based on 'no' bit
+    // The last 3 directives are used to bind a portion of the bus to aliases that are used below.
+    Mux16(a=Result, b=NotResult, sel=no, out=out, out[0..7]=HalfOneOut, out[8..15]=HalfTwoOut, out[15]=OutSign);
+
+    // Sets the 'zr' bit based on the value of 'out' by reducing 16 bits to one w/ multiple ORs
+    Or8Way(in=HalfOneOut, out=HalfOneZR);
+    Or8Way(in=HalfTwoOut, out=HalfTwoZR);
+    Or(a=HalfOneZR, b=HalfTwoZR, out=ResNotZero);
+    Not(in=ResNotZero, out=zr);
+
+    // Sets the 'ng' bit based on the most significant bit (the first) of 'out' bus.
+    // In '2's complement' representation, the first bit is set to 1 if the number is negative.
+    Mux(a=false, b=true, sel=OutSign, out=ng);
 }
