@@ -1,0 +1,24 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/b/RAM16K.hdl
+/**
+ * Memory of 16K 16-bit registers.
+ * If load is asserted, the value of the register selected by
+ * address is set to in; Otherwise, the value does not change.
+ * The value of the selected register is emitted by out.
+ */
+CHIP RAM16K {
+    IN in[16], load, address[14];
+    OUT out[16];
+
+    PARTS: // Available gate(s): Logic and arithmetic gates + DFF + Bit + Register + RAM8 + RAM64 + PC + RAM512 + RAM4K
+    DMux4Way(in=load, sel=address[0..1], a=RamLoad0, b=RamLoad1, c=RamLoad2, d=RamLoad3);
+
+    RAM4K(in=in, load=RamLoad0, address=address[2..13], out=RamOut0);
+    RAM4K(in=in, load=RamLoad1, address=address[2..13], out=RamOut1);
+    RAM4K(in=in, load=RamLoad2, address=address[2..13], out=RamOut2);
+    RAM4K(in=in, load=RamLoad3, address=address[2..13], out=RamOut3);
+
+    Mux4Way16(a=RamOut0, b=RamOut1, c=RamOut2, d=RamOut3, sel=address[0..1], out=out);
+}
