@@ -19,3 +19,6 @@
 
 # Go workspace file
 go.work
+
+# nand2tetris toolchain related config files
+/tools/bin/*.dat
