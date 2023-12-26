@@ -1,0 +1,90 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM == 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to restart the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // Address of next instruction
+
+    PARTS:
+    // A Register value passthrough: if the current 'instruction' is an A Instruction
+    // we let pass the instruction, else we let pass the value coming from the ALU. 
+    Mux16(a=instruction, b=AluOut, sel=instruction[15], out=RegAIn);
+    // Here we basically determine if we have to write the A Register,it occurs only when:
+    Not(in=instruction[15], out=IsAInst);           // - It's managing an A Instruction 
+    Or(a=IsAInst, b=instruction[5], out=WriteAReg); // - It's managing a C Instruction where A is assigned a new value.
+    // Final pece: we also duplicate the exit to expose 'addressM' externally 
+    ARegister(in=RegAIn, load=WriteAReg, out=RegAOut, out[0..14]=addressM);
+
+    // Only when dealing with a C Instructions we must chose to use either the A register 
+    // 'view' or the M register 'view', this can be determined by inspecting the 'a' bit.
+    And(a=instruction[15], b=instruction[12], out=UseMReg);
+    Mux16(a=RegAOut, b=inM, sel=UseMReg, out=AOrMOut);
+    
+    // Only when dealing with a C Instructions we can write the D register with the value 
+    // coming from the ALU. This is of course happens only when the 'd2' bit is set to 1.
+    And(a=instruction[15], b=instruction[4], out=WriteDReg);
+    DRegister(in=AluOut, load=WriteDReg, out=RegDOut);
+
+    // When dealing with a C Instruction we wire the c1 to c6 bits in the ALU to obtain 
+    // all the required/possible permutations of operations and mnemonics needed. 
+    // Also: we duplicate the ALU ouput to 'outM' to expose it externally
+    ALU(x=RegDOut, y=AOrMOut, 
+        zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], 
+        f=instruction[7], no=instruction[6], 
+        out=AluOut, out=outM, zr=AluIsZero, ng=AluIsNegative);
+
+    // Only when dealing with a C Instruction if the 'd3' bit is set to 1 we have to
+    // expose externally that the M register has to be overwritten with the new 'outM'.
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // Jump instruction managment: when dealing with a C instruction we can either jump 
+    // for the following reasons (a jump directive requires to overwrite the PC Register):
+    // - JLT: Is just needed the check the 'j1' bit and the ALU helper bit 'ng'
+    And(a=instruction[15], b=instruction[2], out=IsJLT);
+    And(a=IsJLT, b=AluIsNegative, out=JLT);
+    // - JEQ: Is just needed the check the 'j2' bit and the ALU helper bit 'zr'
+    And(a=instruction[15], b=instruction[1], out=IsJEQ);
+    And(a=IsJEQ, b=AluIsZero, out=JEQ);
+    // - JGT: Is just needed to check the 'j3' bit and the negated ALU bits 'zr' and 'ng'
+    Not(in=AluIsZero, out=AluIsNotZero);
+    Not(in=AluIsNegative, out=AluIsNotNegative);
+    And(a=AluIsNotNegative, b=AluIsNotZero,  out=AluIsPositive);
+    And(a=instruction[15], b=instruction[0], out=IsJGT);
+    And(a=IsJGT, b=AluIsPositive, out=JGT);
+
+    // At this point if even one of this checks has a match then we have to jump:
+    // - the 'load' bit on the PC must be asserted to true 
+    Or(a=JLT, b=JEQ, out=JLE);
+    Or(a=JLE, b=JGT, out=WritePCReg);
+    // on the contrary the 'increment' bit should be negated (and viceversa)
+    Not(in=WritePCReg, out=IncPCReg);
+
+    // Wwe wire up the PC Register and expose the new 'pc' value externally
+    PC(in=RegAOut, load=WritePCReg, inc=IncPCReg, reset=reset, out[0..14]=pc);
+}
