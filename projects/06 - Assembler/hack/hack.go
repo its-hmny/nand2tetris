@@ -4,36 +4,28 @@ package hack
 //  								 		General
 // ======================================================================================
 
-type InstructionType int
-
-const (
-	A InstructionType = 0 // A instruction manage only the fetch from a memory location
-	C InstructionType = 1 // C instruction manage arithmetic as well as jump operations
-)
-
-type Instruction interface {
-	Type() InstructionType // To determine if we're working with an A or C instruction
-}
+// In order to determine if we're working with an A or C instruction we can type
+// switch on the interface value, sadly since A and C instructions are so different
+// there's not really any shareable method to put inside the interface.
+type Instruction interface{}
 
 // ======================================================================================
 //  									A Instructions
 // ======================================================================================
 
-type LocType int // Enumeration for all the different type of location (built-in, label, raw)
+type LocationType int // Enumeration for all the different type of location (built-in, label, raw)
 
 const (
-	LocTypeRaw     LocType = 0 // Raw address literal (e.g. @2345, @8989)
-	LocTypeLabel   LocType = 1 // User-defined location w/ a user given name (e.g. @MAIN, @LOOP)
-	LocTypeBuiltIn LocType = 2 // Predefined  associations by the Hack specs (@SCREEN, @KBD, @R1)
+	Raw     LocationType = 0 // Raw address literal (e.g. @2345, @8989)
+	Label   LocationType = 1 // User-defined location w/ a user given name (e.g. @MAIN, @LOOP)
+	BuiltIn LocationType = 2 // Predefined  associations by the Hack specs (@SCREEN, @KBD, @R1)
 )
 
 // In memory representation of an A Instruction for the Hack computer specification
 type AInstruction struct {
-	LocationType LocType // The subtype of the location identified by 'Name'
-	LocationName string  // A generic payload (the label/builtin name or the raw address)
+	LocType LocationType // The subtype of the location identified by 'Name'
+	LocName string       // A generic payload (the label/builtin name or the raw address)
 }
-
-func (AInstruction) Type() InstructionType { return A }
 
 // ======================================================================================
 //										C Instructions
@@ -44,6 +36,6 @@ type CInstruction struct {
 	// TODO (hmny): Populate this struct w/ the required fields
 }
 
-func (CInstruction) Type() InstructionType { return C }
 
-/*
+
+
