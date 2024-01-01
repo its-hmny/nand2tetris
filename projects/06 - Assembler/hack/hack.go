@@ -50,12 +50,12 @@ var (
 	}
 
 	DestTable = map[string]uint16{
-		"M": 0b001, "D": 0b010, "A": 0b100,
+		"": 0b000, "M": 0b001, "D": 0b010, "A": 0b100,
 		"MD": 0b011, "AM": 0b101, "AD": 0b110, "AMD": 0b111,
 	}
 
 	JumpTable = map[string]uint16{
-		"JGT": 0b001, "JEQ": 0b010, "JGE": 0b011,
+		"": 0b000, "JGT": 0b001, "JEQ": 0b010, "JGE": 0b011,
 		"JLT": 0b100, "JNE": 0b101, "JLE": 0b110, "JMP": 0b111,
 	}
 )

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 
 	"its-hmny.dev/n2t-assembler/hack"
@@ -42,5 +43,13 @@ func main() {
 		fmt.Printf("\tAsm:  %+v\n", assembler)
 		fmt.Printf("\tHack: %s\n", hack)
 	}
+
+	fmt.Println("==> Dumping compilation output to file...")
+
+	out, _ := os.Create("./Test.hack")
+	defer out.Close()
+
+	for _, inst := range compiled {
+		out.Write([]byte(fmt.Sprintf("%s\n", inst)))
 	}
 }

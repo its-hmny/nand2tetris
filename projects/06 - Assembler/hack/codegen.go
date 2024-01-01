@@ -2,7 +2,6 @@ package hack
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 )
 
@@ -34,7 +33,7 @@ func (cg *CodeGenerator) Translate() ([]string, error) {
 		case AInstruction:
 			hackInst, err = cg.TranslateAInst(tInstruction)
 		case CInstruction:
-			log.Fatal("TODO: Yet to be implemented")
+			hackInst, err = cg.TranslateCInst(tInstruction)
 		}
 
 		if err != nil {
@@ -75,4 +74,41 @@ func (cg *CodeGenerator) TranslateAInst(inst AInstruction) (string, error) {
 	}
 	// So here we just need to convert the address to its 16 bit binary representation
 	return fmt.Sprintf("%016b", address), nil
+}
+
+// Specialized function to convert a C Instruction to the Hack format.
+//
+// As part of the conversion (for both built-in and user-defined labels) there's a lookup
+// on their respective symbol tables in order to determine the 'real' location address.
+// For location not resolved or resolved to an Out-of-Bound address an error is returned.
+func (cg *CodeGenerator) TranslateCInst(inst CInstruction) (string, error) {
+	command := uint16(0b111 << 13) // Puts the initial '111' opcode at the start
+
+	// Since the 'Comp' bit-codes are the only ones mandatory we check before translation
+	// that the are provided, the check on their well-formed(ness) will come when querying
+	// the translation mappings (this also applies to 'Dest' and 'Jump' bit-codes).
+	if inst.Comp == "" || CompTable[inst.Comp] == 0 {
+		return "", fmt.Errorf("unable to translate C instruction, missing or invalid operation code")
+	}
+
+	// CInstruction.Comp: Command translation with bit-a-bit manipulation
+	if opcode, found := CompTable[inst.Comp]; found {
+		command |= opcode << 6
+	} else {
+		return "", fmt.Errorf("unable to translate C instruction, unknown 'comp' opcode '%s'", inst.Comp)
+	}
+	// CInstruction.Dest: Command translation with bit-a-bit manipulation
+	if opcode, found := DestTable[inst.Dest]; found {
+		command |= opcode << 3
+	} else {
+		return "", fmt.Errorf("unable to translate C instruction, unknown 'dest' opcode '%s'", inst.Dest)
+	}
+	// CInstruction.Jump: Command translation with bit-a-bit manipulation
+	if opcode, found := JumpTable[inst.Jump]; found {
+		command |= opcode
+	} else {
+		return "", fmt.Errorf("unable to translate C instruction, unknown 'jump' opcode '%s'", inst.Jump)
+	}
+
+	return fmt.Sprintf("%016b", command), nil
 }
