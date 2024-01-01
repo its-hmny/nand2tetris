@@ -6,35 +6,51 @@ import (
 	"strconv"
 )
 
+// ----------------------------------------------------------------------------
+// Code Generator
+
+// Takes some a set of 'hack.Instruction' and spits out their binary counterparts.
+//
+// In order to resolve user defined labels in A instructions, during initialization of
+// of the Code Generator a Symbol Table should be provided.
 type CodeGenerator struct {
-	Program []Instruction     // The set of parsed instructions to convert in Hack format
-	Table   map[string]uint16 // Used to resolve user-defined labels w/ their actual address
+	Program []Instruction     // The set of instructions to convert in Hack binary format
+	Table   map[string]uint16 // Mapping to resolve user-defined labels to their underlying address
 }
 
-func (cg *CodeGenerator) Dump() ([]string, error) {
-	code := make([]string, 0, len(cg.Program))
+// Translate each instruction in the 'Program' to the Hack binary format.
+//
+// Each instruction will pass through the following step: evaluation, validation and then conversion
+// to its binary representation (stored inside a uint16) so that it can be further elaborated by the
+// function caller (e.g. dumping .hack code to a file, runtime interpretation, ...).
+func (cg *CodeGenerator) Translate() ([]string, error) {
+	hack := make([]string, 0, len(cg.Program))
 
-	for _, inst := range cg.Program {
+	for _, instruction := range cg.Program {
 		var hackInst string = ""
 		var err error = nil
 
-		switch typedInst := inst.(type) {
+		switch tInstruction := instruction.(type) {
 		case AInstruction:
-			hackInst, err = cg.TranslateAInst(typedInst)
+			hackInst, err = cg.TranslateAInst(tInstruction)
 		case CInstruction:
 			log.Fatal("TODO: Yet to be implemented")
 		}
 
-		if hackInst == "" || err != nil {
+		if err != nil {
 			return nil, err
 		}
-
-		code = append(code, hackInst)
+		hack = append(hack, hackInst)
 	}
 
-	return code, nil
+	return hack, nil
 }
 
+// Specialized function to convert an A Instruction to the Hack format.
+//
+// As part of the conversion (for both built-in and user-defined labels) there's a lookup
+// on their respective symbol tables in order to determine the 'real' location address.
+// For location not resolved or resolved to an Out-of-Bound address an error is returned.
 func (cg *CodeGenerator) TranslateAInst(inst AInstruction) (string, error) {
 	found, address := false, uint16(0)
 
@@ -54,7 +70,7 @@ func (cg *CodeGenerator) TranslateAInst(inst AInstruction) (string, error) {
 	// An A instruction always has the first bit set to zero (the opcode bit) this also mean
 	// that, since each instructions 16 bit there are only 15 bit to address the Hack computer
 	// memory this in turn means that the an address over 2^15 is invalid and out of bound.
-	if address > MaxAddressAllowed {
+	if address > MaxAddressableMemory {
 		return "", fmt.Errorf("location '%s resolved to an address not allowed", inst.LocName)
 	}
 	// So here we just need to convert the address to its 16 bit binary representation

@@ -8,19 +8,15 @@ import (
 )
 
 var program = []hack.Instruction{
-	// Built-in & well known registries with resolution on the built-in table
+	// This first block should produce the sum of R1 + R2 and save it on R3
 	hack.AInstruction{LocType: hack.BuiltIn, LocName: "R1"},
+	hack.CInstruction{Comp: "M", Dest: "D"},
 	hack.AInstruction{LocType: hack.BuiltIn, LocName: "R2"},
-	// User-defined label with simple address binary translation
-	hack.AInstruction{LocType: hack.Raw, LocName: "38"},
-	hack.AInstruction{LocType: hack.Raw, LocName: "42"},
-	hack.AInstruction{LocType: hack.Raw, LocName: "64"},
-	hack.AInstruction{LocType: hack.Raw, LocName: "128"},
-	hack.AInstruction{LocType: hack.Raw, LocName: fmt.Sprint(hack.MaxAddressAllowed - 1)},
-	// User-defined labels with resolution on the symbol table
-	hack.AInstruction{LocType: hack.Label, LocName: "Test1"},
-	hack.AInstruction{LocType: hack.Label, LocName: "Test2"},
-	hack.AInstruction{LocType: hack.Label, LocName: "Test3"},
+	hack.CInstruction{Comp: "D+M", Dest: "D"},
+	hack.AInstruction{LocType: hack.BuiltIn, LocName: "R3"},
+	hack.CInstruction{Comp: "D", Dest: "M"},
+	hack.AInstruction{LocType: hack.Raw, LocName: "6"},
+	hack.CInstruction{Comp: "0", Jump: "JMP"},
 }
 
 var table = map[string]uint16{
@@ -31,7 +27,7 @@ func main() {
 	fmt.Println("============== nand2tetris Hack Assembler ==============")
 
 	translator := hack.CodeGenerator{Program: program, Table: table}
-	compiled, err := translator.Dump()
+	compiled, err := translator.Translate()
 
 	if err != nil {
 		fmt.Printf("ERR: Unable to complete 'codegen' pass:\n\t %s", err)
@@ -43,7 +39,8 @@ func main() {
 		assembler, hack := program[n], compiled[n]
 
 		fmt.Printf("%d) %s: =>\n", n, reflect.TypeOf(assembler).Name())
-		fmt.Printf("\t\t %+v\n", assembler)
-		fmt.Printf("\t\t %s\n", hack)
+		fmt.Printf("\tAsm:  %+v\n", assembler)
+		fmt.Printf("\tHack: %s\n", hack)
+	}
 	}
 }
