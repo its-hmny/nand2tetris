@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"reflect"
+	"strings"
 
+	"its-hmny.dev/n2t-assembler/assembler"
 	"its-hmny.dev/n2t-assembler/hack"
 )
 
@@ -27,9 +28,18 @@ var table = map[string]uint16{
 func main() {
 	fmt.Println("============== nand2tetris Hack Assembler ==============")
 
-	translator := hack.CodeGenerator{Program: program, Table: table}
-	compiled, err := translator.Translate()
+	fmt.Println("================== Assembler parsing ===================")
+	parser := assembler.Parser{Reader: strings.NewReader("@42\n@TEST")}
 
+	status, err := parser.Parse()
+	if !status || err != nil {
+		fmt.Printf("ERR: Unable to complete 'codegen' pass:\n\t %s", err)
+	}
+
+	fmt.Println("==================== Hack codegen =====================")
+	translator := hack.CodeGenerator{Program: program, Table: table}
+
+	compiled, err := translator.Translate()
 	if err != nil {
 		fmt.Printf("ERR: Unable to complete 'codegen' pass:\n\t %s", err)
 	}
