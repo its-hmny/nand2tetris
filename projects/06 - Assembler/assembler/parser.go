@@ -60,13 +60,24 @@ func handleAInst(data []pc.ParsecNode) pc.ParsecNode {
 func handleCInst(data []pc.ParsecNode) pc.ParsecNode {
 	dest, comp, jump := data[0].(*pc.Terminal), data[2].(*pc.Terminal), data[4].(*pc.Terminal)
 	if comp.Name == "" {
-		fmt.Println("ERR: Unable to parse malformed A Instruction")
+		fmt.Println("ERR: Unable to parse malformed C Instruction")
 	}
 
 	inst := hack.CInstruction{Comp: comp.Value, Dest: dest.Value, Jump: jump.Value}
 	fmt.Printf("Found C instruction: %+v\n", inst)
 
 	return &pc.Terminal{} // TODO (hmny): No idea what to put here
+}
+
+func handleLabelDecl(data []pc.ParsecNode) pc.ParsecNode {
+	location := data[1].(*pc.Terminal)
+	if location.Name != "Label" {
+		fmt.Println("ERR: Unable to parse malformed Label Declaration")
+	}
+
+	fmt.Printf("Found Label declaration: %s\n", location.Value)
+
+	return pc.NewTerminal("Label", location.Value, location.Position)
 }
 
 var (
@@ -110,8 +121,12 @@ var (
 var (
 	// A Instruction declaration parser
 	pAInst = pc.And(handleAInst, pc.Atom("@", "@"), pLabel)
+
 	// C Instruction declaration parser
 	pCInst = pc.And(handleCInst, pDest, pc.Atom("=", "="), pComp, pc.Atom(";", ";"), pJump)
+
+	// New Label declaration parser
+	pLabelDecl = pc.And(handleLabelDecl, pc.Atom("(", "("), pLabel, pc.Atom(")", ")"))
 
 	// Assembler program parser
 	pProgram = pc.ManyUntil(nil, pc.OrdChoice(nil, pAInst, pCInst, pLabelDecl), pc.End())
