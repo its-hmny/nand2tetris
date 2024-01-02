@@ -9,7 +9,15 @@ import (
 	"its-hmny.dev/n2t-assembler/hack"
 )
 
-var program = []hack.Instruction{
+var AsmProgram = `
+@42
+@TEST
+M=D+1;JGT
+A=M+1;JEQ
+@THIS
+`
+
+var HackProgram = []hack.Instruction{
 	// This first block should produce the sum of R1 + R2 and save it on R3
 	hack.AInstruction{LocType: hack.BuiltIn, LocName: "R1"},
 	hack.CInstruction{Comp: "M", Dest: "D"},
@@ -21,7 +29,7 @@ var program = []hack.Instruction{
 	hack.CInstruction{Comp: "0", Jump: "JMP"},
 }
 
-var table = map[string]uint16{
+var SymbolTable = map[string]uint16{
 	"Test1": 86, "Test2": 256, "Test3": 24,
 }
 
@@ -29,7 +37,7 @@ func main() {
 	fmt.Println("============== nand2tetris Hack Assembler ==============")
 
 	fmt.Println("================== Assembler parsing ===================")
-	parser := assembler.Parser{Reader: strings.NewReader("@42\n@TEST")}
+	parser := assembler.Parser{Reader: strings.NewReader(AsmProgram)}
 
 	status, err := parser.Parse()
 	if !status || err != nil {
@@ -37,7 +45,7 @@ func main() {
 	}
 
 	fmt.Println("==================== Hack codegen =====================")
-	translator := hack.CodeGenerator{Program: program, Table: table}
+	translator := hack.CodeGenerator{Program: HackProgram, Table: SymbolTable}
 
 	compiled, err := translator.Translate()
 	if err != nil {
@@ -47,11 +55,11 @@ func main() {
 	// For the time being we simply dump the program on stdout before exiting, each
 	// and every instruction is printed both in its in-memory format and raw binary
 	for n := range compiled {
-		assembler, hack := program[n], compiled[n]
+		assembler, hack := HackProgram[n], compiled[n]
 
 		fmt.Printf("%d) %s: =>\n", n, reflect.TypeOf(assembler).Name())
-		fmt.Printf("\tAsm:  %+v\n", assembler)
-		fmt.Printf("\tHack: %s\n", hack)
+		fmt.Printf(" Asm:  %+v\n", assembler)
+		fmt.Printf(" Hack: %s\n\n", hack)
 	}
 
 	fmt.Println("==> Dumping compilation output to file...")
