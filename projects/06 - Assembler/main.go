@@ -11,13 +11,13 @@ import (
 
 var AsmProgram = `
 	@42
-	M=D+1;JGT
+	M=D+1
 	@TEST:LTS
-	A=M+1;JEQ
+	M+1;JEQ
 	
 	(END)
 		@END
-		D=0; JMP
+		0; JMP
 `
 
 var HackProgram = []hack.Instruction{

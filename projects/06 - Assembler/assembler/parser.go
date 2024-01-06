@@ -18,8 +18,11 @@ var (
 	// Parser combinator for A Instructions
 	pAInst = ast.And("a-inst", nil, pc.Atom("@", "@"), pLabel)
 	// Parser combinator for C Instructions
-	// TODO(hmny): Dest in C instruction is optional, must be handled
-	pCInst = ast.And("c-inst", nil, pDest, pc.Atom("=", "="), pComp, pc.Atom(";", ";"), pJump)
+	pCInst = ast.And("c-inst", nil,
+		ast.Maybe("maybe-assign", nil, ast.And("assign", nil, pDest, pc.Atom("=", "="))),
+		pComp, // 'comp' should always be provided
+		ast.Maybe("maybe-goto", nil, ast.And("goto", nil, pc.Atom(";", ";"), pJump)),
+	)
 	// Parser combinator for new label declaration
 	pLabelDecl = ast.And("label-dcl", nil, pc.Atom("(", "("), pLabel, pc.Atom(")", ")"))
 )
