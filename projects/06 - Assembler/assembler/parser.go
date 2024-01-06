@@ -26,8 +26,9 @@ var (
 
 var (
 	// Generic label parser (A Instruction + Label declaration)
-	// TODO (hmny): pc.Ident() may be too wide for Assembler label declaration
-	pLabel = ast.OrdChoice("label", nil, pc.Int(), pc.Ident())
+	// NOTE: A user-defined label can be any sequence of letters,
+	// digits,  _, ., $, : that doesn't begin with a digit.
+	pLabel = ast.OrdChoice("label", nil, pc.Int(), pc.Token(`[A-Za-z_.$:][0-9a-zA-Z_.$:]*`, "SYMBOL"))
 
 	// Generic destination parser (C Instruction subsection)
 	pDest = ast.OrdChoice("dest", nil, pc.Atom("D", "D"), pc.Atom("A", "A"), pc.Atom("M", "M"))

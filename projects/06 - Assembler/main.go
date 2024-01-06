@@ -12,7 +12,7 @@ import (
 var AsmProgram = `
 	@42
 	M=D+1;JGT
-	@TEST
+	@TEST:LTS
 	A=M+1;JEQ
 	
 	(END)
