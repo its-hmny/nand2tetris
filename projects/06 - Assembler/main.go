@@ -10,10 +10,10 @@ import (
 )
 
 var AsmProgram = `
-@42
+	@42
 	M=D+1;JGT
-@TEST
-A=M+1;JEQ
+	@TEST
+	A=M+1;JEQ
 	
 	(END)
 		@END
@@ -40,9 +40,9 @@ func main() {
 	fmt.Println("============== nand2tetris Hack Assembler ==============")
 
 	fmt.Println("================== Assembler parsing ===================")
-	parser := assembler.Parser{Reader: strings.NewReader(AsmProgram)}
+	parser := assembler.Parser{}
 
-	status, err := parser.Parse()
+	status, err := parser.Parse(strings.NewReader(AsmProgram))
 	if !status || err != nil {
 		fmt.Printf("ERR: Unable to complete 'codegen' pass:\n\t %s", err)
 	}
@@ -65,12 +65,12 @@ func main() {
 		fmt.Printf(" Hack: %s\n\n", hack)
 	}
 
-	fmt.Println("==> Dumping compilation output to file...")
+	// fmt.Println("==> Dumping compilation output to file...")
 
-	out, _ := os.Create("./Test.hack")
-	defer out.Close()
+	// out, _ := os.Create("./Test.hack")
+	// defer out.Close()
 
-	for _, inst := range compiled {
-		out.Write([]byte(fmt.Sprintf("%s\n", inst)))
-	}
+	// for _, inst := range compiled {
+	// 	out.Write([]byte(fmt.Sprintf("%s\n", inst)))
+	// }
 }
