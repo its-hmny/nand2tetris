@@ -1,7 +1,6 @@
 package assembler
 
 import (
-	"fmt"
 	"io"
 	"os"
 
@@ -33,8 +32,8 @@ var (
 
 var (
 	// Generic label parser (A Instruction + Label declaration)
-	// NOTE: A user-defined label can be any sequence of letters,
-	// digits,  _, ., $, : that doesn't begin with a digit.
+	// NOTE: A label can be any sequence of letters, digits, and symbols (_, ., $, :).
+	// NOTE: A label cannot begin with a leading digit (a symbol is indeed allowed).
 	pLabel = ast.OrdChoice("label", nil, pc.Int(), pc.Token(`[A-Za-z_.$:][0-9a-zA-Z_.$:]*`, "SYMBOL"))
 
 	// Generic destination parser (C Instruction subsection)
@@ -71,25 +70,34 @@ var (
 
 type Parser struct{}
 
-func (p *Parser) Parse(r io.Reader) (bool, error) {
+func NewParser() Parser { return Parser{} }
+
+func (p *Parser) Parse(r io.Reader) (pc.Queryable, bool) {
 	content, err := io.ReadAll(r)
 	if err != nil {
-		return false, fmt.Errorf("unable to read content: %s", err)
+		return nil, false
 	}
 
-	ast.Reset()
-	if os.Getenv("PARSEC_DEBUG") != "" { // Show 'goparsec' debug logging on-demand
+	// Feature flag: Enable 'goparsec' library's debug logs
+	if os.Getenv("PARSEC_DEBUG") != "" {
 		ast.SetDebug()
 	}
 
-	ast.Parsewith(pProgram, pc.NewScanner(content))
+	// We generate the traversable Abstract Syntax Tree from the source content
+	root, scanner := ast.Parsewith(pProgram, pc.NewScanner(content))
 
-	if os.Getenv("EXPORT_AST") != "" { // Saves the AST as Dot/GraphViz file on-demand
+	// Feature flag: Enables export of the AST as Dot file (debug.ast.fot)
+	if os.Getenv("EXPORT_AST") != "" {
 		file, _ := os.Create("debug.ast.dot")
 		defer file.Close()
 
 		file.Write([]byte(ast.Dotstring("\"Assembler AST\"")))
 	}
 
-	return true, nil
+	// Feature flag: Enables pretty printing of the AST on the console
+	if os.Getenv("PRINT_AST") != "" {
+		ast.Prettyprint()
+	}
+
+	return root, scanner.Endof() // Success is based on the reaching of 'EOF'
 }

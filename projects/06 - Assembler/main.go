@@ -38,19 +38,22 @@ var SymbolTable = map[string]uint16{
 }
 
 func main() {
-	fmt.Println("============== nand2tetris Hack Assembler ==============")
 
-	fmt.Println("================== Assembler parsing ===================")
-	parser := assembler.Parser{}
+	// Instantiate a parser for the Assembler program
+	parser := assembler.NewParser()
 
-	status, err := parser.Parse(strings.NewReader(AsmProgram))
-	if !status || err != nil {
-		fmt.Printf("ERR: Unable to complete 'codegen' pass:\n\t %s", err)
+	// Parses the input file content and extract an AST from it
+	ast, success := parser.Parse(strings.NewReader(AsmProgram))
+	if !success {
+		fmt.Printf("ERR: Unable to complete 'parsing' pass\n")
 	}
 
-	fmt.Println("==================== Hack codegen =====================")
+	fmt.Printf("%+v", ast) // TODO (hmny): Temporary until a IR Generator is created
+
+	// Now, instantiates a code generator for the Hack (compiled) program
 	translator := hack.CodeGenerator{Program: HackProgram, Table: SymbolTable}
 
+	// Iterates over each program instruction and spits out the relative translation
 	compiled, err := translator.Translate()
 	if err != nil {
 		fmt.Printf("ERR: Unable to complete 'codegen' pass:\n\t %s", err)
@@ -61,17 +64,8 @@ func main() {
 	for n := range compiled {
 		assembler, hack := HackProgram[n], compiled[n]
 
-		fmt.Printf("%d) %s: =>\n", n, reflect.TypeOf(assembler).Name())
+		fmt.Printf("%s: =>\n", reflect.TypeOf(assembler).Name())
 		fmt.Printf(" Asm:  %+v\n", assembler)
 		fmt.Printf(" Hack: %s\n\n", hack)
 	}
-
-	// fmt.Println("==> Dumping compilation output to file...")
-
-	// out, _ := os.Create("./Test.hack")
-	// defer out.Close()
-
-	// for _, inst := range compiled {
-	// 	out.Write([]byte(fmt.Sprintf("%s\n", inst)))
-	// }
 }
