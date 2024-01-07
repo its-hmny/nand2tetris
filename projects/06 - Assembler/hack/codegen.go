@@ -87,7 +87,7 @@ func (cg *CodeGenerator) TranslateCInst(inst CInstruction) (string, error) {
 	// Since the 'Comp' bit-codes are the only ones mandatory we check before translation
 	// that the are provided, the check on their well-formed(ness) will come when querying
 	// the translation mappings (this also applies to 'Dest' and 'Jump' bit-codes).
-	if inst.Comp == "" || CompTable[inst.Comp] == 0 {
+	if _, found := CompTable[inst.Comp]; inst.Comp == "" || !found {
 		return "", fmt.Errorf("unable to translate C instruction, missing or invalid operation code")
 	}
 

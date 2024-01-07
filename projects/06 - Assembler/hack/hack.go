@@ -32,20 +32,20 @@ var BuiltInTable = map[string]uint16{ // Predefined/Built-In symbols by the Hack
 var (
 	CompTable = map[string]uint16{
 		// - Constants and identities
-		"0": 0b0101010, "1": 0b011111, "-1": 0b0111010,
+		"0": 0b0101010, "1": 0b0111111, "-1": 0b0111010,
 		"D": 0b0001100, "A": 0b0110000, "M": 0b1110000,
 		// - Binary and numerical negations
 		"!D": 0b0001101, "!A": 0b0110001, "!M": 0b1110001,
 		"-D": 0b0001111, "-A": 0b0110011, "-M": 0b1110011,
 		// - Increment and decrement operations
-		"D+1": 0b0011111, "A+1": 0110111, "M+1": 0b1110111,
+		"D+1": 0b0011111, "A+1": 0b0110111, "M+1": 0b1110111,
 		"D-1": 0b0001110, "A-1": 0b0110010, "M-1": 0b1110010,
 		// - Register with register operations
 		"D+A": 0b0000010, "D+M": 0b1000010,
 		"D-A": 0b0010011, "D-M": 0b1010011,
 		"A-D": 0b0000111, "M-D": 0b1000111,
 		// - Bitwise register with register operations
-		"D&A": 0b0000000, "D&M": 0b100000,
+		"D&A": 0b0000000, "D&M": 0b1000000,
 		"D|A": 0b0010101, "D|M": 0b1010101,
 	}
 
