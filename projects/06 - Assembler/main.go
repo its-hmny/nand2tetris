@@ -11,8 +11,9 @@ import (
 
 var AsmProgram = `
 	@42
-	M=D+1
-	@TEST:LTS
+	// Test comment
+	M=D+1 // Another test comment
+	// Once more @TEST:LTS
 	M+1;JEQ
 	
 	(END)

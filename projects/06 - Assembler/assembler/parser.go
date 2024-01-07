@@ -3,6 +3,7 @@ package assembler
 import (
 	"fmt"
 	"io"
+	"os"
 
 	pc "github.com/prataprc/goparsec"
 )
@@ -12,19 +13,22 @@ var ast = pc.NewAST("assembler", 0)
 
 var (
 	// Parser combinator for an entire Assembler program
-	pProgram = ast.ManyUntil("program", nil, pInst, pc.End())
+	pProgram = ast.ManyUntil("program", nil, ast.OrdChoice("item", nil, pComment, pInst), pc.End())
 	// Parser combinator for a generic Assembler instruction (either C, A or Label declaration)
 	pInst = ast.OrdChoice("inst", nil, pAInst, pCInst, pLabelDecl)
+	// Parser combinator for comments in Assembler program
+	pComment = ast.And("comment", nil, pc.Atom("//", "//"), pc.Token(`(?m).*$`, "COMMENT"))
+
 	// Parser combinator for A Instructions
 	pAInst = ast.And("a-inst", nil, pc.Atom("@", "@"), pLabel)
+	// Parser combinator for new label declaration
+	pLabelDecl = ast.And("label-dcl", nil, pc.Atom("(", "("), pLabel, pc.Atom(")", ")"))
 	// Parser combinator for C Instructions
 	pCInst = ast.And("c-inst", nil,
 		ast.Maybe("maybe-assign", nil, ast.And("assign", nil, pDest, pc.Atom("=", "="))),
 		pComp, // 'comp' should always be provided
 		ast.Maybe("maybe-goto", nil, ast.And("goto", nil, pc.Atom(";", ";"), pJump)),
 	)
-	// Parser combinator for new label declaration
-	pLabelDecl = ast.And("label-dcl", nil, pc.Atom("(", "("), pLabel, pc.Atom(")", ")"))
 )
 
 var (
@@ -74,16 +78,18 @@ func (p *Parser) Parse(r io.Reader) (bool, error) {
 	}
 
 	ast.Reset()
-	// ast.SetDebug()
+	if os.Getenv("PARSEC_DEBUG") != "" { // Show 'goparsec' debug logging on-demand
+		ast.SetDebug()
+	}
+
 	ast.Parsewith(pProgram, pc.NewScanner(content))
 
-	fmt.Println(ast.Dotstring("Assembler Program's AST"))
+	if os.Getenv("EXPORT_AST") != "" { // Saves the AST as Dot/GraphViz file on-demand
+		file, _ := os.Create("debug.ast.dot")
+		defer file.Close()
 
-	// Debug only, in future I'll try to create an AST from it with something
-	// like this: 'pc.NewAST("asm", 10_000_000).Parsewith(pProgram, scanner)'
-	// ? json, _ := json.MarshalIndent(parsed, "", "  ")
-	// ? fmt.Printf("%T: %s\n", parsed, json)
+		file.Write([]byte(ast.Dotstring("\"Assembler AST\"")))
+	}
 
 	return true, nil
-
 }
