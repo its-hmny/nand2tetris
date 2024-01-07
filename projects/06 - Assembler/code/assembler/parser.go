@@ -88,7 +88,7 @@ func (p *Parser) Parse(r io.Reader) (pc.Queryable, bool) {
 
 	// Feature flag: Enables export of the AST as Dot file (debug.ast.fot)
 	if os.Getenv("EXPORT_AST") != "" {
-		file, _ := os.Create("debug.ast.dot")
+		file, _ := os.Create("debug/debug.ast.dot")
 		defer file.Close()
 
 		file.Write([]byte(ast.Dotstring("\"Assembler AST\"")))
