@@ -1,6 +1,7 @@
 package assembler
 
 import (
+	"fmt"
 	"io"
 	"os"
 
@@ -21,7 +22,7 @@ var (
 	// Parser combinator for A Instructions
 	pAInst = ast.And("a-inst", nil, pc.Atom("@", "@"), pLabel)
 	// Parser combinator for new label declaration
-	pLabelDecl = ast.And("label-dcl", nil, pc.Atom("(", "("), pLabel, pc.Atom(")", ")"))
+	pLabelDecl = ast.And("label-decl", nil, pc.Atom("(", "("), pLabel, pc.Atom(")", ")"))
 	// Parser combinator for C Instructions
 	pCInst = ast.And("c-inst", nil,
 		ast.Maybe("maybe-assign", nil, ast.And("assign", nil, pDest, pc.Atom("=", "="))),
@@ -88,7 +89,7 @@ func (p *Parser) Parse(r io.Reader) (pc.Queryable, bool) {
 
 	// Feature flag: Enables export of the AST as Dot file (debug.ast.fot)
 	if os.Getenv("EXPORT_AST") != "" {
-		file, _ := os.Create("debug/debug.ast.dot")
+		file, _ := os.Create(fmt.Sprintf("%s/debug.ast.dot", os.Getenv("DEBUG_FOLDER")))
 		defer file.Close()
 
 		file.Write([]byte(ast.Dotstring("\"Assembler AST\"")))
