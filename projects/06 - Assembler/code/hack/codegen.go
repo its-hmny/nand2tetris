@@ -13,8 +13,13 @@ import (
 // In order to resolve user defined labels in A instructions, during initialization of
 // of the Code Generator a Symbol Table should be provided.
 type CodeGenerator struct {
-	Program []Instruction     // The set of instructions to convert in Hack binary format
-	Table   map[string]uint16 // Mapping to resolve user-defined labels to their underlying address
+	Program     []Instruction     // The set of instructions to convert in Hack binary format
+	SymbolTable map[string]uint16 // Mapping to resolve user-defined labels to their underlying address
+}
+
+// Initializes and returns to the caller a brand new 'CodeGenerator' struct.
+func NewCodeGenerator(p []Instruction, st map[string]uint16) CodeGenerator {
+	return CodeGenerator{Program: p, SymbolTable: st}
 }
 
 // Translate each instruction in the 'Program' to the Hack binary format.
@@ -58,7 +63,7 @@ func (cg *CodeGenerator) TranslateAInst(inst AInstruction) (string, error) {
 		num, err := strconv.ParseInt(inst.LocName, 10, 16)
 		address, found = uint16(num), err == nil
 	case Label: // Lookup the label name in the provided SymbolTable
-		address, found = cg.Table[inst.LocName]
+		address, found = cg.SymbolTable[inst.LocName]
 	case BuiltIn: // Lookup the registry name in the WellKnow table
 		address, found = BuiltInTable[inst.LocName]
 	}
@@ -91,19 +96,19 @@ func (cg *CodeGenerator) TranslateCInst(inst CInstruction) (string, error) {
 		return "", fmt.Errorf("unable to translate C instruction, missing or invalid operation code")
 	}
 
-	// CInstruction.Comp: Command translation with bit-a-bit manipulation
+	// CInst.Comp: Command translation with bit-a-bit manipulation
 	if opcode, found := CompTable[inst.Comp]; found {
 		command |= opcode << 6
 	} else {
 		return "", fmt.Errorf("unable to translate C instruction, unknown 'comp' opcode '%s'", inst.Comp)
 	}
-	// CInstruction.Dest: Command translation with bit-a-bit manipulation
+	// CInst.Dest: Command translation with bit-a-bit manipulation
 	if opcode, found := DestTable[inst.Dest]; found {
 		command |= opcode << 3
 	} else {
 		return "", fmt.Errorf("unable to translate C instruction, unknown 'dest' opcode '%s'", inst.Dest)
 	}
-	// CInstruction.Jump: Command translation with bit-a-bit manipulation
+	// CInst.Jump: Command translation with bit-a-bit manipulation
 	if opcode, found := JumpTable[inst.Jump]; found {
 		command |= opcode
 	} else {

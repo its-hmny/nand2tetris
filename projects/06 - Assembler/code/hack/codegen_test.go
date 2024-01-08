@@ -10,7 +10,7 @@ import (
 func TestAInstructions(t *testing.T) {
 	// Instantiate a basic simple table with some entries and shared codegen for every test cases
 	table := map[string]uint16{"Test1": 0, "Test2": 67, "hmny": 9393, "n2t": 754, "JUMP": 90}
-	codegen := hack.CodeGenerator{Program: []hack.Instruction{}, Table: table}
+	codegen := hack.CodeGenerator{Program: []hack.Instruction{}, SymbolTable: table}
 
 	test := func(inst hack.AInstruction, expected string, fail bool) {
 		// Run the translation function on the given A Instruction
