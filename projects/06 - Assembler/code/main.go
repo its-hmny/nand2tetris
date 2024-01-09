@@ -1,34 +1,40 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"reflect"
-	"strings"
+	"os"
 
 	"its-hmny.dev/n2t-assembler/assembler"
 	"its-hmny.dev/n2t-assembler/hack"
 )
 
-var AsmProgram = `
-	@42
-	// Test comment
-	M=D+1 // Another test comment
-	// Test comment 2
-	@END
-	M+1;JEQ
-	
-	(END)
-		@END
-		0; JMP
-`
-
 func main() {
+	if len(os.Args) < 2 {
+		fmt.Print("USAGE: assembler [INPUT] [OUTPUT]")
+		os.Exit(-1)
+	}
+
+	input, err := os.ReadFile(os.Args[1])
+	if err != nil {
+		fmt.Printf("ERROR: Unable to open input file: %s\n", err)
+		os.Exit(-1)
+	}
+
+	output, err := os.Create(os.Args[2])
+	if err != nil {
+		fmt.Printf("ERROR: Unable to open output file: %s\n", err)
+		os.Exit(-1)
+	}
+	defer output.Close()
+
 	// Instantiate a parser for the Assembler program
 	parser := assembler.NewParser()
 	// Parses the input file content and extract an AST from it
-	ast, success := parser.Parse(strings.NewReader(AsmProgram))
+	ast, success := parser.Parse(bytes.NewReader(input))
 	if !success {
-		fmt.Printf("ERROR: Unable to complete 'parsing' pass\n")
+		fmt.Print("ERROR: Unable to complete 'parsing' pass\n")
+		os.Exit(-1)
 	}
 
 	// Instantiate a parser for the Assembler to Hack lowerer
@@ -37,6 +43,7 @@ func main() {
 	program, table, err := lowerer.FromAST(ast)
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'lowering' pass: %s\n", err)
+		os.Exit(-1)
 	}
 
 	// Now, instantiates a code generator for the Hack (compiled) program
@@ -45,15 +52,11 @@ func main() {
 	compiled, err := translator.Translate()
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'codegen' pass:\n\t %s", err)
+		os.Exit(-1)
 	}
 
-	// For the time being we simply dump the program on stdout before exiting, each
-	// and every instruction is printed both in its in-memory format and raw binary
-	for n := range compiled {
-		assembler, hack := translator.Program[n], compiled[n]
-
-		fmt.Printf("%s: =>\n", reflect.TypeOf(assembler).Name())
-		fmt.Printf(" Asm:  %+v\n", assembler)
-		fmt.Printf(" Hack: %s\n\n", hack)
+	for _, comp := range compiled {
+		line := fmt.Sprintf("%s\n", comp)
+		output.Write([]byte(line))
 	}
 }

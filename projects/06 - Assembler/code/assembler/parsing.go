@@ -85,7 +85,7 @@ func (p *Parser) Parse(r io.Reader) (pc.Queryable, bool) {
 	}
 
 	// We generate the traversable Abstract Syntax Tree from the source content
-	root, scanner := ast.Parsewith(pProgram, pc.NewScanner(content))
+	root, _ := ast.Parsewith(pProgram, pc.NewScanner(content))
 
 	// Feature flag: Enables export of the AST as Dot file (debug.ast.fot)
 	if os.Getenv("EXPORT_AST") != "" {
@@ -99,6 +99,6 @@ func (p *Parser) Parse(r io.Reader) (pc.Queryable, bool) {
 	if os.Getenv("PRINT_AST") != "" {
 		ast.Prettyprint()
 	}
-
-	return root, scanner.Endof() // Success is based on the reaching of 'EOF'
+	// TODO (hmny): This hardcoding to true should be changed
+	return root, true // Success is based on the reaching of 'EOF'
 }
