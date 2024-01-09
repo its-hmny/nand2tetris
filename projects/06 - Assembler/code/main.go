@@ -13,7 +13,8 @@ var AsmProgram = `
 	@42
 	// Test comment
 	M=D+1 // Another test comment
-	// Once more @TEST:LTS
+	// Test comment 2
+	@END
 	M+1;JEQ
 	
 	(END)
@@ -21,48 +22,35 @@ var AsmProgram = `
 		0; JMP
 `
 
-var HackProgram = []hack.Instruction{
-	// This first block should produce the sum of R1 + R2 and save it on R3
-	hack.AInstruction{LocType: hack.BuiltIn, LocName: "R1"},
-	hack.CInstruction{Comp: "M", Dest: "D"},
-	hack.AInstruction{LocType: hack.BuiltIn, LocName: "R2"},
-	hack.CInstruction{Comp: "D+M", Dest: "D"},
-	hack.AInstruction{LocType: hack.BuiltIn, LocName: "R3"},
-	hack.CInstruction{Comp: "D", Dest: "M"},
-	hack.AInstruction{LocType: hack.Raw, LocName: "6"},
-	hack.CInstruction{Comp: "0", Jump: "JMP"},
-}
-
-var SymbolTable = map[string]uint16{
-	"Test1": 86, "Test2": 256, "Test3": 24,
-}
-
 func main() {
-
 	// Instantiate a parser for the Assembler program
 	parser := assembler.NewParser()
-
 	// Parses the input file content and extract an AST from it
 	ast, success := parser.Parse(strings.NewReader(AsmProgram))
 	if !success {
-		fmt.Printf("ERR: Unable to complete 'parsing' pass\n")
+		fmt.Printf("ERROR: Unable to complete 'parsing' pass\n")
 	}
 
-	fmt.Printf("%+v", ast) // TODO (hmny): Temporary until a IR Generator is created
+	// Instantiate a parser for the Assembler to Hack lowerer
+	lowerer := assembler.NewHackLowerer()
+	// Lowers the AST to an in-memory/IR format that follows the Hack specs.
+	program, table, err := lowerer.FromAST(ast)
+	if err != nil {
+		fmt.Printf("ERROR: Unable to complete 'lowering' pass: %s\n", err)
+	}
 
 	// Now, instantiates a code generator for the Hack (compiled) program
-	translator := hack.CodeGenerator{Program: HackProgram, Table: SymbolTable}
-
+	translator := hack.NewCodeGenerator(program, table)
 	// Iterates over each program instruction and spits out the relative translation
 	compiled, err := translator.Translate()
 	if err != nil {
-		fmt.Printf("ERR: Unable to complete 'codegen' pass:\n\t %s", err)
+		fmt.Printf("ERROR: Unable to complete 'codegen' pass:\n\t %s", err)
 	}
 
 	// For the time being we simply dump the program on stdout before exiting, each
 	// and every instruction is printed both in its in-memory format and raw binary
 	for n := range compiled {
-		assembler, hack := HackProgram[n], compiled[n]
+		assembler, hack := translator.Program[n], compiled[n]
 
 		fmt.Printf("%s: =>\n", reflect.TypeOf(assembler).Name())
 		fmt.Printf(" Asm:  %+v\n", assembler)
