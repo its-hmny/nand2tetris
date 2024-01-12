@@ -15,6 +15,7 @@ import (
 type CodeGenerator struct {
 	Program     []Instruction     // The set of instructions to convert in Hack binary format
 	SymbolTable map[string]uint16 // Mapping to resolve user-defined labels to their underlying address
+	nVarOffset  uint16            // Internal offset to allocate memory for new variables
 }
 
 // Initializes and returns to the caller a brand new 'CodeGenerator' struct.
@@ -64,6 +65,15 @@ func (cg *CodeGenerator) TranslateAInst(inst AInstruction) (string, error) {
 		address, found = uint16(num), err == nil
 	case Label: // Lookup the label name in the provided SymbolTable
 		address, found = cg.SymbolTable[inst.LocName]
+		// If not found we treat it as a new variable
+		if !found {
+			// Assign a new memory location starting from 16 onwards
+			address, found = 16+cg.nVarOffset, true
+			// And update the SymbolTable so that future references
+			// gets resolved/points to the same locations in RAM
+			cg.SymbolTable[inst.LocName] = address
+			cg.nVarOffset++
+		}
 	case BuiltIn: // Lookup the registry name in the WellKnow table
 		address, found = BuiltInTable[inst.LocName]
 	}
