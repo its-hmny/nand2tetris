@@ -38,7 +38,12 @@ var (
 	pLabel = ast.OrdChoice("label", nil, pc.Int(), pc.Token(`[A-Za-z_.$:][0-9a-zA-Z_.$:]*`, "SYMBOL"))
 
 	// Generic destination parser (C Instruction subsection)
-	pDest = ast.OrdChoice("dest", nil, pc.Atom("D", "D"), pc.Atom("A", "A"), pc.Atom("M", "M"))
+	// NOTE: The order of the Atom is reversed w.r.t. the one provided in the translation table cause
+	// if not the single destination section will match before in the PC (BFS Search algorithm)
+	pDest = ast.OrdChoice("dest", nil,
+		pc.Atom("AM", "AM"), pc.Atom("AD", "AD"), pc.Atom("MD", "MD"),
+		pc.Atom("D", "D"), pc.Atom("A", "A"), pc.Atom("M", "M"),
+	)
 
 	// Generic computation parser (C Instruction subsection)
 	// NOTE: The order of the Atom is reversed w.r.t. the one provided in the translation table cause
@@ -64,8 +69,10 @@ var (
 
 	// Generic jump parser (C Instruction subsection)
 	pJump = ast.OrdChoice("jump", nil,
-		pc.Atom("JGT", "JGT"), pc.Atom("JEQ", "JEQ"), pc.Atom("JGE", "JGE"),
-		pc.Atom("JLT", "JLT"), pc.Atom("JLE", "JLE"), pc.Atom("JMP", "JMP"),
+		pc.Atom("JNE", "JNE"), pc.Atom("JEQ", "JEQ"),
+		pc.Atom("JGT", "JGT"), pc.Atom("JGE", "JGE"),
+		pc.Atom("JLT", "JLT"), pc.Atom("JLE", "JLE"),
+		pc.Atom("JMP", "JMP"),
 	)
 )
 
