@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"its-hmny.dev/nand2tetris/hack"
+	"its-hmny.dev/nand2tetris/pkg/hack"
 )
 
 func TestAInstructions(t *testing.T) {
