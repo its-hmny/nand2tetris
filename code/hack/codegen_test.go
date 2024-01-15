@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"its-hmny.dev/n2t-assembler/hack"
+	"its-hmny.dev/nand2tetris/hack"
 )
 
 func TestAInstructions(t *testing.T) {

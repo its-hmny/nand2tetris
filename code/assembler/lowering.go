@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	pc "github.com/prataprc/goparsec"
-	"its-hmny.dev/n2t-assembler/hack"
+	"its-hmny.dev/nand2tetris/hack"
 )
 
 type ASTLowerer struct{}

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"its-hmny.dev/n2t-assembler/assembler"
-	"its-hmny.dev/n2t-assembler/hack"
+	"its-hmny.dev/nand2tetris/assembler"
+	"its-hmny.dev/nand2tetris/hack"
 )
 
 func main() {
