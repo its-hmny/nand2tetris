@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"its-hmny.dev/nand2tetris/pkg/assembler"
+	"its-hmny.dev/nand2tetris/pkg/asm"
 	"its-hmny.dev/nand2tetris/pkg/hack"
 )
 
@@ -28,8 +28,8 @@ func main() {
 	}
 	defer output.Close()
 
-	// Instantiate a parser for the Assembler program
-	parser := assembler.NewParser()
+	// Instantiate a parser for the asm program
+	parser := asm.NewParser()
 	// Parses the input file content and extract an AST from it
 	ast, success := parser.Parse(bytes.NewReader(input))
 	if !success {
@@ -37,8 +37,8 @@ func main() {
 		os.Exit(-1)
 	}
 
-	// Instantiate a parser for the Assembler to Hack lowerer
-	lowerer := assembler.NewHackLowerer()
+	// Instantiate a parser for the asm to Hack lowerer
+	lowerer := asm.NewHackLowerer()
 	// Lowers the AST to an in-memory/IR format that follows the Hack specs.
 	program, table, err := lowerer.FromAST(ast)
 	if err != nil {
