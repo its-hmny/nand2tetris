@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "name": "Hack Assembler",
+            "program": "./code/cmd/hack_assembler",
+            "args": [ "InputFile", "OutputFile" ]
+        },
+
+        {
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "name": "VM Translator",
+            "program": "./code/cmd/vm_translator",
+            "args": [ "InputFile", "OutputFile" ]
+        },
+    ]
+}

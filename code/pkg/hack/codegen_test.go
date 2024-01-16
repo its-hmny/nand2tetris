@@ -76,11 +76,16 @@ func TestAInstructions(t *testing.T) {
 		test(hack.AInstruction{LocType: hack.Label, LocName: "hmny"}, fmt.Sprintf("%016b", table["hmny"]), false)
 		test(hack.AInstruction{LocType: hack.Label, LocName: "n2t"}, fmt.Sprintf("%016b", table["n2t"]), false)
 		test(hack.AInstruction{LocType: hack.Label, LocName: "JUMP"}, fmt.Sprintf("%016b", table["JUMP"]), false)
-		// User defined labels that are not available in the Symbol Table and should cause an error
-		test(hack.AInstruction{LocType: hack.Label, LocName: "NOP"}, "", true)
-		test(hack.AInstruction{LocType: hack.Label, LocName: "MISSING"}, "", true)
-		test(hack.AInstruction{LocType: hack.Label, LocName: "NEXT"}, "", true)
-		test(hack.AInstruction{LocType: hack.Label, LocName: "DUNNO"}, "", true)
+		// User defined labels that are not predefined, should be treated as variable an allocated from 16 onwards
+		test(hack.AInstruction{LocType: hack.Label, LocName: "NOP"}, fmt.Sprintf("%016b", 16), true)
+		test(hack.AInstruction{LocType: hack.Label, LocName: "MISSING"}, fmt.Sprintf("%016b", 17), true)
+		test(hack.AInstruction{LocType: hack.Label, LocName: "NEXT"}, fmt.Sprintf("%016b", 18), true)
+		test(hack.AInstruction{LocType: hack.Label, LocName: "DUNNO"}, fmt.Sprintf("%016b", 19), true)
+		// Also their location should be saved in the symbol table and resolve to the same location later on..
+		test(hack.AInstruction{LocType: hack.Label, LocName: "NOP"}, fmt.Sprintf("%016b", 16), true)
+		test(hack.AInstruction{LocType: hack.Label, LocName: "MISSING"}, fmt.Sprintf("%016b", 17), true)
+		test(hack.AInstruction{LocType: hack.Label, LocName: "NEXT"}, fmt.Sprintf("%016b", 18), true)
+		test(hack.AInstruction{LocType: hack.Label, LocName: "DUNNO"}, fmt.Sprintf("%016b", 19), true)
 	})
 }
 
