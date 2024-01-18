@@ -10,9 +10,7 @@ import (
 
 type ASTLowerer struct{}
 
-func NewHackLowerer() ASTLowerer {
-	return ASTLowerer{}
-}
+func NewHackLowerer() ASTLowerer { return ASTLowerer{} }
 
 func (hl *ASTLowerer) FromAST(root pc.Queryable) ([]hack.Instruction, map[string]uint16, error) {
 	program, table := []hack.Instruction{}, map[string]uint16{}

@@ -8,14 +8,24 @@ import (
 	pc "github.com/prataprc/goparsec"
 )
 
+// ----------------------------------------------------------------------------
+// Parser Combinator(s)
+
+// This section defines the Parser Combinator for every token & statement of the Asm language.
+//
+// Each parser combinator either manages a statement (A Inst, C Inst, Label Decl) or some pieces
+// of it: namely tokens and identifiers. Also we manage comments inside the codebase that can
+// either present themselves at the beginning of the line or in the middle.
+
 // Top level object, will generate the traversable AST based on the input plus the PCs below.
 var ast = pc.NewAST("assembler", 0)
 
 var (
-	// Parser combinator for an entire Assembler program
-	pProgram = ast.ManyUntil("program", nil, ast.OrdChoice("item", nil, pComment, pInst), pc.End())
+	// Parser combinator for an entire Assembler program (a sequence of comments and statements)
+	pProgram = ast.ManyUntil("program", nil, ast.OrdChoice("item", nil, pComment, pStatement), pc.End())
+
 	// Parser combinator for a generic Assembler instruction (either C, A or Label declaration)
-	pInst = ast.OrdChoice("inst", nil, pAInst, pCInst, pLabelDecl)
+	pStatement = ast.OrdChoice("statement", nil, pAInst, pCInst, pLabelDecl)
 	// Parser combinator for comments in Assembler program
 	pComment = ast.And("comment", nil, pc.Atom("//", "//"), pc.Token(`(?m).*$`, "COMMENT"))
 
