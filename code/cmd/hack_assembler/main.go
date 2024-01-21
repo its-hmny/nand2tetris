@@ -47,9 +47,9 @@ func main() {
 	}
 
 	// Now, instantiates a code generator for the Hack (compiled) program
-	translator := hack.NewCodeGenerator(program, table)
+	codegen := hack.NewCodeGenerator(program, table)
 	// Iterates over each program instruction and spits out the relative translation
-	compiled, err := translator.Translate()
+	compiled, err := codegen.Generate()
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'codegen' pass:\n\t %s", err)
 		os.Exit(-1)

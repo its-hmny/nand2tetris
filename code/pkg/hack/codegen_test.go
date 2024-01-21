@@ -10,11 +10,11 @@ import (
 func TestAInstructions(t *testing.T) {
 	// Instantiate a basic simple table with some entries and shared codegen for every test cases
 	table := map[string]uint16{"Test1": 0, "Test2": 67, "hmny": 9393, "n2t": 754, "JUMP": 90}
-	codegen := hack.CodeGenerator{Program: []hack.Instruction{}, SymbolTable: table}
+	codegen := hack.NewCodeGenerator([]hack.Instruction{}, table)
 
 	test := func(inst hack.AInstruction, expected string, fail bool) {
 		// Run the translation function on the given A Instruction
-		res, err := codegen.TranslateAInst(inst)
+		res, err := codegen.GenerateAInst(inst)
 		// Each address always is exactly 16 bit long and should match the 'expected'
 		if len(res) == 16 && res != expected {
 			t.Fail()
@@ -91,11 +91,11 @@ func TestAInstructions(t *testing.T) {
 
 func TestCInstructions(t *testing.T) {
 	// Instantiate a shared codegen instance for every test cases
-	codegen := hack.CodeGenerator{}
+	codegen := hack.NewCodeGenerator([]hack.Instruction{}, nil)
 
 	test := func(inst hack.CInstruction, expected string, fail bool) {
 		// Run the translation function on the given A Instruction
-		res, err := codegen.TranslateCInst(inst)
+		res, err := codegen.GenerateCInst(inst)
 		// Each address always is exactly 16 bit long and should match the 'expected'
 		if len(res) == 16 && res != expected {
 			t.Fail()
