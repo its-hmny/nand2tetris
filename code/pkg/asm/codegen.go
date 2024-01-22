@@ -1,8 +1,8 @@
 package asm
 
 import (
-	"errors"
 	"fmt"
+	"strconv"
 
 	"its-hmny.dev/nand2tetris/pkg/hack"
 )
@@ -54,44 +54,48 @@ func (cg *CodeGenerator) Generate() ([]string, error) {
 }
 
 // Specialized function to convert an A Instruction to the Asm format.
-//
-// TODO(hmny): Add comment to document behavior
 func (CodeGenerator) GenerateAInst(stmt AInstruction) (string, error) {
+	// Pre-check on the label/built-in/raw label (is required not to be empty)
 	if stmt.Location == "" {
-		return "", errors.New("unable ro produce empty label declaration")
+		return "", fmt.Errorf("unable to produce empty label declaration")
+	}
+	// Pre-check on the raw literal access (has to be an addressable memory location)
+	addr, err := strconv.ParseUint(stmt.Location, 10, 16)
+	if err == nil && uint16(addr) >= hack.MaxAddressableMemory {
+		return "", fmt.Errorf("unable to use out-of-bound raw address")
 	}
 
 	return fmt.Sprintf("@%s", stmt.Location), nil
 }
 
 // Specialized function to convert a C Instruction to the Asm format.
-//
-// TODO(hmny): Add comment to document behavior
 func (cg *CodeGenerator) GenerateCInst(stmt CInstruction) (string, error) {
-	if stmt.Comp == "" {
-		return "", errors.New("expected 'comp' directive in C Instruction")
+	// Pre-check on the 'comp' (required), 'dest' and 'jump' (either one or the other)
+	if _, found := hack.CompTable[stmt.Comp]; stmt.Comp == "" || !found {
+		return "", fmt.Errorf("expected valid 'comp' directive in CInst, got: '%s'", stmt.Comp)
+	}
+	if stmt.Jump != "" && stmt.Dest != "" {
+		return "", fmt.Errorf("expected either 'dest' or 'jump' directive in CInst")
 	}
 
-	if stmt.Dest != "" && stmt.Jump == "" {
+	// The instruction has either a valid 'jump' or valid 'dest' directive
+	if _, found := hack.DestTable[stmt.Dest]; stmt.Dest != "" && found {
 		return fmt.Sprintf("%s=%s", stmt.Dest, stmt.Comp), nil
 	}
-	if stmt.Jump != "" && stmt.Dest == "" {
+	if _, found := hack.JumpTable[stmt.Jump]; stmt.Jump != "" && found {
 		return fmt.Sprintf("%s;%s", stmt.Comp, stmt.Jump), nil
 	}
 
-	// TODO(hmny): Missing check on the well formed-ness of Comp, Dest and Jump
-
-	return "", errors.New("expected either 'dest' or 'jump' directive in C Instruction")
+	return "", fmt.Errorf("neither 'dest' or 'jump' directives are valid in C Inst")
 }
 
 // Specialized function to convert an Label Declaration to the Asm format.
-//
-// TODO(hmny): Add comment to document behavior
 func (cg *CodeGenerator) GenerateLabelDecl(stmt LabelDecl) (string, error) {
+	if stmt.Name == "" {
+		return "", fmt.Errorf("unable to declare empty label")
+	}
 	if _, found := hack.BuiltInTable[stmt.Name]; found {
 		return "", fmt.Errorf("unable to override built-in label '%s'", stmt.Name)
 	}
-
-	// TODO(hmny): Missing check on the well formed-ness of the label name
 	return fmt.Sprintf("(%s)", stmt.Name), nil
 }
