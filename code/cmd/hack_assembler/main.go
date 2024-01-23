@@ -4,27 +4,35 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/teris-io/cli"
 	"its-hmny.dev/nand2tetris/pkg/asm"
 	"its-hmny.dev/nand2tetris/pkg/hack"
 )
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Print("USAGE: assembler [INPUT] [OUTPUT]")
-		os.Exit(-1)
-	}
+var Description = strings.ReplaceAll(`
+The Hack Assembler takes assembly language code written in the Hack assembly language
+and translates it into machine code that can be executed by the Hack computer. The process
+involves parsing the assembly code, resolving symbols, and generating machine code.
+`, "\n", " ")
 
-	input, err := os.ReadFile(os.Args[1])
+var HackAssembler = cli.New(Description).
+	WithArg(cli.NewArg("input", "The assembler (.asm) file to be compiled")).
+	WithArg(cli.NewArg("output", "The compiled binary output (.hack)")).
+	WithAction(Handler)
+
+func Handler(args []string, options map[string]string) int {
+	input, err := os.ReadFile(args[0])
 	if err != nil {
 		fmt.Printf("ERROR: Unable to open input file: %s\n", err)
-		os.Exit(-1)
+		return -1
 	}
 
-	output, err := os.Create(os.Args[2])
+	output, err := os.Create(args[1])
 	if err != nil {
 		fmt.Printf("ERROR: Unable to open output file: %s\n", err)
-		os.Exit(-1)
+		return -1
 	}
 	defer output.Close()
 
@@ -34,7 +42,7 @@ func main() {
 	ast, success := parser.Parse(bytes.NewReader(input))
 	if !success {
 		fmt.Print("ERROR: Unable to complete 'parsing' pass\n")
-		os.Exit(-1)
+		return -1
 	}
 
 	// Instantiate a parser for the asm to Hack lowerer
@@ -43,7 +51,7 @@ func main() {
 	program, table, err := lowerer.FromAST(ast)
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'lowering' pass: %s\n", err)
-		os.Exit(-1)
+		return -1
 	}
 
 	// Now, instantiates a code generator for the Hack (compiled) program
@@ -52,11 +60,15 @@ func main() {
 	compiled, err := codegen.Generate()
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'codegen' pass:\n\t %s", err)
-		os.Exit(-1)
+		return -1
 	}
 
 	for _, comp := range compiled {
 		line := fmt.Sprintf("%s\n", comp)
 		output.Write([]byte(line))
 	}
+
+	return 0
 }
+
+func main() { os.Exit(HackAssembler.Run(os.Args, os.Stdout)) }
