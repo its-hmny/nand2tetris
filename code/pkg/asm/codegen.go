@@ -69,7 +69,7 @@ func (CodeGenerator) GenerateAInst(stmt AInstruction) (string, error) {
 }
 
 // Specialized function to convert a C Instruction to the Asm format.
-func (cg *CodeGenerator) GenerateCInst(stmt CInstruction) (string, error) {
+func (CodeGenerator) GenerateCInst(stmt CInstruction) (string, error) {
 	// Pre-check on the 'comp' (required), 'dest' and 'jump' (either one or the other)
 	if _, found := hack.CompTable[stmt.Comp]; stmt.Comp == "" || !found {
 		return "", fmt.Errorf("expected valid 'comp' directive in CInst, got: '%s'", stmt.Comp)
@@ -90,7 +90,7 @@ func (cg *CodeGenerator) GenerateCInst(stmt CInstruction) (string, error) {
 }
 
 // Specialized function to convert an Label Declaration to the Asm format.
-func (cg *CodeGenerator) GenerateLabelDecl(stmt LabelDecl) (string, error) {
+func (CodeGenerator) GenerateLabelDecl(stmt LabelDecl) (string, error) {
 	if stmt.Name == "" {
 		return "", fmt.Errorf("unable to declare empty label")
 	}

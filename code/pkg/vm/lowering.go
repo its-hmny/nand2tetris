@@ -60,13 +60,13 @@ func (hl *ASTLowerer) FromAST(root pc.Queryable) (Module, error) {
 
 func (ASTLowerer) handleMemoryOp(node pc.Queryable) (Statement, error) {
 	if node.GetName() != "memory_op" {
-		return nil, fmt.Errorf("expected node 'memory_op', got %s %d", node.GetName())
+		return nil, fmt.Errorf("expected node 'memory_op', got %s", node.GetName())
 	}
 	if len(node.GetChildren()) != 3 {
 		return nil, fmt.Errorf("expected node with 3 leaf, got %d", len(node.GetChildren()))
 	}
 
-	memoptype, segment, index := node.GetChildren()[0], node.GetChildren()[1], node.GetChildren()[2]
+	optype, segment, index := node.GetChildren()[0], node.GetChildren()[1], node.GetChildren()[2]
 
 	offset, err := strconv.ParseUint(index.GetValue(), 10, 16)
 	if err != nil {
@@ -76,7 +76,7 @@ func (ASTLowerer) handleMemoryOp(node pc.Queryable) (Statement, error) {
 	return MemoryOp{
 		Offset:    uint16(offset),
 		Segment:   SegmentType(segment.GetValue()),
-		Operation: OperationType(memoptype.GetValue()),
+		Operation: OperationType(optype.GetValue()),
 	}, nil
 }
 
