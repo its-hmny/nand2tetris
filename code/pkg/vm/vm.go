@@ -65,7 +65,7 @@ const (
 // In the VM intermediate language there are just a handful of operation available.
 // In particular each operation acts directly on the top of the stack, of course we have both unary
 // and binary operation, the specific management of each op will be handled in the codegen phase.
-type ArithmeticOp struct{ Operation string }
+type ArithmeticOp struct{ Operation ArithOpType }
 
 type ArithOpType string // Enum to manage the operation allowed for an ArithmeticOp
 

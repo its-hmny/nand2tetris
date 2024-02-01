@@ -29,14 +29,14 @@ var (
 	// Memory operation, compliant with the following syntax: "{push|pop} {segment} {index}"
 	pMemoryOp = ast.And("memory_op", nil, pMemOpType, pSegment, pc.Int())
 	// Arithmetic operation, could either be binary or unary (modifies only the Stack Pointer)
-	pArithmeticOp = ast.OrdChoice("arithmetic_op", nil,
+	pArithmeticOp = ast.And("arithmetic_op", nil, ast.OrdChoice("operations", nil,
 		// Comparison operations available on the VM bytecode
 		pc.Atom("eq", "EQ"), pc.Atom("gt", "GT"), pc.Atom("lt", "LT"),
 		// Arithmetic operations available on the VM bytecode
 		pc.Atom("add", "ADD"), pc.Atom("sub", "SUB"), pc.Atom("neg", "NEG"),
 		// Bit-a-bit operations available on the VM bytecode
 		pc.Atom("not", "NOT"), pc.Atom("and", "AND"), pc.Atom("or", "OR"),
-	)
+	))
 
 	// Unconditional jump operation, compliant with the following syntax: "goto {symbol}"
 	pUncondJumpOp = ast.And("goto_op", nil, pc.Atom("goto", "GOTO"), pLabel)
