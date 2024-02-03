@@ -5,21 +5,21 @@ package vm
 
 // This section contains some general information about the VM intermediate language.
 //
-// We declare a shared 'Statement' interface for every macro operation available for the
+// We declare a shared 'Operation' interface for every macro operation available for the
 // language and we define some other useful top-level struct such as Program and Module.
 // Is important to note that a VM program can be composed of multiple translation units
 // that can be also referenced as file or modules or also classes.
-
-// Used to put together all statements in the VM language (Memory, Arithmetic, ... ops).
-type Statement interface{}
 
 // A VM Program is just a set of multiple modules/files, in the VM spec each Jack class is
 // translated to its own .vm file (just like Java .class file) that can be handled as its
 // own translation unit during the compilation or lowering phases.
 type Program struct{ Modules []Module }
 
-// A VM Module is just a linear list of VM statements/instructions
-type Module struct{ Statements []Statement }
+// A VM Module is just a linear list of VM operations/instructions
+type Module struct{ Operations []Operation }
+
+// Used to put together all operation in the VM language (Memory, Arithmetic, ... ops).
+type Operation interface{}
 
 // ----------------------------------------------------------------------------
 // Memory Op

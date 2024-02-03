@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/teris-io/cli"
+	"its-hmny.dev/nand2tetris/pkg/asm"
 	"its-hmny.dev/nand2tetris/pkg/vm"
 )
 
@@ -46,12 +47,25 @@ func Handler(args []string, options map[string]string) int {
 	}
 
 	// Instantiate a parser for the asm to Hack lowerer
-	lowerer := vm.NewVMLowerer(ast)
+	lowerer := vm.NewLowerer(ast)
 	// Lowers the AST to an in-memory/IR format that follows the Hack specs.
-	_, err = lowerer.FromAST()
+	program, err := lowerer.Lowerer()
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'lowering' pass: %s\n", err)
 		return -1
+	}
+
+	// Now, instantiates a code generator for the Hack (compiled) program
+	codegen := asm.NewCodeGenerator(program)
+	// Iterates over each program instruction and spits out the relative translation
+	compiled, err := codegen.Generate()
+	if err != nil {
+		fmt.Printf("ERROR: Unable to complete 'codegen' pass:\n\t %s", err)
+		return -1
+	}
+
+	for _, comp := range compiled {
+		fmt.Printf("%s\n", comp)
 	}
 
 	return 0
