@@ -46,9 +46,9 @@ func Handler(args []string, options map[string]string) int {
 	}
 
 	// Instantiate a parser for the asm to Hack lowerer
-	lowerer := asm.NewHackLowerer(ast)
+	lowerer := asm.NewLowerer(ast)
 	// Lowers the AST to an in-memory/IR format that follows the Hack specs.
-	program, table, err := lowerer.FromAST()
+	program, table, err := lowerer.Lower()
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'lowering' pass: %s\n", err)
 		return -1

@@ -8,27 +8,38 @@ import (
 	"its-hmny.dev/nand2tetris/pkg/hack"
 )
 
-type ASTLowerer struct {
-	root pc.Queryable
+// ----------------------------------------------------------------------------
+// Asm Lowerer
+
+// The Lowerer takes an Abstract Syntax Tree (AST) and produces its 'hack.Program' counterpart.
+//
+// Since we get a tree we are able to traverse it using a simple Depth First Search (DFS) algorithm
+// on it. For each instruction node visited we produce it's 'hack.Instruction' counterpart (either
+// A Instruction or C Instruction) as well as validating the input before proceeding.
+type Lowerer struct{ root pc.Queryable }
+
+// Initializes and returns to the caller a brand new 'Lowerer' struct.
+// Requires the argument pc.Queryable to be not nil.
+func NewLowerer(r pc.Queryable) Lowerer {
+	return Lowerer{root: r}
 }
 
-func NewHackLowerer(r pc.Queryable) ASTLowerer {
-	return ASTLowerer{root: r}
-}
-
-func (hl *ASTLowerer) FromAST() (hack.Program, hack.SymbolTable, error) {
+// Triggers the lowering process on the given AST root. It iterates on the top-level children
+// of the AST and recursively calls the specified helper function based on the child type (much
+// like a recursive descend parser but for lowering), this means the AST is visited in DFS order.
+func (l *Lowerer) Lower() (hack.Program, hack.SymbolTable, error) {
 	program, table := []hack.Instruction{}, map[string]uint16{}
 
-	if hl.root.GetName() != "program" {
-		return nil, nil, fmt.Errorf("expected node 'program', found %s", hl.root.GetName())
+	if l.root.GetName() != "program" {
+		return nil, nil, fmt.Errorf("expected node 'program', found %s", l.root.GetName())
 	}
 
-	for _, child := range hl.root.GetChildren() {
+	for _, child := range l.root.GetChildren() {
 		switch child.GetName() {
 		// Traverse the AST subtree and returns the in-memory A Instruction defined inside.
 		// After that, adds the instruction to the Program for the 'codegen' phase.
 		case "a-inst":
-			inst, err := hl.HandleAInst(child)
+			inst, err := l.HandleAInst(child)
 			if inst == nil || err != nil {
 				return nil, nil, err
 			}
@@ -37,7 +48,7 @@ func (hl *ASTLowerer) FromAST() (hack.Program, hack.SymbolTable, error) {
 		// Traverse the AST subtree and returns the in-memory C Instruction defined inside.
 		// After that, adds the instruction to the Program for the 'codegen' phase.
 		case "c-inst":
-			inst, err := hl.HandleCInst(child)
+			inst, err := l.HandleCInst(child)
 			if inst == nil || err != nil {
 				return nil, nil, err
 			}
@@ -46,7 +57,7 @@ func (hl *ASTLowerer) FromAST() (hack.Program, hack.SymbolTable, error) {
 		// Traverse the AST subtree and returns the label declared in each that subtree.
 		// After that, adds a new (symbol,address) tuple to the SymbolTable for the 'codegen' phase.
 		case "label-decl":
-			label, err := hl.HandleLabelDecl(child)
+			label, err := l.HandleLabelDecl(child)
 			if label == "" || err != nil {
 				return nil, nil, err
 			}
@@ -65,7 +76,8 @@ func (hl *ASTLowerer) FromAST() (hack.Program, hack.SymbolTable, error) {
 	return program, table, nil
 }
 
-func (ASTLowerer) HandleAInst(inst pc.Queryable) (hack.Instruction, error) {
+// Specialized function to convert a "a-inst" node to an 'hack.AInstruction'.
+func (Lowerer) HandleAInst(inst pc.Queryable) (hack.Instruction, error) {
 	if inst.GetName() != "a-inst" { // Prelude checks: inspects the node to verify it's an 'a-inst'
 		return nil, fmt.Errorf("expected node 'a-inst', found %s", inst.GetName())
 	}
@@ -88,7 +100,8 @@ func (ASTLowerer) HandleAInst(inst pc.Queryable) (hack.Instruction, error) {
 	return hack.AInstruction{LocType: hack.Label, LocName: symbol.GetValue()}, nil
 }
 
-func (ASTLowerer) HandleCInst(inst pc.Queryable) (hack.Instruction, error) {
+// Specialized function to convert a "c-inst" node to an 'hack.CInstruction'.
+func (Lowerer) HandleCInst(inst pc.Queryable) (hack.Instruction, error) {
 	if inst.GetName() != "c-inst" { // Prelude checks: inspects the node to verify it's an 'a-inst'
 		return nil, fmt.Errorf("expected node 'c-inst', found %s", inst.GetName())
 	}
@@ -108,7 +121,8 @@ func (ASTLowerer) HandleCInst(inst pc.Queryable) (hack.Instruction, error) {
 	return nil, fmt.Errorf("expected either node 'assign' or 'goto' not found")
 }
 
-func (ASTLowerer) HandleLabelDecl(decl pc.Queryable) (string, error) {
+// Specialized function to extract from a "label-decl" node to the identifier of the label.
+func (Lowerer) HandleLabelDecl(decl pc.Queryable) (string, error) {
 	if decl.GetName() != "label-decl" { // Prelude checks: inspects the node to verify it's a 'label-decl'
 		return "", fmt.Errorf("expected node 'a-inst', found %s", decl.GetName())
 	}

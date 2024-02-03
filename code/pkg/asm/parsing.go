@@ -86,14 +86,27 @@ var (
 	)
 )
 
-type Parser struct {
-	reader io.Reader
-}
+// ----------------------------------------------------------------------------
+// Asm Parser
 
+// This section defines the Parser for the nand2tetris Asm language.
+//
+// It uses parser combinators to obtain the AST from the source code (the latter can be provided)
+// in multiple ways using a generic io.Reader, the library reads up the feature flags (as env vars):
+// - PARSEC_DEBUG: Verbose logging to inspect which of the PCs gets triggered and match
+// - EXPORT_AST:   Exports in the DEBUG_FOLDER a Graphviz representation of the AST
+// - PRINT_AST:    Print on the stdout a textual representation of the AST
+type Parser struct{ reader io.Reader }
+
+// Initializes and returns to the caller a brand new 'Parser' struct.
+// Requires the argument io.Reader 'r' to be valid and usable.
 func NewParser(r io.Reader) Parser {
 	return Parser{reader: r}
 }
 
+// Scans the textual input stream coming from the 'reader' method and returns a traversable
+// Abstract Syntax Tree (AST) that can be eventually used down the line for other compilation
+// steps such as lowering, optimizations (dead branch removal, loop unrolling and so on...)
 func (p *Parser) Parse() (pc.Queryable, bool) {
 	content, err := io.ReadAll(p.reader)
 	if err != nil {
