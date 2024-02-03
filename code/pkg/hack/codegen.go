@@ -67,16 +67,16 @@ var (
 // In order to resolve user defined labels in A instructions, during initialization of
 // of the Code Generator a Symbol Table should be provided.
 type CodeGenerator struct {
-	program     []Instruction     // The set of instructions to convert in Hack binary format
-	symbolTable map[string]uint16 // Mapping to resolve user-defined labels to their underlying address
-	nVarOffset  uint16            // Internal offset to allocate memory for new variables
+	program    Program     // The set of instructions to convert in Hack binary format
+	table      SymbolTable // Mapping to resolve user-defined labels to their underlying address
+	nVarOffset uint16      // Internal offset to allocate memory for new variables
 }
 
 // Initializes and returns to the caller a brand new 'CodeGenerator' struct.
 // Requires both a non-nil Program 'p' (what we want to translate) as well as
 // an optionally nullable Symbol Table 'st' used to resolve user defined labels.
-func NewCodeGenerator(p []Instruction, st map[string]uint16) CodeGenerator {
-	return CodeGenerator{program: p, symbolTable: st}
+func NewCodeGenerator(p Program, st SymbolTable) CodeGenerator {
+	return CodeGenerator{program: p, table: st}
 }
 
 // Translates each instruction in the 'Program' to the Hack binary format.
@@ -120,14 +120,14 @@ func (cg *CodeGenerator) GenerateAInst(inst AInstruction) (string, error) {
 		num, err := strconv.ParseInt(inst.LocName, 10, 16)
 		address, found = uint16(num), err == nil
 	case Label: // Lookup the label name in the provided SymbolTable
-		address, found = cg.symbolTable[inst.LocName]
+		address, found = cg.table[inst.LocName]
 		// If not found we treat it as a new variable
 		if !found {
 			// Assign a new memory location starting from 16 onwards
 			address, found = 16+cg.nVarOffset, true
 			// And update the SymbolTable so that future references
 			// gets resolved/points to the same locations in RAM
-			cg.symbolTable[inst.LocName] = address
+			cg.table[inst.LocName] = address
 			cg.nVarOffset++
 		}
 	case BuiltIn: // Lookup the registry name in the WellKnow table

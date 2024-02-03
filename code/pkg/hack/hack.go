@@ -9,6 +9,12 @@ package hack
 // as defining some useful constants for runtime assertions during the codegen phase
 // such as the 'MaxAddressableMemory' that defines the upper limit to Memory capacity.
 
+// A Hack program is just a linear and contiguous sequence of instructions.
+type Program []Instruction
+
+// The symbol table is used to resolve label names to their RAM memory location.
+type SymbolTable map[string]uint16
+
 // Just used to put together A and C instructions struct, use type switch to disambiguate.
 type Instruction interface{}
 

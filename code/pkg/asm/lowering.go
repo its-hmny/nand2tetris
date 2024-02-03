@@ -12,7 +12,7 @@ type ASTLowerer struct{}
 
 func NewHackLowerer() ASTLowerer { return ASTLowerer{} }
 
-func (hl *ASTLowerer) FromAST(root pc.Queryable) ([]hack.Instruction, map[string]uint16, error) {
+func (hl *ASTLowerer) FromAST(root pc.Queryable) (hack.Program, hack.SymbolTable, error) {
 	program, table := []hack.Instruction{}, map[string]uint16{}
 
 	if root.GetName() != "program" {
