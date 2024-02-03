@@ -5,12 +5,15 @@ package asm
 
 // This section contains some general information about the Asm language.
 //
-// We declare a shared 'Statement' interface for both A and C instructions as well as defining
+// We declare a shared 'Instruction' interface for both A and C instructions as well as defining
 // custom labels for specific code section (allowing arbitrary jumps) at runtime during code execution.
 // This in turns enables iterations and conditionals both here and at the upper levels (VM, Compiler).
 
+// A Asm program is just a linear and contiguous sequence of instructions.
+type Program []Instruction
+
 // Just used to put together label declaration, A inst and C inst in the same datatype.
-type Statement interface{}
+type Instruction interface{}
 
 // ----------------------------------------------------------------------------
 // Label Declarations

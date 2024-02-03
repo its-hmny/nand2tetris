@@ -11,9 +11,9 @@ import (
 // ----------------------------------------------------------------------------
 // Parser Combinator(s)
 
-// This section defines the Parser Combinator for every token & statement of the Asm language.
+// This section defines the Parser Combinator for every token & instruction of the Asm language.
 //
-// Each parser combinator either manages a statement (A Inst, C Inst, Label Decl) or some pieces
+// Each parser combinator either manages a instruction (A Inst, C Inst, Label Decl) or some pieces
 // of it: namely tokens and identifiers. Also we manage comments inside the codebase that can
 // either present themselves at the beginning of the line or in the middle.
 
@@ -21,11 +21,11 @@ import (
 var ast = pc.NewAST("assembler", 0)
 
 var (
-	// Parser combinator for an entire Assembler program (a sequence of comments and statements)
-	pProgram = ast.ManyUntil("program", nil, ast.OrdChoice("item", nil, pComment, pStatement), pc.End())
+	// Parser combinator for an entire Assembler program (a sequence of comments and instructions)
+	pProgram = ast.ManyUntil("program", nil, ast.OrdChoice("item", nil, pComment, pInstruction), pc.End())
 
 	// Parser combinator for a generic Assembler instruction (either C, A or Label declaration)
-	pStatement = ast.OrdChoice("statement", nil, pAInst, pCInst, pLabelDecl)
+	pInstruction = ast.OrdChoice("instruction", nil, pAInst, pCInst, pLabelDecl)
 	// Parser combinator for comments in Assembler program
 	pComment = ast.And("comment", nil, pc.Atom("//", "//"), pc.Token(`(?m).*$`, "COMMENT"))
 

@@ -8,7 +8,7 @@ import (
 
 func TestAInstructions(t *testing.T) {
 	// Instantiate a basic simple table with some entries and shared codegen for every test cases
-	codegen := asm.NewCodeGenerator([]asm.Statement{})
+	codegen := asm.NewCodeGenerator([]asm.Instruction{})
 
 	test := func(inst asm.AInstruction, expected string, fail bool) {
 		// Run the translation function on the given A Instruction
@@ -78,7 +78,7 @@ func TestAInstructions(t *testing.T) {
 
 func TestCInstructions(t *testing.T) {
 	// Instantiate a shared codegen instance for every test cases
-	codegen := asm.NewCodeGenerator([]asm.Statement{})
+	codegen := asm.NewCodeGenerator([]asm.Instruction{})
 
 	test := func(inst asm.CInstruction, expected string, fail bool) {
 		// Run the translation function on the given A Instruction
@@ -151,7 +151,7 @@ func TestCInstructions(t *testing.T) {
 
 func TestLabelDecl(t *testing.T) {
 	// Instantiate a shared codegen instance for every test cases
-	codegen := asm.NewCodeGenerator([]asm.Statement{})
+	codegen := asm.NewCodeGenerator([]asm.Instruction{})
 
 	test := func(inst asm.LabelDecl, expected string, fail bool) {
 		// Run the translation function on the given A Instruction
