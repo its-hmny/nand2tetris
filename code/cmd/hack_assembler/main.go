@@ -37,18 +37,18 @@ func Handler(args []string, options map[string]string) int {
 	defer output.Close()
 
 	// Instantiate a parser for the asm program
-	parser := asm.NewParser()
+	parser := asm.NewParser(bytes.NewReader(input))
 	// Parses the input file content and extract an AST from it
-	ast, success := parser.Parse(bytes.NewReader(input))
+	ast, success := parser.Parse()
 	if !success {
 		fmt.Print("ERROR: Unable to complete 'parsing' pass\n")
 		return -1
 	}
 
 	// Instantiate a parser for the asm to Hack lowerer
-	lowerer := asm.NewHackLowerer()
+	lowerer := asm.NewHackLowerer(ast)
 	// Lowers the AST to an in-memory/IR format that follows the Hack specs.
-	program, table, err := lowerer.FromAST(ast)
+	program, table, err := lowerer.FromAST()
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'lowering' pass: %s\n", err)
 		return -1

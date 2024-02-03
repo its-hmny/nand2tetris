@@ -86,12 +86,16 @@ var (
 	)
 )
 
-type Parser struct{}
+type Parser struct {
+	reader io.Reader
+}
 
-func NewParser() Parser { return Parser{} }
+func NewParser(r io.Reader) Parser {
+	return Parser{reader: r}
+}
 
-func (p *Parser) Parse(r io.Reader) (pc.Queryable, bool) {
-	content, err := io.ReadAll(r)
+func (p *Parser) Parse() (pc.Queryable, bool) {
+	content, err := io.ReadAll(p.reader)
 	if err != nil {
 		return nil, false
 	}

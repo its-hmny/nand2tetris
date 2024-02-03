@@ -8,18 +8,22 @@ import (
 	"its-hmny.dev/nand2tetris/pkg/hack"
 )
 
-type ASTLowerer struct{}
+type ASTLowerer struct {
+	root pc.Queryable
+}
 
-func NewHackLowerer() ASTLowerer { return ASTLowerer{} }
+func NewHackLowerer(r pc.Queryable) ASTLowerer {
+	return ASTLowerer{root: r}
+}
 
-func (hl *ASTLowerer) FromAST(root pc.Queryable) (hack.Program, hack.SymbolTable, error) {
+func (hl *ASTLowerer) FromAST() (hack.Program, hack.SymbolTable, error) {
 	program, table := []hack.Instruction{}, map[string]uint16{}
 
-	if root.GetName() != "program" {
-		return nil, nil, fmt.Errorf("expected node 'program', found %s", root.GetName())
+	if hl.root.GetName() != "program" {
+		return nil, nil, fmt.Errorf("expected node 'program', found %s", hl.root.GetName())
 	}
 
-	for _, child := range root.GetChildren() {
+	for _, child := range hl.root.GetChildren() {
 		switch child.GetName() {
 		// Traverse the AST subtree and returns the in-memory A Instruction defined inside.
 		// After that, adds the instruction to the Program for the 'codegen' phase.

@@ -8,18 +8,22 @@ import (
 	pc "github.com/prataprc/goparsec"
 )
 
-type ASTLowerer struct{}
+type ASTLowerer struct {
+	root pc.Queryable
+}
 
-func NewVMLowerer() ASTLowerer { return ASTLowerer{} }
+func NewVMLowerer(r pc.Queryable) ASTLowerer {
+	return ASTLowerer{root: r}
+}
 
-func (hl *ASTLowerer) FromAST(root pc.Queryable) (Module, error) {
+func (hl *ASTLowerer) FromAST() (Module, error) {
 	module := Module{Statements: []Statement{}}
 
-	if root.GetName() != "module" {
-		return Module{}, fmt.Errorf("expected node 'program', found %s", root.GetName())
+	if hl.root.GetName() != "module" {
+		return Module{}, fmt.Errorf("expected node 'program', found %s", hl.root.GetName())
 	}
 
-	for _, child := range root.GetChildren() {
+	for _, child := range hl.root.GetChildren() {
 		switch child.GetName() {
 		// Traverse the AST subtree and extracts the MemoryOp struct defined inside.
 		case "memory_op":
