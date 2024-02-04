@@ -2,10 +2,7 @@ package vm
 
 import (
 	"fmt"
-	"log"
-	"strconv"
 
-	pc "github.com/prataprc/goparsec"
 	"its-hmny.dev/nand2tetris/pkg/asm"
 )
 
@@ -24,117 +21,61 @@ var IntrinsicResolver = map[ArithOpType]func() asm.CInstruction{
 // ----------------------------------------------------------------------------
 // Vm Lowerer
 
-// The Lowerer takes an Abstract Syntax Tree (AST) and produces its 'asm.Program' counterpart.
+// The Lowerer takes a 'vm.Program' and produces its 'asm.Program' counterpart.
 //
-// Since we get a tree we are able to traverse it using a simple Depth First Search (DFS) algorithm
-// on it. For each instruction node visited we produce it's 'asm.Instruction' counterpart (either
-// A Instruction, C Instruction) or Label Declaration as well as validating the input before proceeding.
-type Lowerer struct{ root pc.Queryable }
+// Since we get a tree-like struct we are able to traverse it using a Depth First Search (DFS) algorithm
+// on it. For each operation node visited we produce a list of 'hack.Instruction' as counterpart (either
+// A Instruction, C Instruction or LabelDecl) as well as validating the input before proceeding.
+type Lowerer struct{ program Program }
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
-// Requires the argument pc.Queryable to be not nil.
-func NewLowerer(r pc.Queryable) Lowerer {
-	return Lowerer{root: r}
+// Requires the argument Program to be not nil nor empty.
+func NewLowerer(p Program) Lowerer {
+	return Lowerer{program: p}
 }
 
-// Triggers the lowering process on the given AST root. It iterates on the top-level children
-// of the AST and recursively calls the specified helper function based on the child type (much
-// like a recursive descend parser but for lowering), this means the AST is visited in DFS order.
-func (hl *Lowerer) Lowerer() (asm.Program, error) {
+// Triggers the lowering process. It iterates operation by operation and recursively
+// calls the specified helper function based on the operation type (much like a recursive
+// descend parser but for lowering), this means the AST is visited in DFS order.
+func (l *Lowerer) Lowerer() (asm.Program, error) {
 	program := []asm.Instruction{}
 
-	if hl.root.GetName() != "module" {
-		return nil, fmt.Errorf("expected node 'program', found %s", hl.root.GetName())
+	if l.program == nil || len(l.program) == 0 {
+		return nil, fmt.Errorf("the given 'program' is empty")
 	}
 
-	for _, child := range hl.root.GetChildren() {
-		switch child.GetName() {
-		// Traverse the AST subtree and extracts the MemoryOp struct defined inside.
-		case "memory_op":
-			inst, err := hl.handleMemoryOp(child)
-			if inst == nil || err != nil {
-				return nil, err
+	for _, module := range l.program {
+		for _, op := range module {
+			switch tOp := op.(type) {
+			case MemoryOp: // Converts 'vm.MemoryOp' to a list of 'asm.Instruction'
+				inst, err := l.HandleMemoryOp(tOp)
+				if inst == nil || err != nil {
+					return nil, err
+				}
+				program = append(program, inst...)
+
+			case ArithmeticOp: // Converts 'vm.ArithmeticOp' to a list of 'asm.Instruction'
+				inst, err := l.HandleArithmeticOp(tOp)
+				if inst == nil || err != nil {
+					return nil, err
+				}
+				program = append(program, inst...)
+
+			default: // Error case, unrecognized operation type
+				return nil, fmt.Errorf("unrecognized operation '%T'", tOp)
 			}
-			program = append(program, inst...)
-
-		case "arithmetic_op":
-			inst, err := hl.handleArithmeticOp(child)
-			if inst == nil || err != nil {
-				return nil, err
-			}
-			program = append(program, inst...)
-
-		// Comment nodes in the AST are just skipped since not required for 'codegen' phase.
-		case "comment":
-			continue
-
-		// Error case, unrecognized top-level node in the AST
-		default:
-			return nil, fmt.Errorf("unrecognized node '%s'", child.GetName())
 		}
 	}
 
 	return program, nil
 }
 
-// Specialized function to convert a "memory_op" node to a list of 'asm.Instruction'.
-func (Lowerer) handleMemoryOp(node pc.Queryable) ([]asm.Instruction, error) {
-	if node.GetName() != "memory_op" {
-		return nil, fmt.Errorf("expected node 'memory_op', got %s", node.GetName())
-	}
-
-	children := node.GetChildren()
-	if len(children) != 3 {
-		return nil, fmt.Errorf("expected node with 3 leaf, got %d", len(children))
-	}
-
-	operation := OperationType(children[0].GetValue())
-	segment := SegmentType(children[1].GetValue())
-	offset, err := strconv.ParseUint(children[2].GetValue(), 10, 16)
-	if err != nil {
-		log.Fatalf("failed to parse 'offset' in MemoryOp, got '%s'", children[2].GetValue())
-	}
-
-	if operation == Push {
-		return []asm.Instruction{
-			LocationResolver[segment](uint16(offset)),
-			asm.CInstruction{Dest: "D", Comp: "M"},
-			asm.AInstruction{Location: "SP"},
-			asm.CInstruction{Dest: "M", Comp: "D"},
-			asm.CInstruction{Dest: "A", Comp: "A+1"},
-		}, nil
-	}
-
-	if operation == Pop {
-		return []asm.Instruction{
-			asm.AInstruction{Location: "SP"},
-			asm.CInstruction{Dest: "D", Comp: "M"},
-			LocationResolver[segment](uint16(offset)),
-			asm.CInstruction{Dest: "M", Comp: "D"},
-			asm.CInstruction{Dest: "A", Comp: "A-1"},
-		}, nil
-	}
-
-	return nil, fmt.Errorf("unrecognized OperationType '%s'", operation)
+// Specialized function to convert a 'vm.MemoryOp' node to a list of 'asm.Instruction'.
+func (Lowerer) HandleMemoryOp(op MemoryOp) ([]asm.Instruction, error) {
+	return nil, fmt.Errorf("not implemented yet")
 }
 
-// Specialized function to convert a "arithmetic_op" node to a list of 'asm.Instruction'.
-func (Lowerer) handleArithmeticOp(node pc.Queryable) ([]asm.Instruction, error) {
-	if node.GetName() != "arithmetic_op" {
-		log.Fatalf("expected node 'arithmetic_op', got %s ", node.GetName())
-	}
-	children := node.GetChildren()
-	if len(children) != 1 {
-		log.Fatalf("expected node 'arithmetic_op' with 1 children, got %d", len(children))
-	}
-
-	operation := ArithOpType(children[0].GetValue())
-
-	return []asm.Instruction{
-		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "D", Comp: "M"},
-		asm.CInstruction{Dest: "A", Comp: "A-1"},
-		IntrinsicResolver[operation](),
-		asm.CInstruction{Dest: "M", Comp: "D"},
-	}, nil
+// Specialized function to convert a 'vm.ArithmeticOp' node to a list of 'asm.Instruction'.
+func (Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error) {
+	return nil, fmt.Errorf("not implemented yet")
 }

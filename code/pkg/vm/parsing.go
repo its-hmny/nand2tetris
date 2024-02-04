@@ -3,7 +3,9 @@ package vm
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
+	"strconv"
 
 	pc "github.com/prataprc/goparsec"
 )
@@ -100,14 +102,26 @@ func NewParser(r io.Reader) Parser {
 	return Parser{reader: r}
 }
 
-// Scans the textual input stream coming from the 'reader' method and returns a traversable
-// Abstract Syntax Tree (AST) that can be eventually used down the line for other compilation
-// steps such as lowering, optimizations (dead branch removal, loop unrolling and so on...)
-func (p *Parser) Parse() (pc.Queryable, bool) {
+// Parser entrypoint divides the 2 phases of the parsing pipeline
+// Text --> AST: This step is done using PCs and returns a generic traversable AST
+// AST --> IR: This step is done by traversing the AST and extracting the 'vm.Module'
+func (p *Parser) Parse() (Module, error) {
 	content, err := io.ReadAll(p.reader)
 	if err != nil {
-		return nil, false
+		return nil, fmt.Errorf("cannot read from 'io.Reader': %s", err)
 	}
+
+	ast, success := p.FromSource(content)
+	if !success {
+		return nil, fmt.Errorf("failed to parse AST from input content")
+	}
+
+	return p.FromAST(ast)
+}
+
+// Scans the textual input stream coming from the 'reader' method and returns a traversable AST
+// (Abstract Syntax Tree) that can be eventually visited to extract/transform the info available.
+func (p *Parser) FromSource(source []byte) (pc.Queryable, bool) {
 
 	// Feature flag: Enable 'goparsec' library's debug logs
 	if os.Getenv("PARSEC_DEBUG") != "" {
@@ -115,7 +129,7 @@ func (p *Parser) Parse() (pc.Queryable, bool) {
 	}
 
 	// We generate the traversable Abstract Syntax Tree from the source content
-	root, _ := ast.Parsewith(pModule, pc.NewScanner(content))
+	root, _ := ast.Parsewith(pModule, pc.NewScanner(source))
 
 	// Feature flag: Enables export of the AST as Dot file (debug.ast.fot)
 	if os.Getenv("EXPORT_AST") != "" {
@@ -129,7 +143,74 @@ func (p *Parser) Parse() (pc.Queryable, bool) {
 	if os.Getenv("PRINT_AST") != "" {
 		ast.Prettyprint()
 	}
-
 	// TODO (hmny): This hardcoding to true should be changed
 	return root, true // Success is based on the reaching of 'EOF'
+}
+
+// This function takes the root node of the raw parsed AST and does a DFS on it parsing
+// one by one each subtree and retuning a 'vm.Module' that can be used as in-memory and
+// type-safe AST not dependent on the parsing library used.
+func (p *Parser) FromAST(root pc.Queryable) (Module, error) {
+	module := []Operation{}
+
+	if root.GetName() != "module" {
+		return nil, fmt.Errorf("expected node 'program', found %s", root.GetName())
+	}
+
+	for _, child := range root.GetChildren() {
+		switch child.GetName() {
+		case "memory_op": // Memory operation subtree, appends 'vm.MemoryOp' to 'modules'
+			op, err := p.HandleMemoryOp(child)
+			if op == nil || err != nil {
+				return nil, err
+			}
+			module = append(module, op)
+
+		case "arithmetic_op": // Arithmetic operation subtree, appends 'vm.ArithmeticOp' to 'modules'
+			op, err := p.HandleArithmeticOp(child)
+			if op == nil || err != nil {
+				return nil, err
+			}
+			module = append(module, op)
+
+		case "comment": // Comment nodes in the AST are just skipped
+			continue
+
+		default: // Error case, unrecognized subtree in the AST
+			return nil, fmt.Errorf("unrecognized node '%s'", child.GetName())
+		}
+	}
+
+	return module, nil
+}
+
+// Specialized function to convert a "memory_op" node to a 'vm.MemoryOp'.
+func (Parser) HandleMemoryOp(node pc.Queryable) (Operation, error) {
+	if node.GetName() != "memory_op" {
+		return nil, fmt.Errorf("expected node 'memory_op', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 3 {
+		return nil, fmt.Errorf("expected node with 3 leaf, got %d", len(node.GetChildren()))
+	}
+
+	operation := OperationType(node.GetChildren()[0].GetValue())
+	segment := SegmentType(node.GetChildren()[1].GetValue())
+	offset, err := strconv.ParseUint(node.GetChildren()[2].GetValue(), 10, 16)
+	if err != nil {
+		log.Fatalf("failed to parse 'offset' in MemoryOp, got '%s'", node.GetChildren()[2].GetValue())
+	}
+
+	return MemoryOp{Operation: operation, Segment: segment, Offset: uint16(offset)}, nil
+}
+
+// Specialized function to convert a "arithmetic_op" node to a 'vm.ArithmeticOp'.
+func (Parser) HandleArithmeticOp(node pc.Queryable) (Operation, error) {
+	if node.GetName() != "arithmetic_op" {
+		log.Fatalf("expected node 'arithmetic_op', got %s ", node.GetName())
+	}
+	if len(node.GetChildren()) != 1 {
+		log.Fatalf("expected node 'arithmetic_op' with 1 leaf, got %d", len(node.GetChildren()))
+	}
+
+	return ArithmeticOp{Operation: ArithOpType(node.GetChildren()[0].GetValue())}, nil
 }

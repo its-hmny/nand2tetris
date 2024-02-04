@@ -13,10 +13,10 @@ package vm
 // A VM Program is just a set of multiple modules/files, in the VM spec each Jack class is
 // translated to its own .vm file (just like Java .class file) that can be handled as its
 // own translation unit during the compilation or lowering phases.
-type Program struct{ Modules []Module }
+type Program []Module
 
 // A VM Module is just a linear list of VM operations/instructions
-type Module struct{ Operations []Operation }
+type Module []Operation
 
 // Used to put together all operation in the VM language (Memory, Arithmetic, ... ops).
 type Operation interface{}
