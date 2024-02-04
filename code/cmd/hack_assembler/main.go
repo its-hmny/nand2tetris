@@ -36,27 +36,27 @@ func Handler(args []string, options map[string]string) int {
 	}
 	defer output.Close()
 
-	// Instantiate a parser for the asm program
+	// Instantiate a parser for the Asm program
 	parser := asm.NewParser(bytes.NewReader(input))
-	// Parses the input file content and extract an AST from it
-	ast, success := parser.Parse()
-	if !success {
-		fmt.Print("ERROR: Unable to complete 'parsing' pass\n")
+	// Parses the input file content and extract an AST (as a 'asm.Program') from it.
+	asmProgram, err := parser.Parse()
+	if err != nil {
+		fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
 		return -1
 	}
 
-	// Instantiate a parser for the asm to Hack lowerer
-	lowerer := asm.NewLowerer(ast)
-	// Lowers the AST to an in-memory/IR format that follows the Hack specs.
-	program, table, err := lowerer.Lower()
+	// Instantiate a lowerer to convert the program from Asm to Hack
+	lowerer := asm.NewLowerer(asmProgram)
+	// Lowers the asm.Program to an in-memory/IR representation of its Hack counterpart 'hack.Program'.
+	hackProgram, table, err := lowerer.Lower()
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'lowering' pass: %s\n", err)
 		return -1
 	}
 
 	// Now, instantiates a code generator for the Hack (compiled) program
-	codegen := hack.NewCodeGenerator(program, table)
-	// Iterates over each program instruction and spits out the relative translation
+	codegen := hack.NewCodeGenerator(hackProgram, table)
+	// Iterates over each instruction and spits out the relative textual representation.
 	compiled, err := codegen.Generate()
 	if err != nil {
 		fmt.Printf("ERROR: Unable to complete 'codegen' pass:\n\t %s", err)

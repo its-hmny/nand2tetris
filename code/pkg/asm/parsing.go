@@ -104,14 +104,26 @@ func NewParser(r io.Reader) Parser {
 	return Parser{reader: r}
 }
 
-// Scans the textual input stream coming from the 'reader' method and returns a traversable
-// Abstract Syntax Tree (AST) that can be eventually used down the line for other compilation
-// steps such as lowering, optimizations (dead branch removal, loop unrolling and so on...)
-func (p *Parser) Parse() (pc.Queryable, bool) {
+// Parser entrypoint divides the 2 phases of the parsing pipeline
+// Text --> AST: This step is done using PCs and returns a generic traversable AST
+// AST --> IR: This step is done by traversing the AST and extracting the 'asm.Instruction'
+func (p *Parser) Parse() (Program, error) {
 	content, err := io.ReadAll(p.reader)
 	if err != nil {
-		return nil, false
+		return nil, fmt.Errorf("cannot read from 'io.Reader': %s", err)
 	}
+
+	ast, success := p.FromSource(content)
+	if !success {
+		return nil, fmt.Errorf("failed to parse AST from input content")
+	}
+
+	return p.FromAST(ast)
+}
+
+// Scans the textual input stream coming from the 'reader' method and returns a traversable AST
+// (Abstract Syntax Tree) that can be eventually visited to extract/transform the info available.
+func (p *Parser) FromSource(source []byte) (pc.Queryable, bool) {
 
 	// Feature flag: Enable 'goparsec' library's debug logs
 	if os.Getenv("PARSEC_DEBUG") != "" {
@@ -119,7 +131,7 @@ func (p *Parser) Parse() (pc.Queryable, bool) {
 	}
 
 	// We generate the traversable Abstract Syntax Tree from the source content
-	root, _ := ast.Parsewith(pProgram, pc.NewScanner(content))
+	root, _ := ast.Parsewith(pProgram, pc.NewScanner(source))
 
 	// Feature flag: Enables export of the AST as Dot file (debug.ast.fot)
 	if os.Getenv("EXPORT_AST") != "" {
@@ -135,4 +147,97 @@ func (p *Parser) Parse() (pc.Queryable, bool) {
 	}
 	// TODO (hmny): This hardcoding to true should be changed
 	return root, true // Success is based on the reaching of 'EOF'
+}
+
+// This function takes the root node of the raw parsed AST and does a DFS on it parsing
+// one by one each subtree and retuning a 'asm.Program' that can be used as in-memory and
+// type-safe AST not dependent on the parsing library used.
+func (p *Parser) FromAST(root pc.Queryable) (Program, error) {
+	program := []Instruction{}
+
+	if root.GetName() != "program" {
+		return nil, fmt.Errorf("expected node 'program', found %s", root.GetName())
+	}
+
+	for _, child := range root.GetChildren() {
+		switch child.GetName() {
+		case "a-inst": // A Instruction subtree, appends 'asm.AInstruction' to 'program'
+			inst, err := p.HandleAInst(child)
+			if inst == nil || err != nil {
+				return nil, err
+			}
+			program = append(program, inst)
+
+		case "c-inst": // C Instruction subtree, appends 'asm.CInstruction' to 'program'
+			inst, err := p.HandleCInst(child)
+			if inst == nil || err != nil {
+				return nil, err
+			}
+			program = append(program, inst)
+
+		case "label-decl": // Label declaration subtree, appends 'asm.LabelDecl' to 'program'
+			inst, err := p.HandleLabelDecl(child)
+			if inst == nil || err != nil {
+				return nil, err
+			}
+			program = append(program, inst)
+
+		case "comment": // Comment nodes in the AST are just skipped
+			continue
+
+		default: // Error case, unrecognized subtree in the AST
+			return nil, fmt.Errorf("unrecognized node '%s'", child.GetName())
+		}
+	}
+
+	return program, nil
+}
+
+// Specialized function to convert a "a-inst" node to an 'asm.AInstruction'.
+func (Parser) HandleAInst(inst pc.Queryable) (Instruction, error) {
+	if inst.GetName() != "a-inst" { // Prelude checks: inspects the node to verify it's an 'a-inst'
+		return nil, fmt.Errorf("expected node 'a-inst', found %s", inst.GetName())
+	}
+
+	symbol := inst.GetChildren()[1] // Prelude checks: inspects the label node type (INT | SYMBOL)
+	if symbol.GetName() != "INT" && symbol.GetName() != "SYMBOL" {
+		return nil, fmt.Errorf("expected token 'SYMBOL' or 'INT', got %s", symbol.GetName())
+	}
+
+	return AInstruction{Location: symbol.GetValue()}, nil
+}
+
+// Specialized function to convert a "c-inst" node to an 'asm.CInstruction'.
+func (Parser) HandleCInst(inst pc.Queryable) (Instruction, error) {
+	if inst.GetName() != "c-inst" { // Prelude checks: inspects the node to verify it's an 'a-inst'
+		return nil, fmt.Errorf("expected node 'c-inst', found %s", inst.GetName())
+	}
+
+	dest, comp, jump := inst.GetChildren()[0], inst.GetChildren()[1], inst.GetChildren()[2]
+
+	if dest.GetName() == "assign" && len(dest.GetChildren()) == 2 {
+		dest = dest.GetChildren()[0]
+		return CInstruction{Dest: dest.GetValue(), Comp: comp.GetValue()}, nil
+	}
+
+	if jump.GetName() == "goto" || len(jump.GetChildren()) == 2 {
+		jump = jump.GetChildren()[1]
+		return CInstruction{Comp: comp.GetValue(), Jump: jump.GetValue()}, nil
+	}
+
+	return nil, fmt.Errorf("expected either node 'assign' or 'goto' not found")
+}
+
+// Specialized function to extract from a "label-decl" node to an 'asm.LabelDecl'.
+func (Parser) HandleLabelDecl(decl pc.Queryable) (Instruction, error) {
+	if decl.GetName() != "label-decl" { // Prelude checks: inspects the node to verify it's a 'label-decl'
+		return nil, fmt.Errorf("expected node 'a-inst', found %s", decl.GetName())
+	}
+
+	symbol := decl.GetChildren()[1] // Prelude checks: inspects the label node type (INT | SYMBOL)
+	if symbol.GetName() != "SYMBOL" {
+		return nil, fmt.Errorf("expected token 'SYMBOL', got %s", symbol.GetName())
+	}
+
+	return LabelDecl{Name: symbol.GetValue()}, nil
 }
