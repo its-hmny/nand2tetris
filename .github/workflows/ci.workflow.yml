@@ -1,0 +1,22 @@
+name: Run full project test suite (CI)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  run_go_test_suite:
+    name: "Run test suite on Go code"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: "Setup Go"
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.21
+
+    - name: "Checkout source code"
+      uses: actions/checkout@v2
+
+    - name: "Run Go tests"
+      run: cd code; go test -v ./...
