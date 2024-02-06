@@ -20,7 +20,7 @@ is a higher-level (bytecode'like) language tailored for use with the Hack comput
 var VmTranslator = cli.New(Description).
 	// TODO(hmny): 'input' should be registered as optional and put last to support multi-args
 	WithArg(cli.NewArg("input", "The assembler (.asm) file to be compiled")).
-	// ? WithArg(cli.NewArg("output", "The compiled binary output (.hack)")).
+	WithArg(cli.NewArg("output", "The compiled binary output (.hack)")).
 	WithAction(Handler)
 
 func Handler(args []string, options map[string]string) int {
@@ -30,12 +30,12 @@ func Handler(args []string, options map[string]string) int {
 		return -1
 	}
 
-	// ? output, err := os.Create(args[1])
-	// ? if err != nil {
-	// ? 	fmt.Printf("ERROR: Unable to open output file: %s\n", err)
-	// ? 	return -1
-	// ? }
-	// ? defer output.Close()
+	output, err := os.Create(args[1])
+	if err != nil {
+		fmt.Printf("ERROR: Unable to open output file: %s\n", err)
+		return -1
+	}
+	defer output.Close()
 
 	// Instantiate a parser for the Vm program
 	parser := vm.NewParser(bytes.NewReader(input))
@@ -65,7 +65,8 @@ func Handler(args []string, options map[string]string) int {
 	}
 
 	for _, comp := range compiled {
-		fmt.Printf("%s\n", comp)
+		line := fmt.Sprintf("%s\n", comp)
+		output.Write([]byte(line))
 	}
 
 	return 0

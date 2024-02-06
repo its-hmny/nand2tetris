@@ -6,17 +6,9 @@ import (
 	"its-hmny.dev/nand2tetris/pkg/asm"
 )
 
-var LocationResolver = map[SegmentType]func(uint16) asm.AInstruction{
-	Constant: func(constant uint16) asm.AInstruction {
-		return asm.AInstruction{Location: fmt.Sprint(constant)}
-	},
-}
-
-var IntrinsicResolver = map[ArithOpType]func() asm.CInstruction{
-	Add: func() asm.CInstruction {
-		return asm.CInstruction{Dest: "D", Comp: "D+M"}
-	},
-}
+var (
+	SegmentTable = map[SegmentType]string{Local: "LCL", Argument: "ARG", This: "THIS", That: "THAT"}
+)
 
 // ----------------------------------------------------------------------------
 // Vm Lowerer
@@ -72,10 +64,70 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 
 // Specialized function to convert a 'vm.MemoryOp' node to a list of 'asm.Instruction'.
 func (Lowerer) HandleMemoryOp(op MemoryOp) ([]asm.Instruction, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	translated := []asm.Instruction{} // Accumulator of the translated instructions
+
+	if op.Segment == Constant {
+		translated = append(translated,
+			// Takes the raw location, saves A on D
+			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
+			asm.CInstruction{Dest: "D", Comp: "A", Jump: ""},
+		)
+	}
+
+	if op.Segment == Local || op.Segment == Argument || op.Segment == This || op.Segment == That {
+		label, found := SegmentTable[op.Segment]
+		if !found {
+			return nil, fmt.Errorf("could not map %s to Asm label", op.Segment)
+		}
+
+		translated = append(translated,
+			// Takes the base pointer for the requested segment
+			asm.AInstruction{Location: label},
+			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A", Jump: ""},
+			// Saves on D on for usage by the next instruction
+			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		)
+	}
+
+	// TODO(hmny): Missing handling of Pop operations
+	// TODO(hmny): Missing handling of 'pointer' and 'temp' segments
+
+	// ! On D reg I find the required value to put on stack
+	translated = append(translated,
+		// Takes SP and goto it location,
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "A", Comp: "M", Jump: ""},
+		// Saves on M the D result
+		asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		// Increments SP to new memory location
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "M+1", Jump: ""},
+	)
+
+	return translated, nil
 }
 
 // Specialized function to convert a 'vm.ArithmeticOp' node to a list of 'asm.Instruction'.
 func (Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	if op.Operation == Add {
+		return []asm.Instruction{
+			// Takes SP and goto it location,
+			asm.AInstruction{Location: "SP"},
+			asm.CInstruction{Dest: "AM", Comp: "M-1", Jump: ""},
+			// Saves on D the M register the first operand
+			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			// Go back one, M contains the second operand
+			asm.CInstruction{Dest: "A", Comp: "A-1", Jump: ""}, // TODO
+			// Do the arithmetic operation
+			asm.CInstruction{Dest: "M", Comp: "D+M", Jump: ""}, // TODO
+			// No need to decrement the stack pointer anymore
+			// ? asm.AInstruction{Location: "SP"},
+			// ? asm.CInstruction{Dest: "M", Comp: "M-1", Jump: ""},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("not implemented fully")
 }
