@@ -2,15 +2,17 @@
 
 set -eu
 
-# ANSI escape codes for colors and attributes
-bold=$(tput bold)
-red=$(tput setaf 1)
-blue=$(tput setaf 4)
-green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-reset=$(tput sgr0)
+# Define ANSI escape codes for colors and attributes
+bold="\033[1m"
+red="\033[31m"
+blue="\033[34m"
+green="\033[32m"
+yellow="\033[33m"
+reset="\033[0m"
 
-# Define blacklist of files to skip
+# Define blacklist of test files to skip (they need user interaction)
+# - Fill: requires user evaluation (press a key and see the screen change color)
+# - Memory: requires the user to press a key in order to continue the testing
 blacklist=("Fill.tst" "Memory.tst")
 
 # Get the directory of the script
@@ -30,7 +32,7 @@ test_logic_gates() {
 
         # Check if file is in the blacklist
         if [[ " ${blacklist[@]} " =~ " $tst_name " ]]; then
-            echo "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
+            echo -e "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
             continue
         fi
         
@@ -58,7 +60,7 @@ test_boolean_arithmetic() {
 
         # Check if file is in the blacklist
         if [[ " ${blacklist[@]} " =~ " $tst_name " ]]; then
-            echo "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
+            echo -e "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
             continue
         fi
         
@@ -86,7 +88,7 @@ test_sequential_logic() {
 
         # Check if file is in the blacklist
         if [[ " ${blacklist[@]} " =~ " $tst_name " ]]; then
-            echo "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
+            echo -e "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
             continue
         fi
         
@@ -111,16 +113,10 @@ test_machine_language() {
     # Iterate over each .tst file and run HardwareSimulator.sh
     for tst_path in ./04\ -\ Machine\ Language/**/*.tst; do
         tst_name=$(basename "$tst_path")
-
-        # Check if file is in the blacklist
-        if [[ " ${blacklist[@]} " =~ " $tst_name " ]]; then
-            echo "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
-            continue
-        fi
         
         # Check if file is in the blacklist
         if [[ " ${blacklist[@]} " =~ " $tst_name " ]]; then
-            echo "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
+            echo -e "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
             continue
         fi
         
@@ -153,7 +149,7 @@ test_computer_architecture() {
 
         # Check if file is in the blacklist
         if [[ " ${blacklist[@]} " =~ " $tst_name " ]]; then
-            echo "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
+            echo -e "${blue}${bold}- Skipping test: '$tst_name'...${reset}"
             continue
         fi
         
