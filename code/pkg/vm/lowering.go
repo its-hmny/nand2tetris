@@ -63,14 +63,29 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 }
 
 // Specialized function to convert a 'vm.MemoryOp' node to a list of 'asm.Instruction'.
-func (Lowerer) HandleMemoryOp(op MemoryOp) ([]asm.Instruction, error) {
+func (l *Lowerer) HandleMemoryOp(op MemoryOp) ([]asm.Instruction, error) {
+	switch op.Operation {
+	case Pop:
+		return l.HandlePopOp(op)
+	case Push:
+		return l.HandlePushOp(op)
+	default:
+		return nil, fmt.Errorf("unrecognized MemoryOp instruction %s", op.Operation)
+	}
+}
+
+// Specialized function to convert a 'vm.MemoryOp' (subtype Push) node to a list of 'asm.Instruction'.
+func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 	translated := []asm.Instruction{} // Accumulator of the translated instructions
 
 	if op.Segment == Constant {
 		translated = append(translated,
-			// Takes the raw location, saves A on D
+			// Takes the raw location with the A Instruction, saves A reg on D reg
 			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
+			// Saves on D the M reg value, then copies it on R13 (for persistence)
 			asm.CInstruction{Dest: "D", Comp: "A", Jump: ""},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
 		)
 	}
 
@@ -87,16 +102,24 @@ func (Lowerer) HandleMemoryOp(op MemoryOp) ([]asm.Instruction, error) {
 			// Adds the offset and goto to the pointed location
 			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
 			asm.CInstruction{Dest: "A", Comp: "D+A", Jump: ""},
-			// Saves on D on for usage by the next instruction
+			// Saves on D the M reg value, then copies it on R13 (for persistence)
 			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
 		)
 	}
 
-	// TODO(hmny): Missing handling of Pop operations
-	// TODO(hmny): Missing handling of 'pointer' and 'temp' segments
+	if op.Segment == Pointer || op.Segment == Temp {
+		// TODO(hmny): Missing handling of 'pointer' and 'temp' segments
+		return nil, fmt.Errorf("'pointer' and 'temp' segment are not supported yet")
+	}
 
-	// ! On D reg I find the required value to put on stack
+	// This is the set of operations that is common to every push on the stack.
+	// We expect that on the D register will have the value to push and proceed accordingly.
 	translated = append(translated,
+		// Takes out the value from R13 and saves onto the D reg
+		asm.AInstruction{Location: "R13"},
+		asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
 		// Takes SP and goto it location,
 		asm.AInstruction{Location: "SP"},
 		asm.CInstruction{Dest: "A", Comp: "M", Jump: ""},
@@ -108,6 +131,53 @@ func (Lowerer) HandleMemoryOp(op MemoryOp) ([]asm.Instruction, error) {
 	)
 
 	return translated, nil
+}
+
+// Specialized function to convert a 'vm.MemoryOp' (subtype Pop) node to a list of 'asm.Instruction'.
+func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
+	// This is the set of operations that is common to every pop on the stack.
+	// We save on the D register the value to be stored on the heap and proceed based on the specific segment.
+	translated := []asm.Instruction{ // Accumulator of the translated instructions
+		// Takes SP and goto its location
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "A", Comp: "M", Jump: ""},
+		// Saves on D the M reg value, then copies it on R13 (for persistence)
+		asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		asm.AInstruction{Location: "R13"},
+		asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		// Decrements SP to new memory location
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "M-1", Jump: ""},
+	}
+
+	if op.Segment == Constant {
+		return nil, fmt.Errorf("cannot push on read-only segment 'constant'")
+	}
+
+	if op.Segment == Local || op.Segment == Argument || op.Segment == This || op.Segment == That {
+		label, found := SegmentTable[op.Segment]
+		if !found {
+			return nil, fmt.Errorf("could not map %s to Asm instructions", op.Segment)
+		}
+
+		translated = append(translated,
+			// Takes the base pointer for the requested segment
+			asm.AInstruction{Location: label},
+			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A", Jump: ""},
+			// Saves on D on for usage by the next instruction
+			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		)
+	}
+
+	if op.Segment == Pointer || op.Segment == Temp {
+		// TODO(hmny): Missing handling of 'pointer' and 'temp' segments
+		return nil, fmt.Errorf("'pointer' and 'temp' segment are not supported yet")
+	}
+
+	return translated, fmt.Errorf("not implemented yet")
 }
 
 // Specialized function to convert a 'vm.ArithmeticOp' node to a list of 'asm.Instruction'.
