@@ -8,6 +8,52 @@ import (
 
 var (
 	SegmentTable = map[SegmentType]string{Local: "LCL", Argument: "ARG", This: "THIS", That: "THAT"}
+
+	ArithmeticTable = map[ArithOpType][]asm.Instruction{
+		// Mappers to []asm.Instruction for the comparison operations in VM language (eq, gt, lt)
+		Eq: {
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "D", Comp: "D-M"},
+			asm.CInstruction{Dest: "D", Comp: "!D"},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		},
+		Gt: {
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R14"},
+			// ? asm.CInstruction{Dest: "D", Comp: "D+M"},
+			// ? asm.AInstruction{Location: "R15"},
+			// ? asm.CInstruction{Dest: "M", Comp: "D"},
+		},
+		Lt: nil,
+
+		// Mappers to []asm.Instruction for the arithmetic operations in VM language (add, sub, neg)
+		Add: {
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "D", Comp: "D+M"},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		},
+		Sub: {
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "D", Comp: "D-M"},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		},
+		Neg: {
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "-D"},
+		},
+	}
 )
 
 // ----------------------------------------------------------------------------
@@ -182,22 +228,49 @@ func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 
 // Specialized function to convert a 'vm.ArithmeticOp' node to a list of 'asm.Instruction'.
 func (Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error) {
-	if op.Operation == Add {
-		return []asm.Instruction{
-			// Takes SP and goto it location,
-			asm.AInstruction{Location: "SP"},
-			asm.CInstruction{Dest: "AM", Comp: "M-1", Jump: ""},
-			// Saves on D the M register the first operand
-			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
-			// Go back one, M contains the second operand
-			asm.CInstruction{Dest: "A", Comp: "A-1", Jump: ""}, // TODO
-			// Do the arithmetic operation
-			asm.CInstruction{Dest: "M", Comp: "D+M", Jump: ""}, // TODO
-			// No need to decrement the stack pointer anymore
-			// ? asm.AInstruction{Location: "SP"},
-			// ? asm.CInstruction{Dest: "M", Comp: "M-1", Jump: ""},
-		}, nil
+	prelude := []asm.Instruction{
+		// Takes SP and goto it location (also decrementing it)
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "AM", Comp: "M-1", Jump: ""},
+		// Saves onto D the value and then copies it onto R13
+		asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		asm.AInstruction{Location: "R13"},
+		asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
 	}
 
-	return nil, fmt.Errorf("not implemented fully")
+	// For every binary operation we push the second operand onto R14 reg
+	if op.Operation != Not && op.Operation != Neg {
+		prelude = append(prelude,
+			// Takes SP and goto it location (also decrementing it)
+			asm.AInstruction{Location: "SP"},
+			asm.CInstruction{Dest: "AM", Comp: "M-1", Jump: ""},
+			// Saves onto D the value and then copies it onto  R14
+			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		)
+	}
+
+	// The 'arithmetic' section does the computation and stores everything on R15.
+	arithmetic, found := ArithmeticTable[op.Operation]
+	if !found {
+		return nil, fmt.Errorf("could not map %s to Asm instructions", op.Operation)
+	}
+
+	// The 'postlude' section takes the value in R15 and push it onto the Stack
+	postlude := []asm.Instruction{
+		// Takes out the value from R15 and saves onto the D reg
+		asm.AInstruction{Location: "R15"},
+		asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		// Takes SP and goto it location,
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "A", Comp: "M", Jump: ""},
+		// Saves on M the D result
+		asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		// Increments SP to new memory location
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "M+1", Jump: ""},
+	}
+
+	return append(append(prelude, arithmetic...), postlude...), nil
 }
