@@ -7,7 +7,7 @@ import (
 )
 
 var SegmentTable = map[SegmentType]string{
-	Local: "LCL", Argument: "ARG", This: "THIS", That: "THAT"
+	Local: "LCL", Argument: "ARG", This: "THIS", That: "THAT",
 }
 
 var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
@@ -37,7 +37,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "D-M"},
 			asm.AInstruction{Location: fmt.Sprintf("GREATER_%d", counter)},
-			asm.CInstruction{Comp: "D", Jump: "JLE"},
+			asm.CInstruction{Comp: "D", Jump: "JLT"},
 			asm.CInstruction{Dest: "D", Comp: "0"},
 			asm.AInstruction{Location: fmt.Sprintf("END_%d", counter)},
 			asm.CInstruction{Comp: "0", Jump: "JMP"},
@@ -55,7 +55,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "D-M"},
 			asm.AInstruction{Location: fmt.Sprintf("LESS_%d", counter)},
-			asm.CInstruction{Comp: "D", Jump: "JGE"},
+			asm.CInstruction{Comp: "D", Jump: "JGT"},
 			asm.CInstruction{Dest: "D", Comp: "0"},
 			asm.AInstruction{Location: fmt.Sprintf("END_%d", counter)},
 			asm.CInstruction{Comp: "0", Jump: "JMP"},
