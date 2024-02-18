@@ -70,9 +70,9 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 	// Mappers to []asm.Instruction for the arithmetic operations in VM language (add, sub, neg)
 	Add: func(int) []asm.Instruction {
 		return []asm.Instruction{
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "D+M"},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
@@ -80,9 +80,9 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 	},
 	Sub: func(int) []asm.Instruction {
 		return []asm.Instruction{
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "D-M"},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
