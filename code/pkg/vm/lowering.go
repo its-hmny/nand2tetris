@@ -6,79 +6,127 @@ import (
 	"its-hmny.dev/nand2tetris/pkg/asm"
 )
 
-var (
-	SegmentTable = map[SegmentType]string{Local: "LCL", Argument: "ARG", This: "THIS", That: "THAT"}
+var SegmentTable = map[SegmentType]string{
+	Local: "LCL", Argument: "ARG", This: "THIS", That: "THAT"
+}
 
-	ArithmeticTable = map[ArithOpType][]asm.Instruction{
-		// Mappers to []asm.Instruction for the comparison operations in VM language (eq, gt, lt)
-		Eq: {
+var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
+	// Mappers to []asm.Instruction for the comparison operations in VM language (eq, gt, lt)
+	Eq: func(counter int) []asm.Instruction {
+		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "D-M"},
-			asm.CInstruction{Dest: "D", Comp: "!D"},
+			asm.AInstruction{Location: fmt.Sprintf("EQUAL_%d", counter)},
+			asm.CInstruction{Comp: "D", Jump: "JEQ"},
+			asm.CInstruction{Dest: "D", Comp: "0"},
+			asm.AInstruction{Location: fmt.Sprintf("END_%d", counter)},
+			asm.CInstruction{Comp: "0", Jump: "JMP"},
+			asm.LabelDecl{Name: fmt.Sprintf("EQUAL_%d", counter)},
+			asm.CInstruction{Dest: "D", Comp: "-1"},
+			asm.LabelDecl{Name: fmt.Sprintf("END_%d", counter)},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
-		},
-		Gt: {
+		}
+	},
+	Gt: func(counter int) []asm.Instruction {
+		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
-			// ? asm.CInstruction{Dest: "D", Comp: "D+M"},
-			// ? asm.AInstruction{Location: "R15"},
-			// ? asm.CInstruction{Dest: "M", Comp: "D"},
-		},
-		Lt: nil,
+			asm.CInstruction{Dest: "D", Comp: "D-M"},
+			asm.AInstruction{Location: fmt.Sprintf("GREATER_%d", counter)},
+			asm.CInstruction{Comp: "D", Jump: "JLE"},
+			asm.CInstruction{Dest: "D", Comp: "0"},
+			asm.AInstruction{Location: fmt.Sprintf("END_%d", counter)},
+			asm.CInstruction{Comp: "0", Jump: "JMP"},
+			asm.LabelDecl{Name: fmt.Sprintf("GREATER_%d", counter)},
+			asm.CInstruction{Dest: "D", Comp: "-1"},
+			asm.LabelDecl{Name: fmt.Sprintf("END_%d", counter)},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+	Lt: func(counter int) []asm.Instruction {
+		return []asm.Instruction{
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "D", Comp: "D-M"},
+			asm.AInstruction{Location: fmt.Sprintf("LESS_%d", counter)},
+			asm.CInstruction{Comp: "D", Jump: "JGE"},
+			asm.CInstruction{Dest: "D", Comp: "0"},
+			asm.AInstruction{Location: fmt.Sprintf("END_%d", counter)},
+			asm.CInstruction{Comp: "0", Jump: "JMP"},
+			asm.LabelDecl{Name: fmt.Sprintf("LESS_%d", counter)},
+			asm.CInstruction{Dest: "D", Comp: "-1"},
+			asm.LabelDecl{Name: fmt.Sprintf("END_%d", counter)},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
 
-		// Mappers to []asm.Instruction for the arithmetic operations in VM language (add, sub, neg)
-		Add: {
+	// Mappers to []asm.Instruction for the arithmetic operations in VM language (add, sub, neg)
+	Add: func(int) []asm.Instruction {
+		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "D+M"},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
-		},
-		Sub: {
+		}
+	},
+	Sub: func(int) []asm.Instruction {
+		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "D-M"},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
-		},
-		Neg: {
+		}
+	},
+	Neg: func(int) []asm.Instruction {
+		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "-D"},
-		},
+		}
+	},
 
-		// Mappers to []asm.Instruction for the bitwise operations in VM language (not, and, or)
-		Not: {
+	// Mappers to []asm.Instruction for the bitwise operations in VM language (not, and, or)
+	Not: func(int) []asm.Instruction {
+		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "!D"},
-		},
-		And: {
+		}
+	},
+	And: func(int) []asm.Instruction {
+		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "D&M"},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
-		},
-		Or: {
+		}
+	},
+	Or: func(int) []asm.Instruction {
+		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "D|M"},
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
-		},
-	}
-)
+		}
+	},
+}
 
 // ----------------------------------------------------------------------------
 // Vm Lowerer
@@ -88,7 +136,10 @@ var (
 // Since we get a tree-like struct we are able to traverse it using a Depth First Search (DFS) algorithm
 // on it. For each operation node visited we produce a list of 'hack.Instruction' as counterpart (either
 // A Instruction, C Instruction or LabelDecl) as well as validating the input before proceeding.
-type Lowerer struct{ program Program }
+type Lowerer struct {
+	program Program
+	nRandom int
+}
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
 // Requires the argument Program to be not nil nor empty.
@@ -251,7 +302,7 @@ func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 }
 
 // Specialized function to convert a 'vm.ArithmeticOp' node to a list of 'asm.Instruction'.
-func (Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error) {
+func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error) {
 	prelude := []asm.Instruction{
 		// Takes SP and goto it location (also decrementing it)
 		asm.AInstruction{Location: "SP"},
@@ -281,6 +332,10 @@ func (Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error) {
 		return nil, fmt.Errorf("could not map %s to Asm instructions", op.Operation)
 	}
 
+	if op.Operation == Eq || op.Operation == Lt || op.Operation == Gt {
+		l.nRandom += 1
+	}
+
 	// The 'postlude' section takes the value in R15 and push it onto the Stack
 	postlude := []asm.Instruction{
 		// Takes out the value from R15 and saves onto the D reg
@@ -296,5 +351,5 @@ func (Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error) {
 		asm.CInstruction{Dest: "M", Comp: "M+1", Jump: ""},
 	}
 
-	return append(append(prelude, arithmetic...), postlude...), nil
+	return append(append(prelude, arithmetic(l.nRandom)...), postlude...), nil
 }
