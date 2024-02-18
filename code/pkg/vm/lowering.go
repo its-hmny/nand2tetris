@@ -53,6 +53,30 @@ var (
 			asm.AInstruction{Location: "R15"},
 			asm.CInstruction{Dest: "M", Comp: "-D"},
 		},
+
+		// Mappers to []asm.Instruction for the bitwise operations in VM language (not, and, or)
+		Not: {
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "!D"},
+		},
+		And: {
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "D", Comp: "D&M"},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		},
+		Or: {
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R14"},
+			asm.CInstruction{Dest: "D", Comp: "D|M"},
+			asm.AInstruction{Location: "R15"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		},
 	}
 )
 
