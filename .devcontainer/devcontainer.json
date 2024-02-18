@@ -32,6 +32,7 @@
 				// Git & GitHub related extension(s)
 				"eamodio.gitlens",
 				"mhutchie.git-graph",
+				"github.vscode-github-actions",
 				// Markdown related extension(s)
 				"davidanson.vscode-markdownlint",
 				// nan2tetris (.hdl, .asm, .vm, .jack, ...) related extension(s)

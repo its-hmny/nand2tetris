@@ -5,7 +5,7 @@
 <p align="center">
     <img alt="GPLv3 License" src="https://img.shields.io/badge/License-GPL%20v3-yellow.svg">
     <img alt="Code Size" src="https://img.shields.io/github/languages/code-size/its-hmny/nand2tetris?color=green&label=Code%20Size">
-    <img alt="Test suite" src="https://github.com/its-hmny/nand2tetris/actions/workflows/gh-pages.yml/badge.svg">
+    <img alt="Test suite" src="https://github.com/its-hmny/nand2tetris/actions/workflows/ci.workflow.yml/badge.svg">
     <img alt="Release" src="https://img.shields.io/github/v/release/its-hmny/nand2tetris?label=Version">
 </p>
 
