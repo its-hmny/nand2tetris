@@ -7,7 +7,10 @@ import (
 )
 
 var SegmentTable = map[SegmentType]string{
+	// Stack Segment mapped to their own 'asm' labels
 	Local: "LCL", Argument: "ARG", This: "THIS", That: "THAT",
+	// Stack Segment mapped to static raw location in 'asm'
+	Pointer: "3", Temp: "5",
 }
 
 var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
@@ -231,8 +234,23 @@ func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 	}
 
 	if op.Segment == Pointer || op.Segment == Temp {
-		// TODO(hmny): Missing handling of 'pointer' and 'temp' segments
-		return nil, fmt.Errorf("'pointer' and 'temp' segment are not supported yet")
+		label, found := SegmentTable[op.Segment]
+		if !found {
+			return nil, fmt.Errorf("could not map %s to Asm label", op.Segment)
+		}
+
+		translated = append(translated,
+			// Takes the raw mapped location for the requested segment
+			asm.AInstruction{Location: label},
+			asm.CInstruction{Dest: "D", Comp: "A", Jump: ""},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A", Jump: ""},
+			// Saves on D the M reg value, then copies it on R13 (for persistence)
+			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		)
 	}
 
 	// This is the set of operations that is common to every push on the stack.
