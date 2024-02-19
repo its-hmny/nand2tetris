@@ -253,6 +253,16 @@ func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 		)
 	}
 
+	if op.Segment == Static {
+		translated = append(translated,
+			// TODO(Enea): Add file name to Sprintf()
+			asm.AInstruction{Location: fmt.Sprintf("%s.%d", "test", op.Offset)},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		)
+	}
+
 	// This is the set of operations that is common to every push on the stack.
 	// We expect that on the D register will have the value to push and proceed accordingly.
 	translated = append(translated,
@@ -313,6 +323,16 @@ func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
 			asm.CInstruction{Dest: "D", Comp: "D+A"},
 			// Saves on D on for usage by the next instruction
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		)
+	}
+
+	if op.Segment == Static {
+		translated = append(translated,
+			// TODO(Enea): Add file name to Sprintf()
+			asm.AInstruction{Location: fmt.Sprintf("%s.%d", "test", op.Offset)},
+			asm.CInstruction{Dest: "D", Comp: "A"},
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
 		)
