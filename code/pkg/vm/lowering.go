@@ -207,9 +207,9 @@ func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 			// Takes the raw location with the A Instruction, saves A reg on D reg
 			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
 			// Saves on D the M reg value, then copies it on R13 (for persistence)
-			asm.CInstruction{Dest: "D", Comp: "A", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "A"},
 			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+			asm.CInstruction{Dest: "M", Comp: "D"},
 		)
 	}
 
@@ -222,14 +222,14 @@ func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 		translated = append(translated,
 			// Takes the base pointer for the requested segment
 			asm.AInstruction{Location: label},
-			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "M"},
 			// Adds the offset and goto to the pointed location
 			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			asm.CInstruction{Dest: "A", Comp: "D+A", Jump: ""},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
 			// Saves on D the M reg value, then copies it on R13 (for persistence)
-			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+			asm.CInstruction{Dest: "M", Comp: "D"},
 		)
 	}
 
@@ -242,14 +242,14 @@ func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 		translated = append(translated,
 			// Takes the raw mapped location for the requested segment
 			asm.AInstruction{Location: label},
-			asm.CInstruction{Dest: "D", Comp: "A", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "A"},
 			// Adds the offset and goto to the pointed location
 			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			asm.CInstruction{Dest: "A", Comp: "D+A", Jump: ""},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
 			// Saves on D the M reg value, then copies it on R13 (for persistence)
-			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+			asm.CInstruction{Dest: "M", Comp: "D"},
 		)
 	}
 
@@ -258,15 +258,15 @@ func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 	translated = append(translated,
 		// Takes out the value from R13 and saves onto the D reg
 		asm.AInstruction{Location: "R13"},
-		asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		asm.CInstruction{Dest: "D", Comp: "M"},
 		// Takes SP and goto it location,
 		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "A", Comp: "M", Jump: ""},
+		asm.CInstruction{Dest: "A", Comp: "M"},
 		// Saves on M the D result
-		asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		asm.CInstruction{Dest: "M", Comp: "D"},
 		// Increments SP to new memory location
 		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "M", Comp: "M+1", Jump: ""},
+		asm.CInstruction{Dest: "M", Comp: "M+1"},
 	)
 
 	return translated, nil
@@ -289,13 +289,13 @@ func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 		translated = append(translated,
 			// Takes the base pointer for the requested segment
 			asm.AInstruction{Location: label},
-			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "M"},
 			// Adds the offset and goto to the pointed location
 			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			asm.CInstruction{Dest: "D", Comp: "D+A", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "D+A"},
 			// Saves on D on for usage by the next instruction
 			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+			asm.CInstruction{Dest: "M", Comp: "D"},
 		)
 	}
 
@@ -308,13 +308,13 @@ func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 		translated = append(translated,
 			// Takes the base pointer for the requested segment
 			asm.AInstruction{Location: label},
-			asm.CInstruction{Dest: "D", Comp: "A", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "A"},
 			// Adds the offset and goto to the pointed location
 			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			asm.CInstruction{Dest: "D", Comp: "D+A", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "D+A"},
 			// Saves on D on for usage by the next instruction
 			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+			asm.CInstruction{Dest: "M", Comp: "D"},
 		)
 	}
 
@@ -323,12 +323,12 @@ func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 	translated = append(translated,
 		// Takes SP and goto its location
 		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "AM", Comp: "M-1", Jump: ""},
+		asm.CInstruction{Dest: "AM", Comp: "M-1"},
 		// Saves on D the M reg value, then copies it on R13 (for persistence)
-		asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		asm.CInstruction{Dest: "D", Comp: "M"},
 		asm.AInstruction{Location: "R13"},
-		asm.CInstruction{Dest: "A", Comp: "M", Jump: ""},
-		asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		asm.CInstruction{Dest: "A", Comp: "M"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
 	)
 
 	return translated, nil
@@ -339,11 +339,11 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 	prelude := []asm.Instruction{
 		// Takes SP and goto it location (also decrementing it)
 		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "AM", Comp: "M-1", Jump: ""},
+		asm.CInstruction{Dest: "AM", Comp: "M-1"},
 		// Saves onto D the value and then copies it onto R13
-		asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		asm.CInstruction{Dest: "D", Comp: "M"},
 		asm.AInstruction{Location: "R13"},
-		asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		asm.CInstruction{Dest: "M", Comp: "D"},
 	}
 
 	// For every binary operation we push the second operand onto R14 reg
@@ -351,11 +351,11 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 		prelude = append(prelude,
 			// Takes SP and goto it location (also decrementing it)
 			asm.AInstruction{Location: "SP"},
-			asm.CInstruction{Dest: "AM", Comp: "M-1", Jump: ""},
+			asm.CInstruction{Dest: "AM", Comp: "M-1"},
 			// Saves onto D the value and then copies it onto  R14
-			asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R14"},
-			asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+			asm.CInstruction{Dest: "M", Comp: "D"},
 		)
 	}
 
@@ -373,15 +373,15 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 	postlude := []asm.Instruction{
 		// Takes out the value from R15 and saves onto the D reg
 		asm.AInstruction{Location: "R15"},
-		asm.CInstruction{Dest: "D", Comp: "M", Jump: ""},
+		asm.CInstruction{Dest: "D", Comp: "M"},
 		// Takes SP and goto it location,
 		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "A", Comp: "M", Jump: ""},
+		asm.CInstruction{Dest: "A", Comp: "M"},
 		// Saves on M the D result
-		asm.CInstruction{Dest: "M", Comp: "D", Jump: ""},
+		asm.CInstruction{Dest: "M", Comp: "D"},
 		// Increments SP to new memory location
 		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "M", Comp: "M+1", Jump: ""},
+		asm.CInstruction{Dest: "M", Comp: "M+1"},
 	}
 
 	return append(append(prelude, arithmetic(l.nRandom)...), postlude...), nil
