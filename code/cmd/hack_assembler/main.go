@@ -18,8 +18,10 @@ involves parsing the assembly code, resolving symbols, and generating machine co
 `, "\n", " ")
 
 var HackAssembler = cli.New(Description).
-	WithArg(cli.NewArg("input", "The assembler (.asm) file to be compiled")).
-	WithArg(cli.NewArg("output", "The compiled binary output (.hack)")).
+	WithArg(cli.NewArg("input", "The assembler (.asm) file to be compiled").
+		WithType(cli.TypeString)).
+	WithArg(cli.NewArg("output", "The compiled binary output (.hack)").
+		WithType(cli.TypeString)).
 	WithAction(Handler)
 
 func Handler(args []string, options map[string]string) int {

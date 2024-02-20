@@ -20,8 +20,11 @@ is a higher-level (bytecode'like) language tailored for use with the Hack comput
 
 var VmTranslator = cli.New(Description).
 	// 'AsOptional()' allows to have more than one input .vm file
-	WithArg(cli.NewArg("inputs", "The bytecode (.vm) file to be compiled").AsOptional().WithType(cli.TypeString)).
-	WithOption(cli.NewOption("output", "The compiled binary output (.asm)").WithType(cli.TypeString)).
+	WithArg(cli.NewArg("inputs", "The bytecode (.vm) file to be compiled").
+		AsOptional().
+		WithType(cli.TypeString)).
+	WithOption(cli.NewOption("output", "The compiled binary output (.asm)").
+		WithType(cli.TypeString)).
 	WithAction(Handler)
 
 func Handler(args []string, options map[string]string) int {
@@ -43,17 +46,17 @@ func Handler(args []string, options map[string]string) int {
 	program := vm.Program{}
 
 	// For every file provided by the user we do the following things
-	for _, arg := range args {
-		input, err := os.ReadFile(arg)
+	for _, input := range args {
+		content, err := os.ReadFile(input)
 		if err != nil {
 			fmt.Printf("ERROR: Unable to open input file: %s\n", err)
 			return -1
 		}
 
 		// Instantiate a parser for the Vm program
-		parser := vm.NewParser(bytes.NewReader(input))
+		parser := vm.NewParser(bytes.NewReader(content))
 		// Parses the input file content and extract an AST (as a 'vm.Module') from it.
-		program[path.Base(arg)], err = parser.Parse()
+		program[path.Base(input)], err = parser.Parse()
 		if err != nil {
 			fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
 			os.Exit(-1)
