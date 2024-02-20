@@ -13,9 +13,9 @@ var SegmentTable = map[SegmentType]string{
 	Pointer: "3", Temp: "5",
 }
 
-var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
+var ArithmeticTable = map[ArithOpType]func(uint) []asm.Instruction{
 	// Mappers to []asm.Instruction for the comparison operations in VM language (eq, gt, lt)
-	Eq: func(counter int) []asm.Instruction {
+	Eq: func(counter uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -33,7 +33,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 			asm.CInstruction{Dest: "M", Comp: "D"},
 		}
 	},
-	Gt: func(counter int) []asm.Instruction {
+	Gt: func(counter uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -51,7 +51,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 			asm.CInstruction{Dest: "M", Comp: "D"},
 		}
 	},
-	Lt: func(counter int) []asm.Instruction {
+	Lt: func(counter uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -71,7 +71,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 	},
 
 	// Mappers to []asm.Instruction for the arithmetic operations in VM language (add, sub, neg)
-	Add: func(int) []asm.Instruction {
+	Add: func(uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -81,7 +81,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 			asm.CInstruction{Dest: "M", Comp: "D"},
 		}
 	},
-	Sub: func(int) []asm.Instruction {
+	Sub: func(uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R14"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -91,7 +91,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 			asm.CInstruction{Dest: "M", Comp: "D"},
 		}
 	},
-	Neg: func(int) []asm.Instruction {
+	Neg: func(uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -101,7 +101,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 	},
 
 	// Mappers to []asm.Instruction for the bitwise operations in VM language (not, and, or)
-	Not: func(int) []asm.Instruction {
+	Not: func(uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -109,7 +109,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 			asm.CInstruction{Dest: "M", Comp: "!D"},
 		}
 	},
-	And: func(int) []asm.Instruction {
+	And: func(uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -119,7 +119,7 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 			asm.CInstruction{Dest: "M", Comp: "D"},
 		}
 	},
-	Or: func(int) []asm.Instruction {
+	Or: func(uint) []asm.Instruction {
 		return []asm.Instruction{
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -140,8 +140,9 @@ var ArithmeticTable = map[ArithOpType]func(int) []asm.Instruction{
 // on it. For each operation node visited we produce a list of 'hack.Instruction' as counterpart (either
 // A Instruction, C Instruction or LabelDecl) as well as validating the input before proceeding.
 type Lowerer struct {
-	program Program
-	nRandom int
+	program         Program
+	labelCounter    uint   // Counter to 'randomize' labels with same name
+	translationUnit string // Keeps track of the .vm file we're lowering at the moment
 }
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
@@ -160,7 +161,9 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 		return nil, fmt.Errorf("the given 'program' is empty")
 	}
 
-	for _, module := range l.program {
+	for name, module := range l.program {
+		l.translationUnit = name // Updates the tracker, signaling we're lowering another module
+
 		for _, op := range module {
 			switch tOp := op.(type) {
 			case MemoryOp: // Converts 'vm.MemoryOp' to a list of 'asm.Instruction'
@@ -199,7 +202,7 @@ func (l *Lowerer) HandleMemoryOp(op MemoryOp) ([]asm.Instruction, error) {
 }
 
 // Specialized function to convert a 'vm.MemoryOp' (subtype Push) node to a list of 'asm.Instruction'.
-func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
+func (l *Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 	translated := []asm.Instruction{} // Accumulator of the translated instructions
 
 	if op.Segment == Constant {
@@ -255,8 +258,7 @@ func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 
 	if op.Segment == Static {
 		translated = append(translated,
-			// TODO(Enea): Add file name to Sprintf()
-			asm.AInstruction{Location: fmt.Sprintf("%s.%d", "test", op.Offset)},
+			asm.AInstruction{Location: fmt.Sprintf("%s.%d", l.translationUnit, op.Offset)},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
@@ -283,7 +285,7 @@ func (Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 }
 
 // Specialized function to convert a 'vm.MemoryOp' (subtype Pop) node to a list of 'asm.Instruction'.
-func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
+func (l *Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 	translated := []asm.Instruction{}
 
 	if op.Segment == Constant {
@@ -330,8 +332,7 @@ func (Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 
 	if op.Segment == Static {
 		translated = append(translated,
-			// TODO(Enea): Add file name to Sprintf()
-			asm.AInstruction{Location: fmt.Sprintf("%s.%d", "test", op.Offset)},
+			asm.AInstruction{Location: fmt.Sprintf("%s.%d", l.translationUnit, op.Offset)},
 			asm.CInstruction{Dest: "D", Comp: "A"},
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
@@ -386,7 +387,7 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 	}
 
 	if op.Operation == Eq || op.Operation == Lt || op.Operation == Gt {
-		l.nRandom += 1
+		l.labelCounter += 1
 	}
 
 	// The 'postlude' section takes the value in R15 and push it onto the Stack
@@ -404,5 +405,5 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 		asm.CInstruction{Dest: "M", Comp: "M+1"},
 	}
 
-	return append(append(prelude, arithmetic(l.nRandom)...), postlude...), nil
+	return append(append(prelude, arithmetic(l.labelCounter)...), postlude...), nil
 }
