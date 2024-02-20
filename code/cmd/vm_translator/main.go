@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/teris-io/cli"
@@ -18,36 +19,49 @@ is a higher-level (bytecode'like) language tailored for use with the Hack comput
 `, "\n", " ")
 
 var VmTranslator = cli.New(Description).
-	// TODO(hmny): 'input' should be registered as optional and put last to support multi-args
-	WithArg(cli.NewArg("input", "The assembler (.asm) file to be compiled")).
-	WithArg(cli.NewArg("output", "The compiled binary output (.hack)")).
+	// 'AsOptional()' allows to have more than one input .vm file
+	WithArg(cli.NewArg("inputs", "The bytecode (.vm) file to be compiled").AsOptional().WithType(cli.TypeString)).
+	WithOption(cli.NewOption("output", "The compiled binary output (.asm)").WithType(cli.TypeString)).
 	WithAction(Handler)
 
 func Handler(args []string, options map[string]string) int {
-	input, err := os.ReadFile(args[0])
-	if err != nil {
-		fmt.Printf("ERROR: Unable to open input file: %s\n", err)
+	if len(args) < 1 || options["output"] == "" {
+		fmt.Printf("ERROR: Not enough arguments provided, use --help\n")
 		return -1
 	}
 
-	output, err := os.Create(args[1])
+	output, err := os.Create(options["output"])
 	if err != nil {
 		fmt.Printf("ERROR: Unable to open output file: %s\n", err)
 		return -1
 	}
 	defer output.Close()
 
-	// Instantiate a parser for the Vm program
-	parser := vm.NewParser(bytes.NewReader(input))
-	// Parses the input file content and extract an AST (as a 'vm.Module') from it.
-	vmModule, err := parser.Parse()
-	if err != nil {
-		fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
-		os.Exit(-1)
+	// Allocates a 'vm.Program' struct to save all the parsed translation unit
+	// (the .vm files) that will be parsed and lowered independently and then
+	// sent to the codegen phases (that will create a monolithic compiled output).
+	program := vm.Program{}
+
+	// For every file provided by the user we do the following things
+	for _, arg := range args {
+		input, err := os.ReadFile(arg)
+		if err != nil {
+			fmt.Printf("ERROR: Unable to open input file: %s\n", err)
+			return -1
+		}
+
+		// Instantiate a parser for the Vm program
+		parser := vm.NewParser(bytes.NewReader(input))
+		// Parses the input file content and extract an AST (as a 'vm.Module') from it.
+		program[path.Base(arg)], err = parser.Parse()
+		if err != nil {
+			fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
+			os.Exit(-1)
+		}
 	}
 
 	// Instantiate a lowerer to convert the program from Vm to Asm
-	lowerer := vm.NewLowerer([]vm.Module{vmModule})
+	lowerer := vm.NewLowerer(program)
 	// Lowers the vm.Program to an in-memory/IR representation of its Asm counterpart 'asm.Program'.
 	asmProgram, err := lowerer.Lowerer()
 	if err != nil {
