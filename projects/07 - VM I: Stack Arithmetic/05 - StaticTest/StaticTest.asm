@@ -31,7 +31,7 @@ A=M
 M=D
 @SP
 M=M+1
-@test.8
+@StaticTest.vm.8
 D=A
 @R13
 M=D
@@ -41,7 +41,7 @@ D=M
 @R13
 A=M
 M=D
-@test.3
+@StaticTest.vm.3
 D=A
 @R13
 M=D
@@ -51,7 +51,7 @@ D=M
 @R13
 A=M
 M=D
-@test.1
+@StaticTest.vm.1
 D=A
 @R13
 M=D
@@ -61,7 +61,7 @@ D=M
 @R13
 A=M
 M=D
-@test.3
+@StaticTest.vm.3
 D=M
 @R13
 M=D
@@ -72,7 +72,7 @@ A=M
 M=D
 @SP
 M=M+1
-@test.1
+@StaticTest.vm.1
 D=M
 @R13
 M=D
@@ -106,7 +106,7 @@ A=M
 M=D
 @SP
 M=M+1
-@test.8
+@StaticTest.vm.8
 D=M
 @R13
 M=D

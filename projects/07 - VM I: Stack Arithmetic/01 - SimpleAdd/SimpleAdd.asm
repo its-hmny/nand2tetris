@@ -30,9 +30,9 @@ AM=M-1
 D=M
 @R14
 M=D
-@R13
-D=M
 @R14
+D=M
+@R13
 D=D+M
 @R15
 M=D
