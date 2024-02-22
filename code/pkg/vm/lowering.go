@@ -140,15 +140,22 @@ var ArithmeticTable = map[ArithOpType]func(uint) []asm.Instruction{
 // on it. For each operation node visited we produce a list of 'hack.Instruction' as counterpart (either
 // A Instruction, C Instruction or LabelDecl) as well as validating the input before proceeding.
 type Lowerer struct {
-	program         Program
-	labelCounter    uint   // Counter to 'randomize' labels with same name
-	translationUnit string // Keeps track of the .vm file we're lowering at the moment
+	program Program
+
+	// Keeps track of the module (.vm file) we're lowering at the moment
+	// Used to randomize and make unique the static variables during lowering
+	vmModule string
+	// Keeps track of the scope (either global or function) we're lowering at the moment
+	// Used to randomize and make unique the label declaration during lowering
+	vmScope string
+
+	nRandomizer uint // Counter to randomize 'asm.LabelDecl(s)' with same name
 }
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
 // Requires the argument Program to be not nil nor empty.
 func NewLowerer(p Program) Lowerer {
-	return Lowerer{program: p}
+	return Lowerer{program: p, vmScope: "global"}
 }
 
 // Triggers the lowering process. It iterates operation by operation and recursively
@@ -162,7 +169,7 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 	}
 
 	for name, module := range l.program {
-		l.translationUnit = name // Updates the tracker, signaling we're lowering another module
+		l.vmModule = name // Updates the tracker, signaling we're lowering another module
 
 		for _, op := range module {
 			switch tOp := op.(type) {
@@ -175,6 +182,20 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 
 			case ArithmeticOp: // Converts 'vm.ArithmeticOp' to a list of 'asm.Instruction'
 				inst, err := l.HandleArithmeticOp(tOp)
+				if inst == nil || err != nil {
+					return nil, err
+				}
+				program = append(program, inst...)
+
+			case LabelDeclaration: // Converts 'vm.LabelDeclaration' to a list of 'asm.Instruction'
+				inst, err := l.HandleLabelDecl(tOp)
+				if inst == nil || err != nil {
+					return nil, err
+				}
+				program = append(program, inst...)
+
+			case GotoOp: // Converts 'vm.GotoOp' to a list of 'asm.Instruction'
+				inst, err := l.HandleGotoOp(tOp)
 				if inst == nil || err != nil {
 					return nil, err
 				}
@@ -258,7 +279,7 @@ func (l *Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
 
 	if op.Segment == Static {
 		translated = append(translated,
-			asm.AInstruction{Location: fmt.Sprintf("%s.%d", l.translationUnit, op.Offset)},
+			asm.AInstruction{Location: fmt.Sprintf("%s.%d", l.vmModule, op.Offset)},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
@@ -332,7 +353,7 @@ func (l *Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
 
 	if op.Segment == Static {
 		translated = append(translated,
-			asm.AInstruction{Location: fmt.Sprintf("%s.%d", l.translationUnit, op.Offset)},
+			asm.AInstruction{Location: fmt.Sprintf("%s.%d", l.vmModule, op.Offset)},
 			asm.CInstruction{Dest: "D", Comp: "A"},
 			asm.AInstruction{Location: "R13"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
@@ -387,7 +408,7 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 	}
 
 	if op.Operation == Eq || op.Operation == Lt || op.Operation == Gt {
-		l.labelCounter += 1
+		l.nRandomizer += 1
 	}
 
 	// The 'postlude' section takes the value in R15 and push it onto the Stack
@@ -405,5 +426,55 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 		asm.CInstruction{Dest: "M", Comp: "M+1"},
 	}
 
-	return append(append(prelude, arithmetic(l.labelCounter)...), postlude...), nil
+	return append(append(prelude, arithmetic(l.nRandomizer)...), postlude...), nil
+}
+
+// Specialized function to convert a 'vm.LabelDeclaration' node to a list of 'asm.Instruction'.
+func (l *Lowerer) HandleLabelDecl(op LabelDeclaration) ([]asm.Instruction, error) {
+	if op.Name == "" {
+		return nil, fmt.Errorf("unexpected empty label value")
+	}
+	if l.vmScope == "" {
+		return nil, fmt.Errorf("unexpected empty 'vmScope' value")
+	}
+
+	// The vm.LabelDecl is scoped to either the function or the global scope, by appending the
+	// name of the current scope as prefix we 'implement' this scoping in the asm counterpart
+	// that doesn't support this kind of high-level constructs (it has a unified global scope).
+	return []asm.Instruction{asm.LabelDecl{Name: fmt.Sprintf("%s$%s", l.vmScope, op.Name)}}, nil
+}
+
+// Specialized function to convert a 'vm.GotoOp' node to a list of 'asm.Instruction'.
+func (l *Lowerer) HandleGotoOp(op GotoOp) ([]asm.Instruction, error) {
+	if op.Label == "" {
+		return nil, fmt.Errorf("unexpected empty label value")
+	}
+	if l.vmScope == "" {
+		return nil, fmt.Errorf("unexpected empty 'vmScope' value")
+	}
+
+	if op.Jump == Conditional {
+		return []asm.Instruction{
+			// Takes SP, goto its location and decrements it
+			asm.AInstruction{Location: "SP"},
+			asm.CInstruction{Dest: "AM", Comp: "M-1"},
+			// Saves on D the M reg value for later
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Loads the jump location, since labels are scoped in VM language we also 'randomize' it.
+			asm.AInstruction{Location: fmt.Sprintf("%s$%s", l.vmScope, op.Label)},
+			// Makes the jump if D reg contains a 'truthy' value (different from 0)
+			asm.CInstruction{Comp: "D", Jump: "JGT"},
+		}, nil
+	}
+
+	if op.Jump == Unconditional {
+		return []asm.Instruction{
+			// Loads the jump location, since labels are scoped in VM language we also 'randomize' it.
+			asm.AInstruction{Location: fmt.Sprintf("%s$%s", l.vmScope, op.Label)},
+			// Makes the jump always (unconditionally)
+			asm.CInstruction{Comp: "0", Jump: "JMP"},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("unrecognized jump type, got %s", op.Jump)
 }
