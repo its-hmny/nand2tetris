@@ -58,4 +58,20 @@ func TestVMTranslator(t *testing.T) {
 		tester := fmt.Sprintf("%s/%s", base, "StaticTest.tst")
 		test(input, output, tester)
 	})
+
+	t.Run("BasicLoop.vm", func(t *testing.T) {
+		base := "../../../projects/08 - VM II: Program Flow/01 - BasicLoop"
+		input := fmt.Sprintf("%s/%s", base, "BasicLoop.vm")
+		output := fmt.Sprintf("%s/%s", base, "BasicLoop.asm")
+		tester := fmt.Sprintf("%s/%s", base, "BasicLoop.tst")
+		test(input, output, tester)
+	})
+
+	t.Run("FibonacciSeries.vm", func(t *testing.T) {
+		base := "../../../projects/08 - VM II: Program Flow/02 - FibonacciSeries"
+		input := fmt.Sprintf("%s/%s", base, "FibonacciSeries.vm")
+		output := fmt.Sprintf("%s/%s", base, "FibonacciSeries.asm")
+		tester := fmt.Sprintf("%s/%s", base, "FibonacciSeries.tst")
+		test(input, output, tester)
+	})
 }
