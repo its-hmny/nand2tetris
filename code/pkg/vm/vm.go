@@ -82,3 +82,32 @@ const (
 	And ArithOpType = "and"
 	Or  ArithOpType = "or"
 )
+
+// ----------------------------------------------------------------------------
+// Label Declaration
+
+// In memory representation of a Label declaration for the VM language.
+//
+// In the VM intermediate language is possible to define a function scoped label that can be used to
+// make both conditional and unconditional jump allowing the user to implement looping and conditional.
+// Is important to note that the label is available only from within the function that declares it.
+type LabelDeclaration struct{ Name string }
+
+// ----------------------------------------------------------------------------
+// Goto Op
+
+// In memory representation of a Goto operation for the VM language.
+//
+// In the VM intermediate language is possible to do conditional and unconditional jumps that can be used
+// to make both conditional and unconditional jump allowing the user to implement looping and conditional.
+type GotoOp struct {
+	Label string   // The label (memory reference) where we should jump
+	Jump  JumpType // The type of jump (conditional or unconditional)
+}
+
+type JumpType string // Enum to manage the operation allowed for an ArithmeticOp
+
+const (
+	Conditional   = "if-goto"
+	Unconditional = "goto"
+)

@@ -32,10 +32,10 @@ var (
 	pComment = ast.And("comment", nil, pc.Atom("//", "//"), pc.Token(`(?m).*$`, "COMMENT"))
 	// Parser combinator for a generic VM operation (MemoryOp, ArithmeticOp, ...)
 	pOperation = ast.OrdChoice("operation", nil,
-		// Stack operation and label/function declaration
-		pMemoryOp, pArithmeticOp, pLabelDecl, pFuncDecl,
-		// Jump operation of multiple sorts
-		pReturnOp, pFunCallOp, pUncondJumpOp, pCondJumpOp,
+		// Stack operation + label and jump operations
+		pMemoryOp, pArithmeticOp, pLabelDecl, pGotoOp,
+		// Function related operations and statements
+		pFuncDecl, pFunCallOp, pReturnOp,
 	)
 
 	// Memory operation, compliant with the following syntax: "{push|pop} {segment} {index}"
@@ -44,24 +44,23 @@ var (
 	pArithmeticOp = ast.And("arithmetic_op", nil, pArithOpType)
 
 	// Label declaration, compliant with the following syntax: "label {symbol}"s
-	pLabelDecl = ast.And("label_decl", nil, pc.Atom("label", "LABEL"), pLabel)
+	pLabelDecl = ast.And("label_decl", nil, pc.Atom("label", "LABEL"), pIdent)
+	// Jump operation, compliant with the following syntax: "{if-goto|goto} {symbol}"
+	pGotoOp = ast.And("goto_op", nil, pJumpType, pIdent)
+
 	// Function declaration, compliant with the following syntax: "function {name} {n_args}"
-	pFuncDecl = ast.And("func_decl", nil, pc.Atom("function", "FUNC"), pFuncName, pc.Int())
-
-	// Unconditional jump operation, compliant with the following syntax: "goto {symbol}"
-	pUncondJumpOp = ast.And("goto_op", nil, pc.Atom("goto", "GOTO"), pLabel)
-	// Conditional jump operation, compliant with the following syntax: "if goto {symbol}"
-	pCondJumpOp = ast.And("if-goto_op", nil, pc.Atom("if-goto", "IF-GOTO"), pLabel)
-
+	pFuncDecl = ast.And("func_decl", nil, pc.Atom("function", "FUNC"), pIdent, pc.Int())
+	// Function call operation, compliant with the following syntax: "call {name} {n_args}"
+	pFunCallOp = ast.And("func_call", nil, pc.Atom("call", "CALL"), pIdent, pc.Int())
 	// Return operation, compliant with the following syntax: "return"
 	pReturnOp = ast.And("returns", nil, pc.Atom("return", "RETURN"))
-	// Function calling operation, compliant with the following syntax: "call {name} {n_args}"
-	pFunCallOp = ast.And("func_call", nil, pc.Atom("call", "CALL"), pFuncName, pc.Int())
 )
 
 var (
-	pLabel    = pc.Ident() // Label names follow the same pattern as identifiers in other languages
-	pFuncName = pc.Ident() // Function names follow the same pattern as identifiers in other languages
+	// Generic Identifier parser (for label and function declaration)
+	// NOTE: An ident can be any sequence of letters, digits, and symbols (_, ., $, :).
+	// NOTE: An ident cannot begin with a leading digit (a symbol is indeed allowed).
+	pIdent = pc.Token(`[A-Za-z_.$:][0-9a-zA-Z_.$:]*`, "IDENT")
 
 	// Available memory operation type (only push and pop since it's stack based)
 	pMemOpType = ast.OrdChoice("mem_op_type", nil, pc.Atom("push", "PUSH"), pc.Atom("pop", "POP"))
@@ -82,6 +81,9 @@ var (
 		// Bit-a-bit operations available on the VM bytecode
 		pc.Atom("not", "NOT"), pc.Atom("and", "AND"), pc.Atom("or", "OR"),
 	)
+
+	// Jump types can either be conditional (if-goto) or unconditional (goto).
+	pJumpType = ast.OrdChoice("jump_type", nil, pc.Atom("goto", "GOTO"), pc.Atom("if-goto", "IF-GOTO"))
 )
 
 // ----------------------------------------------------------------------------
@@ -173,6 +175,20 @@ func (p *Parser) FromAST(root pc.Queryable) (Module, error) {
 			}
 			module = append(module, op)
 
+		case "label_decl": // Label declaration subtree, appends 'vm.LabelDeclaration' to 'modules'
+			op, err := p.HandleLabelDecl(child)
+			if op == nil || err != nil {
+				return nil, err
+			}
+			module = append(module, op)
+
+		case "goto_op": // Goto operation subtree, appends 'vm.GotoOp' to 'modules'
+			op, err := p.HandleGotoOp(child)
+			if op == nil || err != nil {
+				return nil, err
+			}
+			module = append(module, op)
+
 		case "comment": // Comment nodes in the AST are just skipped
 			continue
 
@@ -213,4 +229,31 @@ func (Parser) HandleArithmeticOp(node pc.Queryable) (Operation, error) {
 	}
 
 	return ArithmeticOp{Operation: ArithOpType(node.GetChildren()[0].GetValue())}, nil
+}
+
+// Specialized function to convert a "label_decl" node to a 'vm.LabelDeclaration'.
+func (Parser) HandleLabelDecl(node pc.Queryable) (Operation, error) {
+	if node.GetName() != "label_decl" {
+		log.Fatalf("expected node 'label_decl', got %s ", node.GetName())
+	}
+	if len(node.GetChildren()) != 2 {
+		log.Fatalf("expected node 'label_decl' with 2 leaf, got %d", len(node.GetChildren()))
+	}
+
+	return LabelDeclaration{Name: node.GetChildren()[1].GetValue()}, nil
+}
+
+// Specialized function to convert a "goto_op" node to a 'vm.GotoOp'.
+func (Parser) HandleGotoOp(node pc.Queryable) (Operation, error) {
+	if node.GetName() != "goto_op" {
+		log.Fatalf("expected node 'goto_op', got %s ", node.GetName())
+	}
+	if len(node.GetChildren()) != 2 {
+		log.Fatalf("expected node 'goto_op' with 2 leaf, got %d", len(node.GetChildren()))
+	}
+
+	jump := JumpType(node.GetChildren()[0].GetValue())
+	label := node.GetChildren()[1].GetValue()
+
+	return GotoOp{Jump: jump, Label: label}, nil
 }
