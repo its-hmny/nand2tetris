@@ -53,7 +53,7 @@ var (
 	// Function call operation, compliant with the following syntax: "call {name} {n_args}"
 	pFunCallOp = ast.And("func_call", nil, pc.Atom("call", "CALL"), pIdent, pc.Int())
 	// Return operation, compliant with the following syntax: "return"
-	pReturnOp = ast.And("returns", nil, pc.Atom("return", "RETURN"))
+	pReturnOp = ast.And("return_op", nil, pc.Atom("return", "RETURN"))
 )
 
 var (
@@ -189,6 +189,27 @@ func (p *Parser) FromAST(root pc.Queryable) (Module, error) {
 			}
 			module = append(module, op)
 
+		case "func_decl": // Function declaration subtree, appends 'vm.FuncDecl' to 'modules'
+			op, err := p.HandleFuncDecl(child)
+			if op == nil || err != nil {
+				return nil, err
+			}
+			module = append(module, op)
+
+		case "return_op": // Return operation subtree, appends 'vm.ReturnOp' to 'modules'
+			op, err := p.HandleReturnOp(child)
+			if op == nil || err != nil {
+				return nil, err
+			}
+			module = append(module, op)
+
+		case "func_call": // Function call operation subtree, appends 'vm.FuncCallOp' to 'modules'
+			op, err := p.HandleFuncCall(child)
+			if op == nil || err != nil {
+				return nil, err
+			}
+			module = append(module, op)
+
 		case "comment": // Comment nodes in the AST are just skipped
 			continue
 
@@ -256,4 +277,52 @@ func (Parser) HandleGotoOp(node pc.Queryable) (Operation, error) {
 	label := node.GetChildren()[1].GetValue()
 
 	return GotoOp{Jump: jump, Label: label}, nil
+}
+
+// Specialized function to convert a "func_decl" node to a 'vm.FuncDecl'.
+func (Parser) HandleFuncDecl(node pc.Queryable) (Operation, error) {
+	if node.GetName() != "func_decl" {
+		log.Fatalf("expected node 'func_decl', got %s ", node.GetName())
+	}
+	if len(node.GetChildren()) != 3 {
+		log.Fatalf("expected node 'func_decl' with 3 leaf, got %d", len(node.GetChildren()))
+	}
+
+	name := node.GetChildren()[1].GetValue()
+	args, err := strconv.ParseUint(node.GetChildren()[2].GetValue(), 10, 8)
+	if err != nil {
+		log.Fatalf("failed to parse 'args' in FuncDecl, got '%s'", node.GetChildren()[2].GetValue())
+	}
+
+	return FuncDecl{Name: name, ArgsNum: uint8(args)}, nil
+}
+
+// Specialized function to convert a "return_op" node to a 'vm.ReturnOp'.
+func (Parser) HandleReturnOp(node pc.Queryable) (Operation, error) {
+	if node.GetName() != "return_op" {
+		log.Fatalf("expected node 'return_op', got %s ", node.GetName())
+	}
+	if len(node.GetChildren()) != 1 {
+		log.Fatalf("expected node 'return_op' with 1 leaf, got %d", len(node.GetChildren()))
+	}
+
+	return ReturnOp{}, nil
+}
+
+// Specialized function to convert a "func_call" node to a 'vm.FuncCallOp'.
+func (Parser) HandleFuncCall(node pc.Queryable) (Operation, error) {
+	if node.GetName() != "func_call" {
+		log.Fatalf("expected node 'func_call', got %s ", node.GetName())
+	}
+	if len(node.GetChildren()) != 3 {
+		log.Fatalf("expected node 'func_call' with 3 leaf, got %d", len(node.GetChildren()))
+	}
+
+	name := node.GetChildren()[1].GetValue()
+	args, err := strconv.ParseUint(node.GetChildren()[2].GetValue(), 10, 8)
+	if err != nil {
+		log.Fatalf("failed to parse 'args' in FuncCallOp, got '%s'", node.GetChildren()[2].GetValue())
+	}
+
+	return FuncCallOp{Name: name, ArgsNum: uint8(args)}, nil
 }

@@ -111,3 +111,38 @@ const (
 	Conditional   = "if-goto"
 	Unconditional = "goto"
 )
+
+// ----------------------------------------------------------------------------
+// Function Declaration
+
+// In memory representation of a Function declaration for the VM language.
+//
+// In the VM intermediate language is possible to define custom functions to reuse logic across the
+// VM program since function are globally defined and unique. Every function has its own cardinality
+// which basically means that it expects a predefined number of arguments as inputs before executing.
+type FuncDecl struct {
+	Name    string // The function name/identifier
+	ArgsNum uint8  // How many arguments does the function expect (the cardinality)
+}
+
+// ----------------------------------------------------------------------------
+// Return Op
+
+// In memory representation of a Return operation for the VM language.
+//
+// In the VM intermediate language is possible to return early or at the end of the function
+// execution with (optionally) the output of the computation (that has to be on the stack top).
+type ReturnOp struct{}
+
+// ----------------------------------------------------------------------------
+// Function Call Op
+
+// In memory representation of a Function Call operation for the VM language.
+//
+// In the VM intermediate language is possible to call a custom defined function by referencing its name
+// (also identifier) and indicate how many arguments we are providing on the stack top. The movements of
+// the arguments from their location to the stack top as to be done before the call operation.
+type FuncCallOp struct {
+	Name    string // The function name/identifier
+	ArgsNum uint8  // How many arguments we have provided on the frame
+}
