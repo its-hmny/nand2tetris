@@ -208,6 +208,13 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 				}
 				program = append(program, inst...)
 
+			case ReturnOp: // Converts 'vm.ReturnOp' to a list of 'asm.Instruction'
+				inst, err := l.HandleReturnOp(tOp)
+				if inst == nil || err != nil {
+					return nil, err
+				}
+				program = append(program, inst...)
+
 			default: // Error case, unrecognized operation type
 				return nil, fmt.Errorf("unrecognized operation '%T'", tOp)
 			}
@@ -493,14 +500,14 @@ func (l *Lowerer) HandleFuncDecl(op FuncDecl) ([]asm.Instruction, error) {
 	}
 
 	// Allocates first the label that will represent the entrypoint of the function
-	translated := []asm.Instruction{asm.LabelDecl{Name: op.Name}}
+	prelude := []asm.Instruction{asm.LabelDecl{Name: op.Name}}
 
 	// Wipes clean the 'local' segment section with zeroes (just enough as indicated by the FuncDecl)
 	for offset := range op.ArgsNum {
-		translated = append(translated,
+		prelude = append(prelude,
 			// Takes the LCL pointer location for the 'local' segment
 			asm.AInstruction{Location: "LCL"},
-			asm.CInstruction{Dest: "D", Comp: "A"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
 			// Adds the offset and goto to the pointed location
 			asm.AInstruction{Location: fmt.Sprint(offset)},
 			asm.CInstruction{Dest: "A", Comp: "D+A"},
@@ -508,5 +515,65 @@ func (l *Lowerer) HandleFuncDecl(op FuncDecl) ([]asm.Instruction, error) {
 			asm.CInstruction{Dest: "M", Comp: "0"})
 	}
 
-	return translated, nil
+	return prelude, nil
+}
+
+// Specialized function to convert a 'vm.ReturnOp' node to a list of 'asm.Instruction'.
+func (l *Lowerer) HandleReturnOp(op ReturnOp) ([]asm.Instruction, error) {
+	postlude := []asm.Instruction{
+		// ? FRAME = LCL
+		asm.AInstruction{Location: "LCL"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		// On R13 we keep the temporary frame pointer (on the book named as FRAME)
+		asm.AInstruction{Location: "R13"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		// ? RET = *(FRAME-5)
+		asm.AInstruction{Location: "5"},
+		asm.CInstruction{Dest: "A", Comp: "D-A"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		// On R14 we keep the temporary return address (on the book named as RET)
+		asm.AInstruction{Location: "R14"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		// ? *ARG = pop()
+		asm.AInstruction{Location: "ARG"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		// Saves on D on for usage by the next instruction
+		asm.AInstruction{Location: "R13"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		// Takes SP and goto its location
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "AM", Comp: "M-1"},
+		// Saves on D the M reg value, then copies it on R13 (for persistence)
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		asm.AInstruction{Location: "R13"},
+		asm.CInstruction{Dest: "A", Comp: "M"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		// ? SP = ARG+1
+		// ARG[0] will coincide with the top of the stack (also SP will point here).
+		asm.AInstruction{Location: "ARG"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "D+1"},
+	}
+
+	// ? THAT = *(FRAME-1), THIS = *(FRAME-2), ARG = *(FRAME-3), LCL = *(FRAME-4)
+	for offset, segment := range []string{"THAT", "THIS", "ARG", "LCL"} {
+		postlude = append(postlude,
+			asm.AInstruction{Location: "LCL"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: fmt.Sprint(offset + 1)},
+			asm.CInstruction{Dest: "A", Comp: "D-A"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: segment},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		)
+	}
+
+	postlude = append(postlude,
+		// ? goto RET
+		asm.AInstruction{Location: "R14"},
+		asm.CInstruction{Comp: "0", Jump: "JMP"},
+	)
+
+	return postlude, nil
 }
