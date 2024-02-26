@@ -201,6 +201,13 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 				}
 				program = append(program, inst...)
 
+			case FuncDecl: // Converts 'vm.FuncDecl' to a list of 'asm.Instruction'
+				inst, err := l.HandleFuncDecl(tOp)
+				if inst == nil || err != nil {
+					return nil, err
+				}
+				program = append(program, inst...)
+
 			default: // Error case, unrecognized operation type
 				return nil, fmt.Errorf("unrecognized operation '%T'", tOp)
 			}
@@ -477,4 +484,29 @@ func (l *Lowerer) HandleGotoOp(op GotoOp) ([]asm.Instruction, error) {
 	}
 
 	return nil, fmt.Errorf("unrecognized jump type, got %s", op.Jump)
+}
+
+// Specialized function to convert a 'vm.FuncDecl' node to a list of 'asm.Instruction'.
+func (l *Lowerer) HandleFuncDecl(op FuncDecl) ([]asm.Instruction, error) {
+	if op.Name == "" {
+		return nil, fmt.Errorf("unexpected empty 'FuncDecl.Name' value")
+	}
+
+	// Allocates first the label that will represent the entrypoint of the function
+	translated := []asm.Instruction{asm.LabelDecl{Name: op.Name}}
+
+	// Wipes clean the 'local' segment section with zeroes (just enough as indicated by the FuncDecl)
+	for offset := range op.ArgsNum {
+		translated = append(translated,
+			// Takes the LCL pointer location for the 'local' segment
+			asm.AInstruction{Location: "LCL"},
+			asm.CInstruction{Dest: "D", Comp: "A"},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
+			// Saves at that location the zero (wiping out the memory)
+			asm.CInstruction{Dest: "M", Comp: "0"})
+	}
+
+	return translated, nil
 }
