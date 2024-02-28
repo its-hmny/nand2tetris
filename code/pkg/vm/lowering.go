@@ -6,13 +6,6 @@ import (
 	"its-hmny.dev/nand2tetris/pkg/asm"
 )
 
-var SegmentTable = map[SegmentType]string{
-	// Stack Segment mapped to their own 'asm' labels
-	Local: "LCL", Argument: "ARG", This: "THIS", That: "THAT",
-	// Stack Segment mapped to static raw location in 'asm'
-	Pointer: "3", Temp: "5",
-}
-
 // ----------------------------------------------------------------------------
 // Translation tables
 
@@ -610,48 +603,51 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 }
 
 // Specialized function to convert a 'vm.LabelDeclaration' node to a list of 'asm.Instruction'.
+// Manages the 'scoping' of the labels (a label is reachable only from within its declaration scope)
+// during the lowering to the asm counterpart by prepending the label with the scope name.
 func (l *Lowerer) HandleLabelDecl(op LabelDeclaration) ([]asm.Instruction, error) {
-	if op.Name == "" {
+	if op.Name == "" { // Invariant: the label name should always be provided
 		return nil, fmt.Errorf("unexpected empty label value")
 	}
-	if l.vmScope == "" {
+	if l.vmScope == "" { // Invariant: the scope name should always be provided
 		return nil, fmt.Errorf("unexpected empty 'vmScope' value")
 	}
 
-	// The vm.LabelDecl is scoped to either the function or the global scope, by appending the
-	// name of the current scope as prefix we 'implement' this scoping in the asm counterpart
-	// that doesn't support this kind of high-level constructs (it has a unified global scope).
+	// The vm.LabelDecl is scoped to either the function or the global scope, by appending the name
+	// of the current scope as prefix we 'implement' this scoping in the asm counterpart that doesn't
+	// support this kind of high-level constructs (as it has a unified global scope/namespace).
 	return []asm.Instruction{asm.LabelDecl{Name: fmt.Sprintf("%s$%s", l.vmScope, op.Name)}}, nil
 }
 
 // Specialized function to convert a 'vm.GotoOp' node to a list of 'asm.Instruction'.
+// Manages the 'scoping' of the labels (a label is reachable only from within its declaration scope)
+// during the lowering to the asm counterpart by prepending the label with the scope name.
 func (l *Lowerer) HandleGotoOp(op GotoOp) ([]asm.Instruction, error) {
-	if op.Label == "" {
+	if op.Label == "" { // Invariant: the label name should always be provided
 		return nil, fmt.Errorf("unexpected empty label value")
 	}
-	if l.vmScope == "" {
+	if l.vmScope == "" { // Invariant: the scope name should always be provided
 		return nil, fmt.Errorf("unexpected empty 'vmScope' value")
 	}
 
 	if op.Jump == Conditional {
 		return []asm.Instruction{
-			// Takes SP, goto its location and decrements it
+			// Decrements the SP and goto the pointed location
 			asm.AInstruction{Location: "SP"},
 			asm.CInstruction{Dest: "AM", Comp: "M-1"},
-			// Saves on D the M reg value for later
 			asm.CInstruction{Dest: "D", Comp: "M"},
-			// Loads the jump location, since labels are scoped in VM language we also 'randomize' it.
+			// Loads the jump location, 'scoping' the label/destination.
 			asm.AInstruction{Location: fmt.Sprintf("%s$%s", l.vmScope, op.Label)},
-			// Makes the jump if D reg contains a 'truthy' value (different from 0)
+			// Makes the jump if D reg contains a 'truthy' value (!= 0)
 			asm.CInstruction{Comp: "D", Jump: "JGT"},
 		}, nil
 	}
 
 	if op.Jump == Unconditional {
 		return []asm.Instruction{
-			// Loads the jump location, since labels are scoped in VM language we also 'randomize' it.
+			// Loads the jump location, 'scoping' the label/destination.
 			asm.AInstruction{Location: fmt.Sprintf("%s$%s", l.vmScope, op.Label)},
-			// Makes the jump always (unconditionally)
+			// Makes the unconditional jump (always jumps)
 			asm.CInstruction{Comp: "0", Jump: "JMP"},
 		}, nil
 	}
