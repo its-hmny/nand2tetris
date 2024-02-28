@@ -13,6 +13,252 @@ var SegmentTable = map[SegmentType]string{
 	Pointer: "3", Temp: "5",
 }
 
+// ----------------------------------------------------------------------------
+// Translation tables
+
+// This section contains the translation tables, cornerstone of the lowering phase.
+//
+// This table provides a simple yet effective way to map every memory and arithmetic operations,
+// that both supports respectively memory segment and arithmetic intrinsics.
+// Notably, we have a the following tables defined:
+//   - 'PushTable': Specifies how to translate Push MemoryOp to their (segment specific) asm code
+//   - 'PopTable': Specifies how to translate Pop MemoryOp to their (segment specific) asm code
+//   - 'ArithmeticTable': Specifies how to all the arithmetic operation to their asm code
+
+// The 'PushTable' as the name suggests allows to map a memory push operation for a specific segment
+// to their asm counterpart, the convention here is that the value is taken from the memory location
+// and saves it on the 'well-known' R13 register (reserved for internal usage) so that it can be
+// pushed on the stack by a shared and reusable piece of codegen.
+var PushTable = map[SegmentType]func(uint, string) []asm.Instruction{
+	// Direct access segment, go to the raw location and uses the A reg as value
+	Constant: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Loads the raw memory location using direct access
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "D", Comp: "A"},
+			// Copies teh value on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Indirect access segment, takes the pointer + offset and saves the value
+	Local: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the base pointer for the segment
+			asm.AInstruction{Location: "LCL"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
+			// Copies teh value on R13 (for persistence)
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Indirect access segment, takes the pointer + offset and saves the value
+	Argument: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the base pointer for the segment
+			asm.AInstruction{Location: "ARG"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
+			// Copies teh value on R13 (for persistence)
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Indirect access segment, takes the pointer + offset and saves the value
+	This: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the base pointer for the segment
+			asm.AInstruction{Location: "THIS"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
+			// Copies teh value on R13 (for persistence)
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Indirect access segment, takes the pointer + offset and saves the value
+	That: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the base pointer for the segment
+			asm.AInstruction{Location: "THAT"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
+			// Copies teh value on R13 (for persistence)
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Direct access segment, takes the raw location + offset and saves the value
+	Pointer: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the raw memory location for the segment
+			asm.AInstruction{Location: "3"},
+			asm.CInstruction{Dest: "D", Comp: "A"},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Copies teh value on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Direct access segment, takes the raw location + offset and saves the value
+	Temp: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the raw mapped location for the segment
+			asm.AInstruction{Location: "5"},
+			asm.CInstruction{Dest: "D", Comp: "A"},
+			// Adds the offset and goto to the pointed location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "A", Comp: "D+A"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Copies teh value on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Static access segment, declares a unique variable shared across the vm.Module
+	Static: func(offset uint, module string) []asm.Instruction {
+		return []asm.Instruction{
+			asm.AInstruction{Location: fmt.Sprintf("%s.%d", module, offset)},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+}
+
+// The 'PopTable' as the name suggests allows to map a memory pop operation for a specific segment
+// to their asm counterpart, the convention here is that the memory location where we have to write
+// the value on the top of the stack pointer, this location is saved on the 'well-known' R13 register
+// (reserved for internal usage) so that it can be written by a reusable piece of codegen.
+var PopTable = map[SegmentType]func(uint, string) []asm.Instruction{
+	// Indirect access segment, takes the pointer + offset and saves it
+	Local: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the base pointer for the segment
+			asm.AInstruction{Location: "LCL"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Adds the offset and saves the location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "D", Comp: "D+A"},
+			// Saves it on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Indirect access segment, takes the pointer + offset and saves it
+	Argument: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the base pointer for the segment
+			asm.AInstruction{Location: "ARG"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Adds the offset and saves the location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "D", Comp: "D+A"},
+			// Saves it on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Indirect access segment, takes the pointer + offset and saves it
+	This: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the base pointer for the segment
+			asm.AInstruction{Location: "THIS"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Adds the offset and saves the location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "D", Comp: "D+A"},
+			// Saves it on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Indirect access segment, takes the pointer + offset and saves it
+	That: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the base pointer for the segment
+			asm.AInstruction{Location: "THAT"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Adds the offset and saves the location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "D", Comp: "D+A"},
+			// Saves it on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Direct access segment, takes the raw location + offset and saves it
+	Pointer: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the raw location for the segment
+			asm.AInstruction{Location: "3"},
+			asm.CInstruction{Dest: "D", Comp: "A"},
+			// Adds the offset and saves the location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "D", Comp: "D+A"},
+			// Saves it on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Direct access segment, takes the raw location + offset and saves it
+	Temp: func(offset uint, _ string) []asm.Instruction {
+		return []asm.Instruction{
+			// Takes the raw location for the segment
+			asm.AInstruction{Location: "5"},
+			asm.CInstruction{Dest: "D", Comp: "A"},
+			// Adds the offset and saves the location
+			asm.AInstruction{Location: fmt.Sprint(offset)},
+			asm.CInstruction{Dest: "D", Comp: "D+A"},
+			// Saves it on R13 (for persistence)
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+
+	// Static access segment, declares a unique variable shared across the vm.Module
+	Static: func(offset uint, module string) []asm.Instruction {
+		return []asm.Instruction{
+			asm.AInstruction{Location: fmt.Sprintf("%s.%d", module, offset)},
+			asm.CInstruction{Dest: "D", Comp: "A"},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		}
+	},
+}
+
+// The 'ArithmeticTable' as the name suggests allows to map an arithmetic operation to a a set of
+// specific asm instructions counterparts. The convention here is that the two operands are provided
+// and saved respectively on the R13 and R14 registers while the result is saved in R15 (all of them
+// reserved for internal usage) so that the remaining parts of the computation are op independent.
 var ArithmeticTable = map[ArithOpType]func(uint) []asm.Instruction{
 	// Mappers to []asm.Instruction for the comparison operations in VM language (eq, gt, lt)
 	Eq: func(counter uint) []asm.Instruction {
@@ -158,8 +404,8 @@ func NewLowerer(p Program) Lowerer {
 	return Lowerer{program: p, vmScope: "global"}
 }
 
-// Triggers the lowering process. It iterates operation by operation and recursively
-// calls the specified helper function based on the operation type (much like a recursive
+// Triggers the lowering process. It iterates operation by operation and recursively calls
+// the specified helper function based on the operation type (much like a recursive
 // descend parser but for lowering), this means the AST is visited in DFS order.
 func (l *Lowerer) Lowerer() (asm.Program, error) {
 	program := []asm.Instruction{}
@@ -225,169 +471,61 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 }
 
 // Specialized function to convert a 'vm.MemoryOp' node to a list of 'asm.Instruction'.
+// Acts as a sort of 'dispatcher' between the Push and Pop OperationTypes that have
+// really divergent underlying implementations (and asm counterparts),
 func (l *Lowerer) HandleMemoryOp(op MemoryOp) ([]asm.Instruction, error) {
 	switch op.Operation {
 	case Pop:
-		return l.HandlePopOp(op)
+		// Can't pop data onto the 'Constant' segment (is readonly of course)
+		if op.Segment == Constant {
+			return nil, fmt.Errorf("cannot push on read-only segment 'constant'")
+		}
+
+		// Retrieves the specific lowerer implementation based on the op.Segment
+		generator, found := PopTable[op.Segment]
+		if !found {
+			return nil, fmt.Errorf("cannot find entry '%s' in lowering table", op.Segment)
+		}
+
+		// This is the set of operations that is common to every pop on the stack.
+		// We save on the D register the value to be stored on the heap and proceed based on the specific segment.
+		return append(generator(uint(op.Offset), l.vmModule),
+			// Takes SP and goto its location
+			asm.AInstruction{Location: "SP"},
+			asm.CInstruction{Dest: "AM", Comp: "M-1"},
+			// Saves on D the M reg value, then copies it on R13 (for persistence)
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "A", Comp: "M"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+		), nil
+
 	case Push:
-		return l.HandlePushOp(op)
+		// Retrieves the specific lowerer implementation based on the op.Segment
+		generator, found := PushTable[op.Segment]
+		if !found {
+			return nil, fmt.Errorf("cannot find entry '%s' in lowering table", op.Segment)
+		}
+
+		// This is the set of operations that is common to every push on the stack.
+		// We expect that on the D register will have the value to push and proceed accordingly.
+		return append(generator(uint(op.Offset), l.vmModule),
+			// Takes out the value from R13 and saves onto the D reg
+			asm.AInstruction{Location: "R13"},
+			asm.CInstruction{Dest: "D", Comp: "M"},
+			// Takes SP and goto it location,
+			asm.AInstruction{Location: "SP"},
+			asm.CInstruction{Dest: "A", Comp: "M"},
+			// Saves on M the D result
+			asm.CInstruction{Dest: "M", Comp: "D"},
+			// Increments SP to new memory location
+			asm.AInstruction{Location: "SP"},
+			asm.CInstruction{Dest: "M", Comp: "M+1"},
+		), nil
+
 	default:
 		return nil, fmt.Errorf("unrecognized MemoryOp instruction %s", op.Operation)
 	}
-}
-
-// Specialized function to convert a 'vm.MemoryOp' (subtype Push) node to a list of 'asm.Instruction'.
-func (l *Lowerer) HandlePushOp(op MemoryOp) ([]asm.Instruction, error) {
-	translated := []asm.Instruction{} // Accumulator of the translated instructions
-
-	if op.Segment == Constant {
-		translated = append(translated,
-			// Takes the raw location with the A Instruction, saves A reg on D reg
-			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			// Saves on D the M reg value, then copies it on R13 (for persistence)
-			asm.CInstruction{Dest: "D", Comp: "A"},
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D"},
-		)
-	}
-
-	if op.Segment == Local || op.Segment == Argument || op.Segment == This || op.Segment == That {
-		label, found := SegmentTable[op.Segment]
-		if !found {
-			return nil, fmt.Errorf("could not map %s to Asm label", op.Segment)
-		}
-
-		translated = append(translated,
-			// Takes the base pointer for the requested segment
-			asm.AInstruction{Location: label},
-			asm.CInstruction{Dest: "D", Comp: "M"},
-			// Adds the offset and goto to the pointed location
-			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			asm.CInstruction{Dest: "A", Comp: "D+A"},
-			// Saves on D the M reg value, then copies it on R13 (for persistence)
-			asm.CInstruction{Dest: "D", Comp: "M"},
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D"},
-		)
-	}
-
-	if op.Segment == Pointer || op.Segment == Temp {
-		label, found := SegmentTable[op.Segment]
-		if !found {
-			return nil, fmt.Errorf("could not map %s to Asm label", op.Segment)
-		}
-
-		translated = append(translated,
-			// Takes the raw mapped location for the requested segment
-			asm.AInstruction{Location: label},
-			asm.CInstruction{Dest: "D", Comp: "A"},
-			// Adds the offset and goto to the pointed location
-			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			asm.CInstruction{Dest: "A", Comp: "D+A"},
-			// Saves on D the M reg value, then copies it on R13 (for persistence)
-			asm.CInstruction{Dest: "D", Comp: "M"},
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D"},
-		)
-	}
-
-	if op.Segment == Static {
-		translated = append(translated,
-			asm.AInstruction{Location: fmt.Sprintf("%s.%d", l.vmModule, op.Offset)},
-			asm.CInstruction{Dest: "D", Comp: "M"},
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D"},
-		)
-	}
-
-	// This is the set of operations that is common to every push on the stack.
-	// We expect that on the D register will have the value to push and proceed accordingly.
-	translated = append(translated,
-		// Takes out the value from R13 and saves onto the D reg
-		asm.AInstruction{Location: "R13"},
-		asm.CInstruction{Dest: "D", Comp: "M"},
-		// Takes SP and goto it location,
-		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "A", Comp: "M"},
-		// Saves on M the D result
-		asm.CInstruction{Dest: "M", Comp: "D"},
-		// Increments SP to new memory location
-		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "M", Comp: "M+1"},
-	)
-
-	return translated, nil
-}
-
-// Specialized function to convert a 'vm.MemoryOp' (subtype Pop) node to a list of 'asm.Instruction'.
-func (l *Lowerer) HandlePopOp(op MemoryOp) ([]asm.Instruction, error) {
-	translated := []asm.Instruction{}
-
-	if op.Segment == Constant {
-		return nil, fmt.Errorf("cannot push on read-only segment 'constant'")
-	}
-
-	if op.Segment == Local || op.Segment == Argument || op.Segment == This || op.Segment == That {
-		label, found := SegmentTable[op.Segment]
-		if !found {
-			return nil, fmt.Errorf("could not map %s to Asm instructions", op.Segment)
-		}
-
-		translated = append(translated,
-			// Takes the base pointer for the requested segment
-			asm.AInstruction{Location: label},
-			asm.CInstruction{Dest: "D", Comp: "M"},
-			// Adds the offset and goto to the pointed location
-			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			asm.CInstruction{Dest: "D", Comp: "D+A"},
-			// Saves on D on for usage by the next instruction
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D"},
-		)
-	}
-
-	if op.Segment == Pointer || op.Segment == Temp {
-		label, found := SegmentTable[op.Segment]
-		if !found {
-			return nil, fmt.Errorf("could not map %s to Asm instructions", op.Segment)
-		}
-
-		translated = append(translated,
-			// Takes the base pointer for the requested segment
-			asm.AInstruction{Location: label},
-			asm.CInstruction{Dest: "D", Comp: "A"},
-			// Adds the offset and goto to the pointed location
-			asm.AInstruction{Location: fmt.Sprint(op.Offset)},
-			asm.CInstruction{Dest: "D", Comp: "D+A"},
-			// Saves on D on for usage by the next instruction
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D"},
-		)
-	}
-
-	if op.Segment == Static {
-		translated = append(translated,
-			asm.AInstruction{Location: fmt.Sprintf("%s.%d", l.vmModule, op.Offset)},
-			asm.CInstruction{Dest: "D", Comp: "A"},
-			asm.AInstruction{Location: "R13"},
-			asm.CInstruction{Dest: "M", Comp: "D"},
-		)
-	}
-
-	// This is the set of operations that is common to every pop on the stack.
-	// We save on the D register the value to be stored on the heap and proceed based on the specific segment.
-	translated = append(translated,
-		// Takes SP and goto its location
-		asm.AInstruction{Location: "SP"},
-		asm.CInstruction{Dest: "AM", Comp: "M-1"},
-		// Saves on D the M reg value, then copies it on R13 (for persistence)
-		asm.CInstruction{Dest: "D", Comp: "M"},
-		asm.AInstruction{Location: "R13"},
-		asm.CInstruction{Dest: "A", Comp: "M"},
-		asm.CInstruction{Dest: "M", Comp: "D"},
-	)
-
-	return translated, nil
 }
 
 // Specialized function to convert a 'vm.ArithmeticOp' node to a list of 'asm.Instruction'.

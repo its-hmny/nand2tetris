@@ -21,8 +21,7 @@ is a higher-level (bytecode'like) language tailored for use with the Hack comput
 var VmTranslator = cli.New(Description).
 	// 'AsOptional()' allows to have more than one input .vm file
 	WithArg(cli.NewArg("inputs", "The bytecode (.vm) file to be compiled").
-		AsOptional().
-		WithType(cli.TypeString)).
+		AsOptional().WithType(cli.TypeString)).
 	WithOption(cli.NewOption("output", "The compiled binary output (.asm)").
 		WithType(cli.TypeString)).
 	WithAction(Handler)
