@@ -656,17 +656,19 @@ func (l *Lowerer) HandleGotoOp(op GotoOp) ([]asm.Instruction, error) {
 }
 
 // Specialized function to convert a 'vm.FuncDecl' node to a list of 'asm.Instruction'.
+// The first instructions to be executed when calling a function cleans up the 'local' segment
+// memory location with zeroes to avoid errors due to uninitialized memory (the number of
+// local variables has to be predefined in the function declaration itself 'op.NLocals').
 func (l *Lowerer) HandleFuncDecl(op FuncDecl) ([]asm.Instruction, error) {
 	if op.Name == "" {
-		return nil, fmt.Errorf("unexpected empty 'FuncDecl.Name' value")
+		return nil, fmt.Errorf("unexpected empty function name value")
 	}
 
-	// Allocates first the label that will represent the entrypoint of the function
-	prelude := []asm.Instruction{asm.LabelDecl{Name: op.Name}}
+	// First, allocates the label for the function entrypoint
+	translated := []asm.Instruction{asm.LabelDecl{Name: op.Name}}
 
-	// Wipes clean the 'local' segment section with zeroes (just enough as indicated by the FuncDecl)
-	for offset := range op.ArgsNum {
-		prelude = append(prelude,
+	for offset := range op.NLocal { // Wipes the 'local' segment initializing all memory to 0
+		translated = append(translated,
 			// Takes the LCL pointer location for the 'local' segment
 			asm.AInstruction{Location: "LCL"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
@@ -677,50 +679,47 @@ func (l *Lowerer) HandleFuncDecl(op FuncDecl) ([]asm.Instruction, error) {
 			asm.CInstruction{Dest: "M", Comp: "0"})
 	}
 
-	return prelude, nil
+	return translated, nil
 }
 
 // Specialized function to convert a 'vm.ReturnOp' node to a list of 'asm.Instruction'.
+// When returning from a function call we have to restore all memory segments pointer
+// back to the one used by the caller, while also pushing the return value on the stack.
 func (l *Lowerer) HandleReturnOp(op ReturnOp) ([]asm.Instruction, error) {
-	postlude := []asm.Instruction{
-		// ? FRAME = LCL
+	translated := []asm.Instruction{
+		// We save the base frame pointer on R13 (the beginning of the call frame)
 		asm.AInstruction{Location: "LCL"},
 		asm.CInstruction{Dest: "D", Comp: "M"},
-		// On R13 we keep the temporary frame pointer (on the book named as FRAME)
 		asm.AInstruction{Location: "R13"},
 		asm.CInstruction{Dest: "M", Comp: "D"},
-		// ? RET = *(FRAME-5)
+		// We save the return address on R14 (ReturnAddr = FrameBase-5)
 		asm.AInstruction{Location: "5"},
 		asm.CInstruction{Dest: "A", Comp: "D-A"},
 		asm.CInstruction{Dest: "D", Comp: "M"},
-		// On R14 we keep the temporary return address (on the book named as RET)
 		asm.AInstruction{Location: "R14"},
 		asm.CInstruction{Dest: "M", Comp: "D"},
-		// ? *ARG = pop()
+		// Line-by-line translation of 'pop argument 0'
 		asm.AInstruction{Location: "ARG"},
 		asm.CInstruction{Dest: "D", Comp: "M"},
-		// Saves on D on for usage by the next instruction
 		asm.AInstruction{Location: "R13"},
 		asm.CInstruction{Dest: "M", Comp: "D"},
-		// Takes SP and goto its location
 		asm.AInstruction{Location: "SP"},
 		asm.CInstruction{Dest: "AM", Comp: "M-1"},
-		// Saves on D the M reg value, then copies it on R13 (for persistence)
 		asm.CInstruction{Dest: "D", Comp: "M"},
 		asm.AInstruction{Location: "R13"},
 		asm.CInstruction{Dest: "A", Comp: "M"},
 		asm.CInstruction{Dest: "M", Comp: "D"},
-		// ? SP = ARG+1
-		// ARG[0] will coincide with the top of the stack (also SP will point here).
+		// We restore the Stack Pointer back to the top of the stack of the caller
 		asm.AInstruction{Location: "ARG"},
 		asm.CInstruction{Dest: "D", Comp: "M"},
 		asm.AInstruction{Location: "SP"},
 		asm.CInstruction{Dest: "M", Comp: "D+1"},
 	}
 
-	// ? THAT = *(FRAME-1), THIS = *(FRAME-2), ARG = *(FRAME-3), LCL = *(FRAME-4)
+	// We restore as well the 'that', 'this', 'argument' and 'local' pointers back to the memory location
+	// used by the caller (this address are saved by the caller when calling the current function)
 	for offset, segment := range []string{"THAT", "THIS", "ARG", "LCL"} {
-		postlude = append(postlude,
+		translated = append(translated,
 			asm.AInstruction{Location: "LCL"},
 			asm.CInstruction{Dest: "D", Comp: "M"},
 			asm.AInstruction{Location: fmt.Sprint(offset + 1)},
@@ -731,11 +730,11 @@ func (l *Lowerer) HandleReturnOp(op ReturnOp) ([]asm.Instruction, error) {
 		)
 	}
 
-	postlude = append(postlude,
-		// ? goto RET
+	// At last, once everything is restored we jump back to the return address
+	translated = append(translated,
 		asm.AInstruction{Location: "R14"},
 		asm.CInstruction{Comp: "0", Jump: "JMP"},
 	)
 
-	return postlude, nil
+	return translated, nil
 }

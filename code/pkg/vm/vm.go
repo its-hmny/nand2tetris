@@ -121,8 +121,8 @@ const (
 // VM program since function are globally defined and unique. Every function has its own cardinality
 // which basically means that it expects a predefined number of arguments as inputs before executing.
 type FuncDecl struct {
-	Name    string // The function name/identifier
-	ArgsNum uint8  // How many arguments does the function expect (the cardinality)
+	Name   string // The function name/identifier
+	NLocal uint8  // How many local variable does the function need (the Frame size)
 }
 
 // ----------------------------------------------------------------------------
@@ -143,6 +143,6 @@ type ReturnOp struct{}
 // (also identifier) and indicate how many arguments we are providing on the stack top. The movements of
 // the arguments from their location to the stack top as to be done before the call operation.
 type FuncCallOp struct {
-	Name    string // The function name/identifier
-	ArgsNum uint8  // How many arguments we have provided on the frame
+	Name  string // The function name/identifier
+	NArgs uint8  // How many arguments we have provided on the call Frame
 }

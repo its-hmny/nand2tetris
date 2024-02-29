@@ -294,7 +294,7 @@ func (Parser) HandleFuncDecl(node pc.Queryable) (Operation, error) {
 		log.Fatalf("failed to parse 'args' in FuncDecl, got '%s'", node.GetChildren()[2].GetValue())
 	}
 
-	return FuncDecl{Name: name, ArgsNum: uint8(args)}, nil
+	return FuncDecl{Name: name, NLocal: uint8(args)}, nil
 }
 
 // Specialized function to convert a "return_op" node to a 'vm.ReturnOp'.
@@ -324,5 +324,5 @@ func (Parser) HandleFuncCall(node pc.Queryable) (Operation, error) {
 		log.Fatalf("failed to parse 'args' in FuncCallOp, got '%s'", node.GetChildren()[2].GetValue())
 	}
 
-	return FuncCallOp{Name: name, ArgsNum: uint8(args)}, nil
+	return FuncCallOp{Name: name, NArgs: uint8(args)}, nil
 }
