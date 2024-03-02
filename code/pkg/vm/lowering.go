@@ -470,10 +470,19 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 				if inst == nil || err != nil {
 					return nil, err
 				}
+				l.vmScope = tOp.Name
 				program = append(program, inst...)
 
 			case ReturnOp: // Converts 'vm.ReturnOp' to a list of 'asm.Instruction'
 				inst, err := l.HandleReturnOp(tOp)
+				if inst == nil || err != nil {
+					return nil, err
+				}
+				l.vmScope = "global"
+				program = append(program, inst...)
+
+			case FuncCallOp: // Converts 'vm.FuncCallOp' to a list of 'asm.Instruction'
+				inst, err := l.HandleFuncCallOp(tOp)
 				if inst == nil || err != nil {
 					return nil, err
 				}
@@ -737,4 +746,68 @@ func (l *Lowerer) HandleReturnOp(op ReturnOp) ([]asm.Instruction, error) {
 	)
 
 	return translated, nil
+}
+
+func (l *Lowerer) HandleFuncCallOp(op FuncCallOp) ([]asm.Instruction, error) {
+	return []asm.Instruction{
+		// Takes the return address for the caller and push it on the stack
+		asm.AInstruction{Location: fmt.Sprintf("%s-ret", l.vmScope)},
+		asm.CInstruction{Dest: "D", Comp: "A"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "A", Comp: "M"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "M+1"},
+		// Takes the current 'local' segment pointer for the caller and push it on the stack
+		asm.AInstruction{Location: "LCL"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "A", Comp: "M"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "M+1"},
+		// Takes the current 'argument' segment pointer for the caller and push it on the stack
+		asm.AInstruction{Location: "ARG"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "A", Comp: "M"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "M+1"},
+		// Takes the current 'this' segment pointer for the caller and push it on the stack
+		asm.AInstruction{Location: "THIS"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "A", Comp: "M"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "M+1"},
+		// Takes the current 'that' segment pointer for the caller and push it on the stack
+		asm.AInstruction{Location: "THAT"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "A", Comp: "M"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "M", Comp: "M+1"},
+		// Sets the callee function 'argument' segment pointer to its location
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		asm.AInstruction{Location: "5"},
+		asm.CInstruction{Dest: "D", Comp: "D-A"},
+		asm.AInstruction{Location: fmt.Sprint(op.NArgs)},
+		asm.CInstruction{Dest: "D", Comp: "D-A"},
+		asm.AInstruction{Location: "ARG"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		// Sets the callee function 'local' segment pointer to its location
+		asm.AInstruction{Location: "SP"},
+		asm.CInstruction{Dest: "D", Comp: "M"},
+		asm.AInstruction{Location: "LCL"},
+		asm.CInstruction{Dest: "M", Comp: "D"},
+		// Transfer the execution control to the callee function with a jump to its entrypoint
+		asm.AInstruction{Location: op.Name},
+		asm.CInstruction{Comp: "0", Jump: "JMP"},
+		// Declare a label that will reference the caller's return address
+		asm.LabelDecl{Name: fmt.Sprintf("%s-ret", l.vmScope)},
+	}, nil
 }
