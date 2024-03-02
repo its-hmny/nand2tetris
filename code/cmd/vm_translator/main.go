@@ -24,6 +24,8 @@ var VmTranslator = cli.New(Description).
 		AsOptional().WithType(cli.TypeString)).
 	WithOption(cli.NewOption("output", "The compiled binary output (.asm)").
 		WithType(cli.TypeString)).
+	WithOption(cli.NewOption("bootstrap", "Includes bootstrap code in the final .asm file").
+		WithType(cli.TypeBool)).
 	WithAction(Handler)
 
 func Handler(args []string, options map[string]string) int {
@@ -71,12 +73,27 @@ func Handler(args []string, options map[string]string) int {
 		return -1
 	}
 
+	// When the user opts in to include the 'bootstrap' code as the first instructions of our
+	// translated program, this code does the following things:
+	// - Sets the Stack Pointer to its base location at memory location 256
+	// - Jump to the Sys.init function that (defined by the one of the 'vm.Module')
+	if _, enabled := options["bootstrap"]; enabled {
+		asmProgram = append([]asm.Instruction{
+			asm.AInstruction{Location: "256"},
+			asm.CInstruction{Dest: "D", Comp: "A"},
+			asm.AInstruction{Location: "SP"},
+			asm.CInstruction{Dest: "M", Comp: "D"},
+			asm.AInstruction{Location: "Sys.init"},
+			asm.CInstruction{Comp: "0", Jump: "JMP"},
+		}, asmProgram...)
+	}
+
 	// Now, instantiates a code generator for the Asm (compiled) program
 	codegen := asm.NewCodeGenerator(asmProgram)
 	// Iterates over each instruction and spits out the relative textual representation.
 	compiled, err := codegen.Generate()
 	if err != nil {
-		fmt.Printf("ERROR: Unable to complete 'codegen' pass:\n\t %s", err)
+		fmt.Printf("ERROR: Unable to complete 'codegen' pass: %s\n", err)
 		return -1
 	}
 
