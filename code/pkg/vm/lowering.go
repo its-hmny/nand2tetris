@@ -685,7 +685,11 @@ func (l *Lowerer) HandleFuncDecl(op FuncDecl) ([]asm.Instruction, error) {
 			asm.AInstruction{Location: fmt.Sprint(offset)},
 			asm.CInstruction{Dest: "A", Comp: "D+A"},
 			// Saves at that location the zero (wiping out the memory)
-			asm.CInstruction{Dest: "M", Comp: "0"})
+			asm.CInstruction{Dest: "M", Comp: "0"},
+			// Increments the Stack Pointer to avoid double write errors
+			asm.AInstruction{Location: "SP"},
+			asm.CInstruction{Dest: "M", Comp: "M+1"},
+		)
 	}
 
 	return translated, nil

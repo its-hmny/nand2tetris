@@ -82,4 +82,12 @@ func TestVMTranslator(t *testing.T) {
 		tester := fmt.Sprintf("%s/%s", base, "SimpleFunction.tst")
 		test(input, output, tester)
 	})
+
+	t.Run("NestedCall.vm", func(t *testing.T) {
+		base := "../../../projects/08 - VM II: Program Flow/04 - NestedCall"
+		input := fmt.Sprintf("%s/%s", base, "Sys.vm")
+		output := fmt.Sprintf("%s/%s", base, "NestedCall.asm")
+		tester := fmt.Sprintf("%s/%s", base, "NestedCall.tst")
+		test(input, output, tester)
+	})
 }
