@@ -742,6 +742,7 @@ func (l *Lowerer) HandleReturnOp(op ReturnOp) ([]asm.Instruction, error) {
 	// At last, once everything is restored we jump back to the return address
 	translated = append(translated,
 		asm.AInstruction{Location: "R14"},
+		asm.CInstruction{Dest: "A", Comp: "M"},
 		asm.CInstruction{Comp: "0", Jump: "JMP"},
 	)
 
