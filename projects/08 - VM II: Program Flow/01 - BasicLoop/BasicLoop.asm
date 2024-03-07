@@ -163,7 +163,7 @@ M=M+1
 AM=M-1
 D=M
 @global$LOOP
-D;JGT
+D;JNE
 @LCL
 D=M
 @0

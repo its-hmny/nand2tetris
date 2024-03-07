@@ -647,7 +647,7 @@ func (l *Lowerer) HandleGotoOp(op GotoOp) ([]asm.Instruction, error) {
 			// Loads the jump location, 'scoping' the label/destination.
 			asm.AInstruction{Location: fmt.Sprintf("%s$%s", l.vmScope, op.Label)},
 			// Makes the jump if D reg contains a 'truthy' value (!= 0)
-			asm.CInstruction{Comp: "D", Jump: "JGT"},
+			asm.CInstruction{Comp: "D", Jump: "JNE"},
 		}, nil
 	}
 

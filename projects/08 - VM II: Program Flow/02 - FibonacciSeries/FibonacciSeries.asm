@@ -149,7 +149,7 @@ M=M+1
 AM=M-1
 D=M
 @global$COMPUTE_ELEMENT
-D;JGT
+D;JNE
 @global$END
 0;JMP
 (global$COMPUTE_ELEMENT)
