@@ -45,7 +45,7 @@ D=M
 @R13
 A=M
 M=D
-@Sys.init-ret
+@Sys.init-ret-1
 D=A
 @SP
 A=M
@@ -94,7 +94,7 @@ D=M
 M=D
 @Sys.main
 0;JMP
-(Sys.init-ret)
+(Sys.init-ret-1)
 @5
 D=A
 @1
@@ -272,7 +272,7 @@ A=M
 M=D
 @SP
 M=M+1
-@Sys.main-ret
+@Sys.main-ret-2
 D=A
 @SP
 A=M
@@ -321,7 +321,7 @@ D=M
 M=D
 @Sys.add12
 0;JMP
-(Sys.main-ret)
+(Sys.main-ret-2)
 @5
 D=A
 @0

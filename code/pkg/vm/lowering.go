@@ -478,7 +478,6 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 				if inst == nil || err != nil {
 					return nil, err
 				}
-				l.vmScope = "global"
 				program = append(program, inst...)
 
 			case FuncCallOp: // Converts 'vm.FuncCallOp' to a list of 'asm.Instruction'
@@ -754,9 +753,10 @@ func (l *Lowerer) HandleReturnOp(op ReturnOp) ([]asm.Instruction, error) {
 }
 
 func (l *Lowerer) HandleFuncCallOp(op FuncCallOp) ([]asm.Instruction, error) {
+	l.nRandomizer++
 	return []asm.Instruction{
 		// Takes the return address for the caller and push it on the stack
-		asm.AInstruction{Location: fmt.Sprintf("%s-ret", l.vmScope)},
+		asm.AInstruction{Location: fmt.Sprintf("%s-ret-%d", l.vmScope, l.nRandomizer)},
 		asm.CInstruction{Dest: "D", Comp: "A"},
 		asm.AInstruction{Location: "SP"},
 		asm.CInstruction{Dest: "A", Comp: "M"},
@@ -813,6 +813,6 @@ func (l *Lowerer) HandleFuncCallOp(op FuncCallOp) ([]asm.Instruction, error) {
 		asm.AInstruction{Location: op.Name},
 		asm.CInstruction{Comp: "0", Jump: "JMP"},
 		// Declare a label that will reference the caller's return address
-		asm.LabelDecl{Name: fmt.Sprintf("%s-ret", l.vmScope)},
+		asm.LabelDecl{Name: fmt.Sprintf("%s-ret-%d", l.vmScope, l.nRandomizer)},
 	}, nil
 }

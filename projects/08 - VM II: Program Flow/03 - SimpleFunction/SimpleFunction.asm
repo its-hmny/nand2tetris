@@ -4,11 +4,15 @@ D=M
 @0
 A=D+A
 M=0
+@SP
+M=M+1
 @LCL
 D=M
 @1
 A=D+A
 M=0
+@SP
+M=M+1
 @LCL
 D=M
 @0
