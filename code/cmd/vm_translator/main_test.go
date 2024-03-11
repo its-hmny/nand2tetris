@@ -7,8 +7,13 @@ import (
 )
 
 func TestVMTranslator(t *testing.T) {
-	test := func(input string, output string, test string) {
-		status := Handler([]string{input}, map[string]string{"output": output})
+	test := func(inputs []string, output string, bootstrap bool, test string) {
+		options := map[string]string{"output": output}
+		if bootstrap {
+			options["bootstrap"] = fmt.Sprint(bootstrap)
+		}
+
+		status := Handler(inputs, options)
 		if status != 0 {
 			t.Fatalf("Unexpected exit status code: expected 0 got: %d", status)
 		}
@@ -24,7 +29,7 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "SimpleAdd.vm")
 		output := fmt.Sprintf("%s/%s", base, "SimpleAdd.asm")
 		tester := fmt.Sprintf("%s/%s", base, "SimpleAdd.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
 	})
 
 	t.Run("StackTest.vm", func(t *testing.T) {
@@ -32,7 +37,7 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "StackTest.vm")
 		output := fmt.Sprintf("%s/%s", base, "StackTest.asm")
 		tester := fmt.Sprintf("%s/%s", base, "StackTest.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
 	})
 
 	t.Run("BasicTest.vm", func(t *testing.T) {
@@ -40,7 +45,7 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "BasicTest.vm")
 		output := fmt.Sprintf("%s/%s", base, "BasicTest.asm")
 		tester := fmt.Sprintf("%s/%s", base, "BasicTest.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
 	})
 
 	t.Run("PointerTest.vm", func(t *testing.T) {
@@ -48,7 +53,7 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "PointerTest.vm")
 		output := fmt.Sprintf("%s/%s", base, "PointerTest.asm")
 		tester := fmt.Sprintf("%s/%s", base, "PointerTest.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
 	})
 
 	t.Run("StaticTest.vm", func(t *testing.T) {
@@ -56,7 +61,7 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "StaticTest.vm")
 		output := fmt.Sprintf("%s/%s", base, "StaticTest.asm")
 		tester := fmt.Sprintf("%s/%s", base, "StaticTest.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
 	})
 
 	t.Run("BasicLoop.vm", func(t *testing.T) {
@@ -64,7 +69,7 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "BasicLoop.vm")
 		output := fmt.Sprintf("%s/%s", base, "BasicLoop.asm")
 		tester := fmt.Sprintf("%s/%s", base, "BasicLoop.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
 	})
 
 	t.Run("FibonacciSeries.vm", func(t *testing.T) {
@@ -72,7 +77,7 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "FibonacciSeries.vm")
 		output := fmt.Sprintf("%s/%s", base, "FibonacciSeries.asm")
 		tester := fmt.Sprintf("%s/%s", base, "FibonacciSeries.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
 	})
 
 	t.Run("SimpleFunction.vm", func(t *testing.T) {
@@ -80,7 +85,7 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "SimpleFunction.vm")
 		output := fmt.Sprintf("%s/%s", base, "SimpleFunction.asm")
 		tester := fmt.Sprintf("%s/%s", base, "SimpleFunction.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
 	})
 
 	t.Run("NestedCall.vm", func(t *testing.T) {
@@ -88,6 +93,29 @@ func TestVMTranslator(t *testing.T) {
 		input := fmt.Sprintf("%s/%s", base, "Sys.vm")
 		output := fmt.Sprintf("%s/%s", base, "NestedCall.asm")
 		tester := fmt.Sprintf("%s/%s", base, "NestedCall.tst")
-		test(input, output, tester)
+		test([]string{input}, output, false, tester)
+	})
+
+	t.Run("FibonacciELement.vm", func(t *testing.T) {
+		base := "../../../projects/08 - VM II: Program Flow/05 - FibonacciElement"
+		inputs := []string{
+			fmt.Sprintf("%s/%s", base, "Sys.vm"),
+			fmt.Sprintf("%s/%s", base, "Main.vm"),
+		}
+		output := fmt.Sprintf("%s/%s", base, "FibonacciElement.asm")
+		tester := fmt.Sprintf("%s/%s", base, "FibonacciElement.tst")
+		test(inputs, output, true, tester)
+	})
+
+	t.Run("StaticsTest.vm", func(t *testing.T) {
+		base := "../../../projects/08 - VM II: Program Flow/06 - StaticsTest"
+		inputs := []string{
+			fmt.Sprintf("%s/%s", base, "Sys.vm"),
+			fmt.Sprintf("%s/%s", base, "Class1.vm"),
+			fmt.Sprintf("%s/%s", base, "Class2.vm"),
+		}
+		output := fmt.Sprintf("%s/%s", base, "StaticsTest.asm")
+		tester := fmt.Sprintf("%s/%s", base, "StaticsTest.tst")
+		test(inputs, output, true, tester)
 	})
 }

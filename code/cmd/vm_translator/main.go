@@ -79,7 +79,7 @@ func Handler(args []string, options map[string]string) int {
 	// - Jump to the Sys.init function that (defined by the one of the 'vm.Module')
 	if _, enabled := options["bootstrap"]; enabled {
 		asmProgram = append([]asm.Instruction{
-			asm.AInstruction{Location: "256"},
+			asm.AInstruction{Location: "261"},
 			asm.CInstruction{Dest: "D", Comp: "A"},
 			asm.AInstruction{Location: "SP"},
 			asm.CInstruction{Dest: "M", Comp: "D"},
