@@ -1,0 +1,75 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"io/fs"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
+	"its-hmny.dev/nand2tetris/pkg/jack"
+
+	"github.com/teris-io/cli"
+)
+
+var Description = strings.ReplaceAll(`
+TODO (hmny): Must add CLI tool description
+`, "\n", " ")
+
+var JackCompiler = cli.New(Description).
+	// 'AsOptional()' allows to have more than one input .vm file
+	WithArg(cli.NewArg("inputs", "The source (.jack) files to be compiled").
+		AsOptional().WithType(cli.TypeString)).
+	WithAction(Handler)
+
+func Handler(args []string, options map[string]string) int {
+	if len(args) < 1 {
+		fmt.Printf("ERROR: Not enough arguments provided, use --help\n")
+		return -1
+	}
+
+	// The first is the aggregation of all the Translation Units (TUs) found during the input walk (just the paths)
+	// The second is the container of the full program (a basic collection of parsed modules that can be explored)
+	// ! While the Jack language spec follows the same semantic as Java every file is a class and every class is a
+	// ! jack.Module, that said in future or other language the same could not apply. By TU we identify the source
+	// ! that needs to be parsed, by module we identify the biggest entity extractable from said file. In jack this
+	// ! a class but for other language it may be a module (Go), a namespace (C#) or just some basic functions (C).
+	TUs, program := []string{}, jack.Program{}
+
+	for _, input := range args {
+		filepath.Walk(input, func(path string, info fs.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() || filepath.Ext(path) != ".jack" {
+				return nil // We recurse on dirs and ignore other filetypes
+			}
+
+			TUs = append(TUs, path)
+			return nil
+		})
+	}
+
+	for _, tu := range TUs {
+		content, err := os.ReadFile(tu)
+		if err != nil {
+			fmt.Printf("ERROR: Unable to open input file: %s\n", err)
+			return -1
+		}
+
+		// Instantiate a parser for the Vm program
+		parser := jack.NewParser(bytes.NewReader(content))
+		// Parses the input file content and extract an AST (as a 'vm.Module') from it.
+		program[path.Base(tu)], err = parser.Parse()
+		if err != nil {
+			fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
+			return -1
+		}
+	}
+
+	return 0
+}
+
+func main() { os.Exit(JackCompiler.Run(os.Args, os.Stdout)) }
