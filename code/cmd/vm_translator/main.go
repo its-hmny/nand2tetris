@@ -60,7 +60,7 @@ func Handler(args []string, options map[string]string) int {
 		program[path.Base(input)], err = parser.Parse()
 		if err != nil {
 			fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
-			os.Exit(-1)
+			return -1
 		}
 	}
 

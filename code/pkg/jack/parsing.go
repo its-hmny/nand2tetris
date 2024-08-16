@@ -26,6 +26,6 @@ func NewParser(r io.Reader) Parser {
 // Parser entrypoint divides the 2 phases of the parsing pipeline
 // Text --> AST: This step is done using PCs and returns a generic traversable AST
 // AST --> IR: This step is done by traversing the AST and extracting the 'vm.Module'
-func (p *Parser) Parse() (Module, error) {
-	return nil, errors.New("Parser.Parse() not implemented yet")
+func (p *Parser) Parse() (Class, error) {
+	return Class{}, errors.New("Parser.Parse() not implemented yet")
 }
