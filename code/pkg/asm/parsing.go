@@ -91,7 +91,7 @@ var (
 
 // This section defines the Parser for the nand2tetris Asm language.
 //
-// It uses parser combinators to obtain the AST from the source code (the latter can be provided)
+// It uses parser combinator(s) to obtain the AST from the source code (the latter can be provided)
 // in multiple ways using a generic io.Reader, the library reads up the feature flags (as env vars):
 // - PARSEC_DEBUG: Verbose logging to inspect which of the PCs gets triggered and match
 // - EXPORT_AST:   Exports in the DEBUG_FOLDER a Graphviz representation of the AST
