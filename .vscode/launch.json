@@ -21,5 +21,14 @@
             "program": "./code/cmd/vm_translator",
             "args": [ "InputFile", "OutputFile" ]
         },
+
+        {
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "name": "Jack Compiler",
+            "program": "./code/cmd/jack_compiler",
+            "args": [ "InputFile", "OutputFile" ]
+        },
     ]
 }
