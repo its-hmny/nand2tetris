@@ -20,40 +20,44 @@ var (
 	)
 
 	pMethod = ast.And("method_decl", nil,
+		// Func keyword, return type and function/method name
 		pc.Atom("function", "FUNC"), pDataType, pIdent,
-		pLParen, ast.Kleene("arguments", nil, pc.And(nil, pDataType, pIdent)), pRParen,
-		pLBrace, ast.Kleene("statements", nil, pStatement), pRBrace,
+		// '(', comma separated argument type(s) and name(s), ')'
+		pLParen, ast.Kleene("arguments", nil, ast.And("argument", nil, pDataType, pIdent), pComma), pRParen,
+		// '{', semi separated statement(s), '}'
+		pLBrace, ast.Kleene("statements", nil, pStatement, pSemi), pRBrace,
 	)
 )
 
 var (
 	pStatement = ast.OrdChoice("statement", nil, pDoStmt, pReturnStmt)
 
-	pDoStmt = ast.And("do_stmt", nil, pc.Atom("do", "DO"),
-		// TODO (hmny): For now all the full qualifier is jammed into a single Ident
-		// ! - ext call to another class method (e.g. 'do X.ExtMethod();')
-		// ! - local call to same class method (e.g. 'do InternalMethod();')
-		pIdent, pLParen,
-		ast.Kleene("args", nil, pExpr, pc.Kleene(nil, pc.And(nil, pComma, pExpr))),
-		pRParen, pSemi,
+	pDoStmt = ast.And("do_stmt", nil,
+		// Support both external method call and local method call syntax:
+		// - 'External': call to another class method (e.g. 'do X.ExtMethod()')
+		// - 'Local': call to same class/instance method (e.g. 'do InternalMethod()')
+		pc.Atom("do", "DO"), ast.Many("qualifiers", nil, pIdent, pDot),
+		// '(', comma separated argument passing w/ expression to be eval'd, ')'
+		pLParen, ast.Kleene("args", nil, pExpr, pComma), pRParen,
 	)
 
-	pReturnStmt = ast.And("return_stmt", nil,
-		pc.Atom("return", "RETURN"), pc.Maybe(nil, pExpr), pSemi,
-	)
+	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), pc.Maybe(nil, pExpr))
 )
 
 var (
-	// TODO (hmny): 'pc.String()' doesn't seem to work properly, will need my own
-	pExpr = ast.OrdChoice("expression", nil, pc.Int(), pc.Float())
+	// ! The order of this PCs is important: by putting Int() before Float() we'll not be able to parse a float
+	// !completely because the integer part will be picked up by the Int() PC before given back control to PExpr.
+	// TODO (hmny): 'pc.String()' doesn't seem to be working properly, will need my own
+	pExpr = ast.OrdChoice("expression", nil, pc.Float(), pc.Int())
 )
 
 var (
 	// Generic Identifier parser (for label and function declaration)
 	// NOTE: An ident can be any sequence of letters, digits, and symbols (_, ., $, :).
 	// NOTE: An ident cannot begin with a leading digit (a symbol is indeed allowed).
-	pIdent = pc.Token(`[A-Za-z_.$:][0-9a-zA-Z_.$:]*`, "IDENT")
+	pIdent = pc.Token(`[A-Za-z_$:][0-9a-zA-Z_$:]*`, "IDENT")
 
+	pDot    = pc.Atom(".", "DOT")
 	pSemi   = pc.Atom(";", "SEMI")
 	pComma  = pc.Atom(",", "COMMA")
 	pLBrace = pc.Atom("{", "LBRACE")
