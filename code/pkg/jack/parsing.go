@@ -13,9 +13,11 @@ var ast = pc.NewAST("jack_program", 0)
 
 var (
 	pClass = ast.And("class_decl", nil,
+		ast.Kleene("file_header", nil, pComment),
 		pc.Atom("class", "CLASS"), pIdent, pLBrace,
-		// ast.Kleene("fields_decls", nil, nil),     // TODO (hmny): Add fields parser
-		ast.Kleene("method_decls", nil, pMethod), // TODO (hmny): Add method parser
+		// TODO (hmny): Add fields parser with support for single and multiline comments
+		// ?  ast.Kleene("fields_or_comments", nil, ast.OrdChoice("items", nil, pField, pComment)),
+		ast.Kleene("methods_or_comments", nil, ast.OrdChoice("items", nil, pMethod, pComment)),
 		pRBrace,
 	)
 
@@ -24,13 +26,21 @@ var (
 		pc.Atom("function", "FUNC"), pDataType, pIdent,
 		// '(', comma separated argument type(s) and name(s), ')'
 		pLParen, ast.Kleene("arguments", nil, ast.And("argument", nil, pDataType, pIdent), pComma), pRParen,
-		// '{', semi separated statement(s), '}'
-		pLBrace, ast.Kleene("statements", nil, pStatement, pSemi), pRBrace,
+		// '{', statement and or comments (s), '}'
+		pLBrace, ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, pStatement, pComment)), pRBrace,
+	)
+
+	// TODO (hmny): We need to inject comment parsing everywhere basically
+	pComment = ast.OrdChoice("comment", nil,
+		// Single line comments (e.g. "// This is a comment")
+		ast.And("sl_comment", nil, pc.Atom("//", "//"), pc.Token(`(?m).*$`, "COMMENT")),
+		// Multi line comments (e.g. "/* This is a comment */")
+		ast.And("ml_comment", nil, pc.Token(`/\*[^*]*\*+(?:[^/*][^*]*\*+)*/`, "COMMENT")),
 	)
 )
 
 var (
-	pStatement = ast.OrdChoice("statement", nil, pDoStmt, pReturnStmt)
+	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pReturnStmt), pSemi)
 
 	pDoStmt = ast.And("do_stmt", nil,
 		// Support both external method call and local method call syntax:
@@ -47,8 +57,14 @@ var (
 var (
 	// ! The order of this PCs is important: by putting Int() before Float() we'll not be able to parse a float
 	// !completely because the integer part will be picked up by the Int() PC before given back control to PExpr.
-	// TODO (hmny): 'pc.String()' doesn't seem to be working properly, will need my own
-	pExpr = ast.OrdChoice("expression", nil, pc.Float(), pc.Int())
+	pExpr    = ast.OrdChoice("expression", nil, pLiteral)
+	pLiteral = ast.OrdChoice("literal", nil,
+		// Numeric literals (int and float) as well as string literals
+		pc.Float(), pc.Int(), pc.Token(`"(?:\\.|[^"\\])*"`, "STRING"),
+		// also we cover in this way boolean literal declaration (true | false) and null
+		pc.Token("true", "TRUE"), pc.Token("false", "FALSE"),
+		pc.Token("null", "NULL"), // TODO (hmny): Should we also add char literal PC
+	)
 )
 
 var (
