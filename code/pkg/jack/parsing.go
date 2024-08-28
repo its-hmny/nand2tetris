@@ -15,10 +15,17 @@ var (
 	pClass = ast.And("class_decl", nil,
 		ast.Kleene("file_header", nil, pComment),
 		pc.Atom("class", "CLASS"), pIdent, pLBrace,
-		// TODO (hmny): Add fields parser with support for single and multiline comments
-		// ?  ast.Kleene("fields_or_comments", nil, ast.OrdChoice("items", nil, pField, pComment)),
+		ast.Kleene("fields_or_comments", nil, ast.OrdChoice("items", nil, pField, pComment)),
 		ast.Kleene("methods_or_comments", nil, ast.OrdChoice("items", nil, pMethod, pComment)),
 		pRBrace,
+	)
+
+	pField = ast.And("field_decl", nil,
+		pc.Atom("field", "FIELD"), pDataType,
+		// ! The 'Many' combinator is used because both of these are valid Jack syntax:
+		// ! - 'field int test;'
+		// ! - 'field int numerator, denominator;'
+		ast.Many("items", nil, pIdent, pComma), pSemi,
 	)
 
 	pMethod = ast.And("method_decl", nil,
