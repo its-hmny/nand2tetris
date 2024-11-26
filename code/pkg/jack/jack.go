@@ -68,11 +68,6 @@ const (
 // w/ their internal logic and required data to perform it (or compile it).
 type Statement interface{}
 
-type IfStmt struct { // Conditional jump construct, will have to fork the execution flow based on a condition
-	Condition Expression  // The expression to be eval'd, casted to a bool value
-	Block     []Statement // The code block to be executed if the condition is met
-}
-
 type DoStmt struct { // Unconditional jump, will call another subroutine and ignore its return value
 	FuncCall FuncCallExpr //The function to be called
 }
@@ -82,13 +77,18 @@ type LetStmt struct { // Variable declaration construct, will allocate a new var
 	Value Expression // The initial value to be associated to the variable
 }
 
-type WhileStmt struct { // Conditional iteration construct, will execute a block based on a condition
+type ReturnStmt struct { // Unconditional jump, will go back to the caller and provide it an (optional) output
+	Expr Expression // The expression to be eval'd, casted to a the return value of the func
+}
+
+type IfStmt struct { // Conditional jump construct, will have to fork the execution flow based on a condition
 	Condition Expression  // The expression to be eval'd, casted to a bool value
 	Block     []Statement // The code block to be executed if the condition is met
 }
 
-type ReturnStmt struct { // Unconditional jump, will go back to the caller and provide it an (optional) output
-	Expr Expression // The expression to be eval'd, casted to a the return value of the func
+type WhileStmt struct { // Conditional iteration construct, will execute a block based on a condition
+	Condition Expression  // The expression to be eval'd, casted to a bool value
+	Block     []Statement // The code block to be executed if the condition is met
 }
 
 // ----------------------------------------------------------------------------

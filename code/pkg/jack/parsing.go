@@ -76,15 +76,18 @@ var (
 )
 
 var (
+	// Top level generic expression parser, declared like this to allow cyclical references.
+	// An example of a expression that has the need to parse other nested expr is (1.0 * (2 / 3)).
+	pExpr pc.Parser
+
 	// ! The order of this PCs is important: by putting Int() before Float() we'll not be able to parse a float
 	// !completely because the integer part will be picked up by the Int() PC before given back control to PExpr.
-	pExpr    = ast.OrdChoice("expression", nil, pLiteral)
 	pLiteral = ast.OrdChoice("literal", nil,
 		// Numeric literals (int and float) as well as string literals
 		pc.Float(), pc.Int(), pc.Token(`"(?:\\.|[^"\\])*"`, "STRING"),
 		// also we cover in this way boolean literal declaration (true | false) and null
-		pc.Token("true", "TRUE"), pc.Token("false", "FALSE"),
-		pc.Token("null", "NULL"), // TODO (hmny): Should we also add char literal PC
+		pc.Token("true", "TRUE"), pc.Token("false", "FALSE"), pc.Token("null", "NULL"),
+		// TODO (hmny): Should we also add char literal PC
 	)
 )
 
@@ -97,10 +100,10 @@ var (
 	pDot    = pc.Atom(".", "DOT")
 	pSemi   = pc.Atom(";", "SEMI")
 	pComma  = pc.Atom(",", "COMMA")
-	pLBrace = pc.Atom("{", "LBRACE")
-	pRBrace = pc.Atom("}", "RBRACE")
 	pLParen = pc.Atom("(", "RPAREN")
 	pRParen = pc.Atom(")", "RPAREN")
+	pLBrace = pc.Atom("{", "LBRACE")
+	pRBrace = pc.Atom("}", "RBRACE")
 
 	// Available memory operation type (only push and pop since it's stack based)
 	pDataType = ast.OrdChoice("data_type", nil,
@@ -110,6 +113,7 @@ var (
 )
 
 func init() {
+	pExpr = ast.OrdChoice("expression", nil, ast.OrdChoice("item", nil, pLiteral))
 	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt))
 }
 
