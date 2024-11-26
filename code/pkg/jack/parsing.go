@@ -34,7 +34,7 @@ var (
 		// '(', comma separated argument type(s) and name(s), ')'
 		pLParen, ast.Kleene("arguments", nil, ast.And("argument", nil, pDataType, pIdent), pComma), pRParen,
 		// '{', statement and or comments (s), '}'
-		pLBrace, ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, pStatement, pComment)), pRBrace,
+		pLBrace, ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, &pStatement, pComment)), pRBrace,
 	)
 
 	// TODO (hmny): We need to inject comment parsing everywhere basically
@@ -47,7 +47,9 @@ var (
 )
 
 var (
-	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pReturnStmt), pSemi)
+	// Top level generic statement parser, declared like this to allow cyclical references.
+	// An example of a statement that has the need to parse other nested statements is 'pWhileStmt'.
+	pStatement pc.Parser
 
 	pDoStmt = ast.And("do_stmt", nil,
 		// Support both external method call and local method call syntax:
@@ -55,10 +57,15 @@ var (
 		// - 'Local': call to same class/instance method (e.g. 'do InternalMethod()')
 		pc.Atom("do", "DO"), ast.Many("qualifiers", nil, pIdent, pDot),
 		// '(', comma separated argument passing w/ expression to be eval'd, ')'
-		pLParen, ast.Kleene("args", nil, pExpr, pComma), pRParen,
+		pLParen, ast.Kleene("args", nil, pExpr, pComma), pRParen, pSemi,
 	)
 
-	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), pc.Maybe(nil, pExpr))
+	pWhileStmt = ast.And("while_stmt", nil,
+		pc.Atom("while", "WHILE"), pLParen, pExpr, pRParen, pLBrace,
+		ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, &pStatement, pComment)), pRBrace,
+	)
+
+	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), pc.Maybe(nil, pExpr), pSemi)
 )
 
 var (
@@ -94,6 +101,10 @@ var (
 		pc.Atom("null", "NULL"), pc.Atom("void", "VOID"), pIdent,
 	)
 )
+
+func init() {
+	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pWhileStmt, pReturnStmt))
+}
 
 // ----------------------------------------------------------------------------
 // Jack Parser
@@ -150,7 +161,7 @@ func (p *Parser) FromSource(source []byte) (pc.Queryable, bool) {
 		file, _ := os.Create(fmt.Sprintf("%s/debug.ast.dot", os.Getenv("DEBUG_FOLDER")))
 		defer file.Close()
 
-		file.Write([]byte(ast.Dotstring("\"VM AST\"")))
+		file.Write([]byte(ast.Dotstring("\"JACK AST\"")))
 	}
 
 	// Feature flag: Enables pretty printing of the AST on the console
