@@ -60,12 +60,19 @@ var (
 		pLParen, ast.Kleene("args", nil, pExpr, pComma), pRParen, pSemi,
 	)
 
+	pLetStmt = ast.And("let_stmt", nil, pc.Atom("let", "LET"), pIdent, pc.Atom("=", "EQUAL"), pExpr, pSemi)
+
+	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), ast.Maybe("expr", nil, pExpr), pSemi)
+
+	pIfStmt = ast.And("if_stmt", nil,
+		pc.Atom("if", "IF"), pLParen, pExpr, pRParen, pLBrace,
+		ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, &pStatement, pComment)), pRBrace,
+	)
+
 	pWhileStmt = ast.And("while_stmt", nil,
 		pc.Atom("while", "WHILE"), pLParen, pExpr, pRParen, pLBrace,
 		ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, &pStatement, pComment)), pRBrace,
 	)
-
-	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), pc.Maybe(nil, pExpr), pSemi)
 )
 
 var (
@@ -103,7 +110,7 @@ var (
 )
 
 func init() {
-	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pWhileStmt, pReturnStmt))
+	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt))
 }
 
 // ----------------------------------------------------------------------------
