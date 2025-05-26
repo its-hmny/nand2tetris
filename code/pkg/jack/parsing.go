@@ -57,22 +57,22 @@ var (
 		// - 'Local': call to same class/instance method (e.g. 'do InternalMethod()')
 		pc.Atom("do", "DO"), ast.Many("qualifiers", nil, pIdent, pDot),
 		// '(', comma separated argument passing w/ expression to be eval'd, ')'
-		pLParen, ast.Kleene("args", nil, pExpr, pComma), pRParen, pSemi,
+		pLParen, ast.Kleene("args", nil, &pExpr, pComma), pRParen, pSemi,
 	)
 
 	pVarStmt = ast.And("var_stmt", nil, pc.Atom("var", "VAR"), pIdent, ast.Many("variables", nil, pIdent, pComma), pSemi)
 
-	pLetStmt = ast.And("let_stmt", nil, pc.Atom("let", "LET"), pIdent, pc.Atom("=", "EQUAL"), pExpr, pSemi)
+	pLetStmt = ast.And("let_stmt", nil, pc.Atom("let", "LET"), pIdent, pc.Atom("=", "EQUAL"), &pExpr, pSemi)
 
-	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), ast.Maybe("expr", nil, pExpr), pSemi)
+	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), ast.Maybe("expr", nil, &pExpr), pSemi)
 
 	pIfStmt = ast.And("if_stmt", nil,
-		pc.Atom("if", "IF"), pLParen, pExpr, pRParen, pLBrace,
+		pc.Atom("if", "IF"), pLParen, &pExpr, pRParen, pLBrace,
 		ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, &pStatement, pComment)), pRBrace,
 	)
 
 	pWhileStmt = ast.And("while_stmt", nil,
-		pc.Atom("while", "WHILE"), pLParen, pExpr, pRParen, pLBrace,
+		pc.Atom("while", "WHILE"), pLParen, &pExpr, pRParen, pLBrace,
 		ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, &pStatement, pComment)), pRBrace,
 	)
 )
