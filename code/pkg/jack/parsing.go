@@ -62,7 +62,7 @@ var (
 
 	pVarStmt = ast.And("var_stmt", nil, pc.Atom("var", "VAR"), pIdent, ast.Many("variables", nil, pIdent, pComma), pSemi)
 
-	pLetStmt = ast.And("let_stmt", nil, pc.Atom("let", "LET"), pIdent, pc.Atom("=", "EQUAL"), &pExpr, pSemi)
+	pLetStmt = ast.And("let_stmt", nil, pc.Atom("let", "LET"), ast.OrdChoice("lhs", nil, pArrayExpr, pIdent), pc.Atom("=", "EQUAL"), &pExpr, pSemi)
 
 	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), ast.Maybe("expr", nil, &pExpr), pSemi)
 
@@ -93,6 +93,30 @@ var (
 		pc.Token("null", "NULL"), pc.Token("this", "THIS"),
 		// TODO (hmny): Should we also add char literal PC
 	)
+
+	pArrayExpr = ast.And("array_expr", nil, pIdent, pc.Atom("[", "RSQUARE"), &pExpr, pc.Atom("]", "LSQUARE"))
+
+	pBinaryExpr = ast.And("binary_expr", nil,
+		ast.OrdChoice("op1", nil, pArrayExpr, pIdent, pLiteral),
+		ast.OrdChoice("op", nil,
+			// Bitwise binary operations
+			pc.Atom("||", "BOOL_OR"), pc.Atom("&&", "BOOL_AND"),
+			// Comparison operations
+			pc.Atom("==", "EQUAL"), pc.Atom("<", "LESS_THAN"), pc.Atom(">", "GREATER_THAN"),
+			// Arithmetic operations
+			pc.Atom("+", "PLUS"), pc.Atom("-", "MINUS"), pc.Atom("/", "DIVIDE"), pc.Atom("*", "MULTIPLY"),
+		),
+		ast.OrdChoice("op2", nil, pArrayExpr, pIdent, pLiteral),
+	)
+
+	pFunCallExpr = ast.And("funcall_expr", nil,
+		// Support both external method call and local method call syntax:
+		// - 'External': call to another class method (e.g. 'do X.ExtMethod()')
+		// - 'Local': call to same class/instance method (e.g. 'do InternalMethod()')
+		ast.Many("qualifiers", nil, pIdent, pDot),
+		// '(', comma separated argument passing w/ expression to be eval'd, ')'
+		pLParen, ast.Kleene("args", nil, &pExpr, pComma), pRParen,
+	)
 )
 
 var (
@@ -117,7 +141,7 @@ var (
 )
 
 func init() {
-	pExpr = ast.OrdChoice("expression", nil, ast.OrdChoice("item", nil, pLiteral, pIdent))
+	pExpr = ast.OrdChoice("expression", nil, ast.OrdChoice("item", nil, pFunCallExpr, pBinaryExpr, pLiteral, pIdent))
 	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pVarStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt))
 }
 
