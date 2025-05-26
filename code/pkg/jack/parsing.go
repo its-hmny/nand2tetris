@@ -60,6 +60,8 @@ var (
 		pLParen, ast.Kleene("args", nil, pExpr, pComma), pRParen, pSemi,
 	)
 
+	pVarStmt = ast.And("var_stmt", nil, pc.Atom("var", "VAR"), pIdent, ast.Many("variables", nil, pIdent, pComma), pSemi)
+
 	pLetStmt = ast.And("let_stmt", nil, pc.Atom("let", "LET"), pIdent, pc.Atom("=", "EQUAL"), pExpr, pSemi)
 
 	pReturnStmt = ast.And("return_stmt", nil, pc.Atom("return", "RETURN"), ast.Maybe("expr", nil, pExpr), pSemi)
@@ -85,8 +87,10 @@ var (
 	pLiteral = ast.OrdChoice("literal", nil,
 		// Numeric literals (int and float) as well as string literals
 		pc.Float(), pc.Int(), pc.Token(`"(?:\\.|[^"\\])*"`, "STRING"),
-		// also we cover in this way boolean literal declaration (true | false) and null
-		pc.Token("true", "TRUE"), pc.Token("false", "FALSE"), pc.Token("null", "NULL"),
+		// also we cover in this way boolean literal declaration (true | false)
+		pc.Token("true", "TRUE"), pc.Token("false", "FALSE"),
+		// also here we parse 'null' and 'this
+		pc.Token("null", "NULL"), pc.Token("this", "THIS"),
 		// TODO (hmny): Should we also add char literal PC
 	)
 )
@@ -113,8 +117,8 @@ var (
 )
 
 func init() {
-	pExpr = ast.OrdChoice("expression", nil, ast.OrdChoice("item", nil, pLiteral))
-	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt))
+	pExpr = ast.OrdChoice("expression", nil, ast.OrdChoice("item", nil, pLiteral, pIdent))
+	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pVarStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt))
 }
 
 // ----------------------------------------------------------------------------

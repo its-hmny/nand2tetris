@@ -72,7 +72,12 @@ type DoStmt struct { // Unconditional jump, will call another subroutine and ign
 	FuncCall FuncCallExpr //The function to be called
 }
 
-type LetStmt struct { // Variable declaration construct, will allocate a new var w/ a given value
+type VarStmt struct { // Variable declaration construct, will allocate a new var w/o a given value
+	Var   string     // The name or identifier of the new local variable
+	Value Expression // The initial value to be associated to the variable
+}
+
+type LetStmt struct { // Variable assignment construct, will allocate a new var w/ a given value
 	Var   string     // The name or identifier of the new local variable
 	Value Expression // The initial value to be associated to the variable
 }
@@ -105,9 +110,7 @@ type VarExpr struct { // Extracts the value contained in a variable
 	Var string // The name or identifier of the variable we want the value of
 }
 
-type ThisExpr struct{} // Extracts the value of the current object we're executing in
-
-type ConstExpr struct { // Extracts the value of a constant (also called literal)
+type LiteralExpr struct { // Extracts the value of a constant (also called literal)
 	Type  VarType // The literal type (string, int, char, ...)
 	Value int16   // The constant value to be produced
 }
