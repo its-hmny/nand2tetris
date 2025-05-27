@@ -16,7 +16,7 @@ var (
 		ast.Kleene("file_header", nil, pComment),
 		pc.Atom("class", "CLASS"), pIdent, pLBrace,
 		ast.Kleene("fields_or_comments", nil, ast.OrdChoice("items", nil, pField, pComment)),
-		ast.Kleene("methods_or_comments", nil, ast.OrdChoice("items", nil, pMethod, pComment)),
+		ast.Kleene("routines_or_comments", nil, ast.OrdChoice("items", nil, pRoutines, pComment)),
 		pRBrace,
 	)
 
@@ -28,9 +28,9 @@ var (
 		ast.Many("items", nil, pIdent, pComma), pSemi,
 	)
 
-	pMethod = ast.And("method_decl", nil,
+	pRoutines = ast.And("routine_decl", nil,
 		// Func keyword, return type and function/method name
-		pc.Atom("function", "FUNC"), pDataType, pIdent,
+		pRoutineType, pDataType, pIdent,
 		// '(', comma separated argument type(s) and name(s), ')'
 		pLParen, ast.Kleene("arguments", nil, ast.And("argument", nil, pDataType, pIdent), pComma), pRParen,
 		// '{', statement and or comments (s), '}'
@@ -133,7 +133,15 @@ var (
 	pLBrace = pc.Atom("{", "LBRACE")
 	pRBrace = pc.Atom("}", "RBRACE")
 
-	// Available memory operation type (only push and pop since it's stack based)
+	// Different types od routine declarations, each has its own meaning:
+	// - constructor: For constructor (just one per class) method (to create the object instance)
+	// - function:  For Java-like static functions (w/o access to the object instance)
+	// - method: For classic OOP-like class methods (w/ access to the object instance)
+	pRoutineType = ast.OrdChoice("method_type", nil,
+		pc.Atom("constructor", "CONSTRUCTOR"), pc.Atom("function", "FUNCTION"), pc.Atom("method", "METHOD"),
+	)
+
+	// Built-in (also known as primitive) data types allowed/provided by the Jack language.
 	pDataType = ast.OrdChoice("data_type", nil,
 		pc.Atom("int", "INT"), pc.Atom("char", "CHAR"), pc.Atom("bool", "BOOL"),
 		pc.Atom("null", "NULL"), pc.Atom("void", "VOID"), pIdent,
