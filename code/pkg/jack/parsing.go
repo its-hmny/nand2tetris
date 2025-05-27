@@ -80,7 +80,7 @@ var (
 var (
 	// Top level generic expression parser, declared like this to allow cyclical references.
 	// An example of a expression that has the need to parse other nested expr is (1.0 * (2 / 3)).
-	pExpr pc.Parser
+	pExpr, pTerm pc.Parser
 
 	// ! The order of this PCs is important: by putting Int() before Float() we'll not be able to parse a float
 	// !completely because the integer part will be picked up by the Int() PC before given back control to PExpr.
@@ -96,17 +96,23 @@ var (
 
 	pArrayExpr = ast.And("array_expr", nil, pIdent, pc.Atom("[", "RSQUARE"), &pExpr, pc.Atom("]", "LSQUARE"))
 
+	pUnaryExpr = ast.And("unary_expr", nil,
+		// Unary operations supported by the Jack language (boolean and arithmetic negation)
+		ast.OrdChoice("op", nil, pc.Atom("-", "ARITH_NEG"), pc.Atom("~", "BOOL_NEG")),
+		&pTerm, // Nested subexpression or term to be evaluated
+	)
+
 	pBinaryExpr = ast.And("binary_expr", nil,
-		ast.OrdChoice("op1", nil, pArrayExpr, pIdent, pLiteral),
+		&pTerm, // Nested subexpression or term to be evaluated
 		ast.OrdChoice("op", nil,
 			// Bitwise binary operations
 			pc.Atom("||", "BOOL_OR"), pc.Atom("&&", "BOOL_AND"),
 			// Comparison operations
-			pc.Atom("==", "EQUAL"), pc.Atom("<", "LESS_THAN"), pc.Atom(">", "GREATER_THAN"),
+			pc.Atom("=", "EQUAL"), pc.Atom("<", "LESS_THAN"), pc.Atom(">", "GREATER_THAN"),
 			// Arithmetic operations
 			pc.Atom("+", "PLUS"), pc.Atom("-", "MINUS"), pc.Atom("/", "DIVIDE"), pc.Atom("*", "MULTIPLY"),
 		),
-		ast.OrdChoice("op2", nil, pArrayExpr, pIdent, pLiteral),
+		&pTerm, // Nested subexpression or term to be evaluated
 	)
 
 	pFunCallExpr = ast.And("funcall_expr", nil,
@@ -149,8 +155,10 @@ var (
 )
 
 func init() {
-	pExpr = ast.OrdChoice("expression", nil, ast.OrdChoice("item", nil, pFunCallExpr, pBinaryExpr, pLiteral, pIdent))
-	pStatement = ast.And("statement", nil, ast.OrdChoice("item", nil, pDoStmt, pVarStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt))
+	pStatement = ast.OrdChoice("item", nil, pDoStmt, pVarStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt)
+
+	pExpr = ast.OrdChoice("expression", nil, pBinaryExpr, pUnaryExpr, pFunCallExpr, pArrayExpr, pLiteral, pIdent)
+	pTerm = ast.OrdChoice("term", nil, pFunCallExpr, pArrayExpr, pLiteral, pIdent, ast.And("subexpr", nil, pLParen, &pExpr, pRParen))
 }
 
 // ----------------------------------------------------------------------------
