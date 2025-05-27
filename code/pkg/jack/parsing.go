@@ -21,7 +21,7 @@ var (
 	)
 
 	pField = ast.And("field_decl", nil,
-		pc.Atom("field", "FIELD"), pDataType,
+		pFieldType, pDataType,
 		// ! The 'Many' combinator is used because both of these are valid Jack syntax:
 		// ! - 'field int test;'
 		// ! - 'field int numerator, denominator;'
@@ -55,9 +55,7 @@ var (
 		// Support both external method call and local method call syntax:
 		// - 'External': call to another class method (e.g. 'do X.ExtMethod()')
 		// - 'Local': call to same class/instance method (e.g. 'do InternalMethod()')
-		pc.Atom("do", "DO"), ast.Many("qualifiers", nil, pIdent, pDot),
-		// '(', comma separated argument passing w/ expression to be eval'd, ')'
-		pLParen, ast.Kleene("args", nil, &pExpr, pComma), pRParen, pSemi,
+		pc.Atom("do", "DO"), pFunCallExpr, pSemi,
 	)
 
 	pVarStmt = ast.And("var_stmt", nil, pc.Atom("var", "VAR"), pIdent, ast.Many("variables", nil, pIdent, pComma), pSemi)
@@ -69,6 +67,11 @@ var (
 	pIfStmt = ast.And("if_stmt", nil,
 		pc.Atom("if", "IF"), pLParen, &pExpr, pRParen, pLBrace,
 		ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, &pStatement, pComment)), pRBrace,
+		ast.Maybe("else_opt", nil, ast.And("else_stmt", nil,
+			pc.Atom("else", "ELSE"), pLBrace,
+			ast.Kleene("statements_or_comments", nil, ast.OrdChoice("item", nil, &pStatement, pComment)),
+			pRBrace,
+		)),
 	)
 
 	pWhileStmt = ast.And("while_stmt", nil,
@@ -106,7 +109,7 @@ var (
 		&pTerm, // Nested subexpression or term to be evaluated
 		ast.OrdChoice("op", nil,
 			// Bitwise binary operations
-			pc.Atom("||", "BOOL_OR"), pc.Atom("&&", "BOOL_AND"),
+			pc.Atom("|", "BOOL_OR"), pc.Atom("&", "BOOL_AND"),
 			// Comparison operations
 			pc.Atom("=", "EQUAL"), pc.Atom("<", "LESS_THAN"), pc.Atom(">", "GREATER_THAN"),
 			// Arithmetic operations
@@ -139,6 +142,13 @@ var (
 	pLBrace = pc.Atom("{", "LBRACE")
 	pRBrace = pc.Atom("}", "RBRACE")
 
+	// Different types of field declarations, each has its own meaning:
+	// - field: For classic OOP-like fields (accessed only by the object instance)
+	// - static: For Java-like static fields (accessed by all the object instances)
+	pFieldType = ast.OrdChoice("method_type", nil,
+		pc.Atom("field", "FIELD"), pc.Atom("static", "STATIC"),
+	)
+
 	// Different types od routine declarations, each has its own meaning:
 	// - constructor: For constructor (just one per class) method (to create the object instance)
 	// - function:  For Java-like static functions (w/o access to the object instance)
@@ -149,7 +159,7 @@ var (
 
 	// Built-in (also known as primitive) data types allowed/provided by the Jack language.
 	pDataType = ast.OrdChoice("data_type", nil,
-		pc.Atom("int", "INT"), pc.Atom("char", "CHAR"), pc.Atom("bool", "BOOL"),
+		pc.Atom("int", "INT"), pc.Atom("char", "CHAR"), pc.Atom("boolean", "BOOL"),
 		pc.Atom("null", "NULL"), pc.Atom("void", "VOID"), pIdent,
 	)
 )
@@ -157,7 +167,7 @@ var (
 func init() {
 	pStatement = ast.OrdChoice("item", nil, pDoStmt, pVarStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt)
 
-	pExpr = ast.OrdChoice("expression", nil, pBinaryExpr, pUnaryExpr, pFunCallExpr, pArrayExpr, pLiteral, pIdent)
+	pExpr = ast.OrdChoice("expression", nil, pBinaryExpr, pUnaryExpr, pFunCallExpr, pArrayExpr, pLiteral, pIdent, ast.And("subexpr", nil, pLParen, &pExpr, pRParen))
 	pTerm = ast.OrdChoice("term", nil, pFunCallExpr, pArrayExpr, pLiteral, pIdent, ast.And("subexpr", nil, pLParen, &pExpr, pRParen))
 }
 
