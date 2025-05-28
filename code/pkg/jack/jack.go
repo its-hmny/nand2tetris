@@ -72,13 +72,12 @@ type DoStmt struct { // Unconditional jump, will call another subroutine and ign
 }
 
 type VarStmt struct { // Variable declaration construct, will allocate a new var w/o a given value
-	Var   string     // The name or identifier of the new local variable
-	Value Expression // The initial value to be associated to the variable
+	Vars []Variable // The name or identifiers of the new local variables
 }
 
 type LetStmt struct { // Variable assignment construct, will allocate a new var w/ a given value
-	Var   string     // The name or identifier of the new local variable
-	Value Expression // The initial value to be associated to the variable
+	Lhs Expression // The expression to be assigned the value (only VarExpr and ArrayExpr are allowed)
+	Rhs Expression // The expression to be evaluated and assigned to the LHS counterpart (all Expression are allowed)
 }
 
 type ReturnStmt struct { // Unconditional jump, will go back to the caller and provide it an (optional) output
@@ -115,8 +114,8 @@ type LiteralExpr struct { // Extracts the value of a constant (also called liter
 }
 
 type ArrayExpr struct { // Extracts the value of a single cell/element for an array
-	Var   string // The name or identifier of the array we want the value from
-	Index int    // The index of the value we want to extract
+	Var   string     // The name or identifier of the array we want the value from
+	Index Expression // The index of the value we want to extract
 }
 
 type UnaryExpr struct { // Applies a transformation to 1 expression to produce a new value
