@@ -46,8 +46,7 @@ type Subroutine struct {
 	Return    DataType            // The type of value returned by the procedure ('void' for no value)
 	Arguments map[string]Variable // The set of arguments to be provided and used during the execution
 
-	LocalVars  map[string]Variable // The set of local vars to store intermediates and others during the execution
-	Statements []Statement         // The list of statements to be executed, a representation of the func program flow
+	Statements []Statement // The list of statements to be executed, a representation of the func program flow
 }
 
 type SubroutineType string // Enum to manage the different type allowed for a Subroutine
@@ -111,8 +110,8 @@ type VarExpr struct { // Extracts the value contained in a variable
 }
 
 type LiteralExpr struct { // Extracts the value of a constant (also called literal)
-	Type  VarType // The literal type (string, int, char, ...)
-	Value int16   // The constant value to be produced
+	Type  DataType // The literal type (string, int, char, ...)
+	Value string   // The constant value to be produced
 }
 
 type ArrayExpr struct { // Extracts the value of a single cell/element for an array
@@ -165,9 +164,8 @@ const (
 // - Static & instanced fields for classes
 // - Local variables and parameters for subroutines
 type Variable struct {
-	Name string  // The var name, acts as identifier in the scope it is declared
-	Type VarType // The variable type helps determine the scope of the variable
-
+	Name      string   // The var name, acts as identifier in the scope it is declared
+	Type      VarType  // The variable type helps determine the scope of the variable
 	DataType  DataType // The data type defines how to read or cast the value contained by the variable
 	ClassName string   // The additional and specific class type if (DataType = Object)
 }
@@ -185,9 +183,9 @@ type DataType string // Enum to manage the operation allowed for an DataType
 
 const (
 	Int    DataType = "int"
-	Char   DataType = "char"
 	Bool   DataType = "bool"
 	Null   DataType = "null"
+	String DataType = "string"
 	Void   DataType = "void"
 	Object DataType = "object"
 )

@@ -1,7 +1,6 @@
 package jack
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -203,10 +202,7 @@ func (p *Parser) Parse() (Class, error) {
 		return Class{}, fmt.Errorf("failed to parse AST from input content")
 	}
 
-	// ! return p.FromAST(ast)
-
-	fmt.Println(ast) // TODO Remove
-	return Class{}, errors.New("Parser.Parse not implemented yet")
+	return p.FromAST(ast)
 }
 
 // Scans the textual input stream coming from the 'reader' method and returns a traversable AST
@@ -235,4 +231,238 @@ func (p *Parser) FromSource(source []byte) (pc.Queryable, bool) {
 	}
 	// TODO (hmny): This hardcoding to true should be changed
 	return root, true // Success is based on the reaching of 'EOF'
+}
+
+// This function takes the root node of the raw parsed AST and does a DFS on it parsing
+// one by one each subtree and retuning a 'jack.Class' that can be used as in-memory and
+// type-safe AST not dependent on the parsing library used.
+func (p *Parser) FromAST(root pc.Queryable) (Class, error) {
+	class := Class{Fields: make(map[string]Variable), Subroutines: make(map[string]Subroutine)}
+
+	if root.GetName() != "class_decl" {
+		return Class{}, fmt.Errorf("expected node 'class_decl', found %s", root.GetName())
+	}
+
+	for _, child := range root.GetChildren() {
+		switch child.GetName() {
+		case "file_header", "comment": // File headers is just a lot of comments and are just skipped
+			continue
+
+		case "CLASS", "LBRACE", "RBRACE": // Syntactic sugar is just skipped
+			continue
+
+		case "IDENT": // Comment nodes in the AST are just skipped
+			class.Name = child.GetValue()
+
+		case "fields_or_comments": // Field declaration subtree, appends 'jack.Variable' to 'class.Fields'
+			for _, node := range child.GetChildren() {
+				if node.GetName() == "comments" { // Skip comments
+					continue
+				}
+				fields, err := p.HandleFieldDecl(node)
+				if err != nil {
+					return Class{}, err
+				}
+				for _, field := range fields {
+					class.Fields[field.Name] = field
+				}
+			}
+
+		case "routines_or_comments": // Method declaration subtree, appends 'jack.Subroutine' to 'class.Subroutines'
+			for _, node := range child.GetChildren() {
+				if node.GetName() == "comments" { // Skip comments
+					continue
+				}
+				subroutine, err := p.HandleSubroutineDecl(node)
+				if err != nil {
+					return Class{}, err
+				}
+				class.Subroutines[subroutine.Name] = subroutine
+			}
+
+		default: // Error case, unrecognized subtree in the AST
+			return Class{}, fmt.Errorf("unrecognized node '%s'", child.GetName())
+		}
+	}
+
+	return class, nil
+}
+
+// Specialized function to convert a "field_decl" node to a '[]jack.Variable'.
+func (Parser) HandleFieldDecl(node pc.Queryable) ([]Variable, error) {
+	if node.GetName() != "field_decl" {
+		return nil, fmt.Errorf("expected node 'field_decl', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 4 {
+		return nil, fmt.Errorf("expected node with 4 leaf, got %d", len(node.GetChildren()))
+	}
+
+	fieldType := VarType(node.GetChildren()[0].GetValue())
+	dataType := DataType(node.GetChildren()[1].GetValue())
+
+	nested, fields := node.GetChildren()[2].GetChildren(), []Variable{}
+	if len(nested) < 1 {
+		return nil, fmt.Errorf("expected at least one field declaration, got %d", len(nested))
+	}
+
+	// Iterate on the nested possible n declarations to extract all the variable names
+	for _, child := range nested {
+		if child.GetName() != "IDENT" {
+			return nil, fmt.Errorf("expected node 'IDENT', got %s", child.GetName())
+		}
+
+		fields = append(fields, Variable{Name: child.GetValue(), Type: fieldType, DataType: dataType})
+	}
+
+	return fields, nil
+}
+
+// Specialized function to convert a "routine_decl" node to a 'jack.Routine'.
+func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
+	if node.GetName() != "routine_decl" {
+		return Subroutine{}, fmt.Errorf("expected node 'routine_decl', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 9 {
+		return Subroutine{}, fmt.Errorf("expected node with 9 leaf, got %d", len(node.GetChildren()))
+	}
+
+	routineType := SubroutineType(node.GetChildren()[0].GetValue())
+	returnType := DataType(node.GetChildren()[1].GetValue())
+	routineName := node.GetChildren()[2].GetValue()
+
+	// All constructors must be named 'new', so we actively check for that
+	if routineType == Constructor && routineName != "new" {
+		return Subroutine{}, fmt.Errorf("constructor method must be named 'new', got '%s'", routineName)
+	}
+
+	// Iterate on the nested possible n declarations to extract all the variable names
+	nested, arguments := node.GetChildren()[4].GetChildren(), map[string]Variable{}
+	for _, child := range nested {
+		argType := DataType(child.GetChildren()[0].GetValue())
+		argName := child.GetChildren()[1].GetValue()
+
+		arguments[argName] = Variable{Name: argName, Type: Parameter, DataType: argType}
+	}
+
+	nested, statements := node.GetChildren()[7].GetChildren(), []Statement{}
+	for _, child := range nested {
+		switch child.GetName() {
+		case "sl_comment", "ml_comment": // Comment nodes in the AST are just skipped
+			continue
+		default:
+			stmt, err := p.HandleStatement(child)
+			if err != nil {
+				return Subroutine{}, fmt.Errorf("failed to handle statement: %w", err)
+			}
+			statements = append(statements, stmt)
+		}
+	}
+
+	return Subroutine{Name: routineName, Type: routineType, Return: returnType, Arguments: arguments, Statements: statements}, nil
+}
+
+// Generalized function to dispatch and convert between multiple statements types returning a 'jack.Statement'.
+func (p *Parser) HandleStatement(node pc.Queryable) (Statement, error) {
+	switch node.GetName() {
+	case "do_stmt": // Comment nodes in the AST are just skipped
+		stmt, err := p.HandleDoStmt(node)
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle 'do' statement: %w", err)
+		}
+		return stmt, nil
+
+	case "return_stmt": // Comment nodes in the AST are just skipped
+		stmt, err := p.HandleReturnStmt(node)
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle 'do' statement: %w", err)
+		}
+		return stmt, nil
+
+	default:
+		return nil, fmt.Errorf("unrecognized node '%s' in statement", node.GetName())
+	}
+}
+
+// Specialized function to convert a "do_stmt" node to a 'jack.DoStmt'.
+func (p *Parser) HandleDoStmt(node pc.Queryable) (Statement, error) {
+	if node.GetName() != "do_stmt" {
+		return nil, fmt.Errorf("expected node 'do_stmt', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 3 {
+		return nil, fmt.Errorf("expected node with 3 leaf, got %d", len(node.GetChildren()))
+	}
+
+	expr, err := p.HandleFunCallExpr(node.GetChildren()[1])
+	if err != nil {
+		return nil, fmt.Errorf("failed to handle nested function call expression: %w", err)
+	}
+
+	return DoStmt{FuncCall: expr.(FuncCallExpr)}, nil
+}
+
+// Specialized function to convert a "return_stmt" node to a 'jack.ReturnStmt'.
+func (p *Parser) HandleReturnStmt(node pc.Queryable) (Statement, error) {
+	if node.GetName() != "return_stmt" {
+		return nil, fmt.Errorf("expected node 'return_stmt', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 3 {
+		return nil, fmt.Errorf("expected node with 3 leaf, got %d", len(node.GetChildren()))
+	}
+
+	// The return value/expression can be omitted (for example if the return type is void)
+	if node.GetChildren()[1].GetName() == "missing" {
+		return ReturnStmt{Expr: nil}, nil
+	}
+
+	expr, err := p.HandleExpression(node.GetChildren()[1])
+	if err != nil {
+		return nil, fmt.Errorf("failed to handle nested expression: %w", err)
+	}
+
+	return ReturnStmt{Expr: expr}, nil
+}
+
+// Generalized function to dispatch and convert between multiple expression types returning a 'jack.Expression'.
+func (p *Parser) HandleExpression(node pc.Queryable) (Expression, error) {
+	switch node.GetName() {
+	case "funcall_expr": // Comment nodes in the AST are just skipped
+		stmt, err := p.HandleFunCallExpr(node)
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle 'funcall' expression: %w", err)
+		}
+		return stmt, nil
+	case "STRING":
+		return LiteralExpr{Type: String, Value: node.GetValue()}, nil
+	default:
+		return nil, fmt.Errorf("unrecognized node '%s' in expression", node.GetName())
+	}
+}
+
+// Specialized function to convert a "funcall_expr" node to a 'jack.FuncCallExpr'.
+func (p *Parser) HandleFunCallExpr(node pc.Queryable) (Expression, error) {
+	if node.GetName() != "funcall_expr" {
+		return nil, fmt.Errorf("expected node 'funcall_expr', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 4 {
+		return nil, fmt.Errorf("expected node with 4 leaf, got %d", len(node.GetChildren()))
+	}
+
+	nested := node.GetChildren()[0].GetChildren()
+	external, class, method := len(nested) > 1, "", ""
+	if external {
+		class, method = nested[0].GetValue(), nested[1].GetValue()
+	} else {
+		class, method = "", nested[0].GetValue()
+	}
+
+	nested, arguments := node.GetChildren()[2].GetChildren(), []Expression{}
+	for _, child := range nested {
+		arg, err := p.HandleExpression(child)
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle nested argument expression: %w", err)
+		}
+		arguments = append(arguments, arg)
+	}
+
+	return FuncCallExpr{IsExtCall: external, Var: class, FuncName: method, Arguments: arguments}, nil
 }
