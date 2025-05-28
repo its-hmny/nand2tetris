@@ -58,7 +58,7 @@ var (
 		pc.Atom("do", "DO"), pFunCallExpr, pSemi,
 	)
 
-	pVarStmt = ast.And("var_stmt", nil, pc.Atom("var", "VAR"), pIdent, ast.Many("variables", nil, pIdent, pComma), pSemi)
+	pVarStmt = ast.And("var_stmt", nil, pc.Atom("var", "VAR"), pDataType, ast.Many("variables", nil, pIdent, pComma), pSemi)
 
 	pLetStmt = ast.And("let_stmt", nil, pc.Atom("let", "LET"), ast.OrdChoice("lhs", nil, pArrayExpr, pIdent), pc.Atom("=", "EQUAL"), &pExpr, pSemi)
 

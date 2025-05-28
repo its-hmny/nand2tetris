@@ -156,7 +156,7 @@ func (p *Parser) FromAST(root pc.Queryable) (Module, error) {
 	module := []Operation{}
 
 	if root.GetName() != "module" {
-		return nil, fmt.Errorf("expected node 'program', found %s", root.GetName())
+		return nil, fmt.Errorf("expected node 'module', found %s", root.GetName())
 	}
 
 	for _, child := range root.GetChildren() {
