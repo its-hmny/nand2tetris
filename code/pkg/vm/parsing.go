@@ -175,7 +175,7 @@ func (p *Parser) FromAST(root pc.Queryable) (Module, error) {
 			}
 			module = append(module, op)
 
-		case "label_decl": // Label declaration subtree, appends 'vm.LabelDeclaration' to 'modules'
+		case "label_decl": // Label declaration subtree, appends 'vm.LabelDecl' to 'modules'
 			op, err := p.HandleLabelDecl(child)
 			if op == nil || err != nil {
 				return nil, err
@@ -252,7 +252,7 @@ func (Parser) HandleArithmeticOp(node pc.Queryable) (Operation, error) {
 	return ArithmeticOp{Operation: ArithOpType(node.GetChildren()[0].GetValue())}, nil
 }
 
-// Specialized function to convert a "label_decl" node to a 'vm.LabelDeclaration'.
+// Specialized function to convert a "label_decl" node to a 'vm.LabelDecl'.
 func (Parser) HandleLabelDecl(node pc.Queryable) (Operation, error) {
 	if node.GetName() != "label_decl" {
 		log.Fatalf("expected node 'label_decl', got %s ", node.GetName())
@@ -261,7 +261,7 @@ func (Parser) HandleLabelDecl(node pc.Queryable) (Operation, error) {
 		log.Fatalf("expected node 'label_decl' with 2 leaf, got %d", len(node.GetChildren()))
 	}
 
-	return LabelDeclaration{Name: node.GetChildren()[1].GetValue()}, nil
+	return LabelDecl{Name: node.GetChildren()[1].GetValue()}, nil
 }
 
 // Specialized function to convert a "goto_op" node to a 'vm.GotoOp'.

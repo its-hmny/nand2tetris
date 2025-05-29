@@ -91,7 +91,7 @@ const (
 // In the VM intermediate language is possible to define a function scoped label that can be used to
 // make both conditional and unconditional jump allowing the user to implement looping and conditional.
 // Is important to note that the label is available only from within the function that declares it.
-type LabelDeclaration struct{ Name string }
+type LabelDecl struct{ Name string }
 
 // ----------------------------------------------------------------------------
 // Goto Op

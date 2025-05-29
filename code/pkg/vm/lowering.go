@@ -451,7 +451,7 @@ func (l *Lowerer) Lowerer() (asm.Program, error) {
 				}
 				program = append(program, inst...)
 
-			case LabelDeclaration: // Converts 'vm.LabelDeclaration' to a list of 'asm.Instruction'
+			case LabelDecl: // Converts 'vm.LabelDecl' to a list of 'asm.Instruction'
 				inst, err := l.HandleLabelDecl(tOp)
 				if inst == nil || err != nil {
 					return nil, err
@@ -610,10 +610,10 @@ func (l *Lowerer) HandleArithmeticOp(op ArithmeticOp) ([]asm.Instruction, error)
 	return append(append(prelude, generator(l.nRandomizer)...), postlude...), nil
 }
 
-// Specialized function to convert a 'vm.LabelDeclaration' node to a list of 'asm.Instruction'.
+// Specialized function to convert a 'vm.LabelDecl' node to a list of 'asm.Instruction'.
 // Manages the 'scoping' of the labels (a label is reachable only from within its declaration scope)
 // during the lowering to the asm counterpart by prepending the label with the scope name.
-func (l *Lowerer) HandleLabelDecl(op LabelDeclaration) ([]asm.Instruction, error) {
+func (l *Lowerer) HandleLabelDecl(op LabelDecl) ([]asm.Instruction, error) {
 	if op.Name == "" { // Invariant: the label name should always be provided
 		return nil, fmt.Errorf("unexpected empty label value")
 	}
