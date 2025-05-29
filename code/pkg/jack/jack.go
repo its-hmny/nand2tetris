@@ -86,7 +86,8 @@ type ReturnStmt struct { // Unconditional jump, will go back to the caller and p
 
 type IfStmt struct { // Conditional jump construct, will have to fork the execution flow based on a condition
 	Condition Expression  // The expression to be eval'd, casted to a bool value
-	Block     []Statement // The code block to be executed if the condition is met
+	ThenBlock []Statement // The code block to be executed if the condition is met
+	ElseBlock []Statement // The code block to be executed if the condition is not met
 }
 
 type WhileStmt struct { // Conditional iteration construct, will execute a block based on a condition

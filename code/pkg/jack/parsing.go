@@ -257,7 +257,7 @@ func (p *Parser) FromAST(root pc.Queryable) (Class, error) {
 
 		case "fields_or_comments": // Field declaration subtree, appends 'jack.Variable' to 'class.Fields'
 			for _, node := range child.GetChildren() {
-				if node.GetName() == "comments" { // Skip comments
+				if node.GetName() == "sl_comment" || node.GetName() == "ml_comment" { // Skip comments
 					continue
 				}
 				fields, err := p.HandleFieldDecl(node)
@@ -271,7 +271,7 @@ func (p *Parser) FromAST(root pc.Queryable) (Class, error) {
 
 		case "routines_or_comments": // Method declaration subtree, appends 'jack.Subroutine' to 'class.Subroutines'
 			for _, node := range child.GetChildren() {
-				if node.GetName() == "comments" { // Skip comments
+				if node.GetName() == "sl_comment" || node.GetName() == "ml_comment" { // Skip comments
 					continue
 				}
 				subroutine, err := p.HandleSubroutineDecl(node)
@@ -386,6 +386,13 @@ func (p *Parser) HandleStatement(node pc.Queryable) (Statement, error) {
 		}
 		return stmt, nil
 
+	case "if_stmt":
+		stmt, err := p.HandleIfStmt(node)
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle 'if' statement: %w", err)
+		}
+		return stmt, nil
+
 	case "while_stmt":
 		stmt, err := p.HandleWhileStmt(node)
 		if err != nil {
@@ -477,6 +484,56 @@ func (p *Parser) HandleLetStmt(node pc.Queryable) (Statement, error) {
 	return LetStmt{Lhs: lhs, Rhs: rhs}, nil
 }
 
+// Specialized function to convert a "if_stmt" node to a 'jack.IfStmt'.
+func (p *Parser) HandleIfStmt(node pc.Queryable) (Statement, error) {
+	if node.GetName() != "if_stmt" {
+		return nil, fmt.Errorf("expected node 'if_stmt', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 8 {
+		return nil, fmt.Errorf("expected node with 8 leaf, got %d", len(node.GetChildren()))
+	}
+
+	condition, err := p.HandleExpression(node.GetChildren()[2])
+	if err != nil {
+		return nil, fmt.Errorf("failed to handle nested if expression: %w", err)
+	}
+
+	nested, thenStmts := node.GetChildren()[5].GetChildren(), []Statement{}
+	for _, child := range nested {
+		switch child.GetName() {
+		case "sl_comment", "ml_comment": // Comment nodes in the AST are just skipped
+			continue
+		default:
+			stmt, err := p.HandleStatement(child)
+			if err != nil {
+				return IfStmt{}, fmt.Errorf("failed to handle statement in 'then' block: %w", err)
+			}
+			thenStmts = append(thenStmts, stmt)
+		}
+	}
+
+	// The else section of the if statement is optional and can be omitted
+	if node.GetChildren()[7].GetName() == "missing" {
+		return IfStmt{Condition: condition, ThenBlock: thenStmts, ElseBlock: []Statement{}}, nil
+	}
+
+	nested, elseStmts := node.GetChildren()[7].GetChildren(), []Statement{}
+	for _, child := range nested {
+		switch child.GetName() {
+		case "sl_comment", "ml_comment": // Comment nodes in the AST are just skipped
+			continue
+		default:
+			stmt, err := p.HandleStatement(child)
+			if err != nil {
+				return IfStmt{}, fmt.Errorf("failed to handle statement in 'else' block: %w", err)
+			}
+			thenStmts = append(thenStmts, stmt)
+		}
+	}
+
+	return IfStmt{Condition: condition, ThenBlock: thenStmts, ElseBlock: elseStmts}, nil
+}
+
 // Specialized function to convert a "while_stmt" node to a 'jack.WhileStmt'.
 func (p *Parser) HandleWhileStmt(node pc.Queryable) (Statement, error) {
 	if node.GetName() != "while_stmt" {
@@ -499,7 +556,7 @@ func (p *Parser) HandleWhileStmt(node pc.Queryable) (Statement, error) {
 		default:
 			stmt, err := p.HandleStatement(child)
 			if err != nil {
-				return Subroutine{}, fmt.Errorf("failed to handle statement: %w", err)
+				return WhileStmt{}, fmt.Errorf("failed to handle statement: %w", err)
 			}
 			statements = append(statements, stmt)
 		}
@@ -540,6 +597,13 @@ func (p *Parser) HandleExpression(node pc.Queryable) (Expression, error) {
 		}
 		return expr, nil
 
+	case "unary_expr":
+		expr, err := p.HandleUnaryExpr(node)
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle 'unary' expression: %w", err)
+		}
+		return expr, nil
+
 	case "binary_expr":
 		expr, err := p.HandleBinaryExpr(node)
 		if err != nil {
@@ -554,8 +618,17 @@ func (p *Parser) HandleExpression(node pc.Queryable) (Expression, error) {
 		}
 		return stmt, nil
 
+	case "subexpr":
+		stmt, err := p.HandleExpression(node.GetChildren()[1])
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle 'nested' expression: %w", err)
+		}
+		return stmt, nil
+
 	case "IDENT":
 		return VarExpr{Var: node.GetValue()}, nil
+	case "THIS":
+		return VarExpr{Var: "this"}, nil
 
 	case "INT":
 		return LiteralExpr{Type: Int, Value: node.GetValue()}, nil
@@ -584,6 +657,25 @@ func (p *Parser) HandleArrayExpr(node pc.Queryable) (Expression, error) {
 	}
 
 	return ArrayExpr{Var: array, Index: expr}, nil
+}
+
+// Specialized function to convert a "unary_expr" node to a 'jack.UnaryExpr'.
+func (p *Parser) HandleUnaryExpr(node pc.Queryable) (Expression, error) {
+	if node.GetName() != "unary_expr" {
+		return nil, fmt.Errorf("expected node 'unary_expr', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 2 {
+		return nil, fmt.Errorf("expected node with 2 leaf, got %d", len(node.GetChildren()))
+	}
+
+	exprType := ExprType(strings.ToLower((node.GetChildren()[0].GetValue())))
+
+	rhs, err := p.HandleExpression(node.GetChildren()[1])
+	if err != nil {
+		return nil, fmt.Errorf("failed to handle left-hand side expression: %w", err)
+	}
+
+	return UnaryExpr{Type: exprType, Rhs: rhs}, nil
 }
 
 // Specialized function to convert a "binary_expr" node to a 'jack.BinaryExpr'.
