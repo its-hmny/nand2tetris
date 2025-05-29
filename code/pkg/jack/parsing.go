@@ -518,7 +518,7 @@ func (p *Parser) HandleIfStmt(node pc.Queryable) (Statement, error) {
 	}
 
 	nested, elseStmts := node.GetChildren()[7].GetChildren(), []Statement{}
-	for _, child := range nested {
+	for _, child := range nested[2].GetChildren() {
 		switch child.GetName() {
 		case "sl_comment", "ml_comment": // Comment nodes in the AST are just skipped
 			continue
@@ -632,8 +632,12 @@ func (p *Parser) HandleExpression(node pc.Queryable) (Expression, error) {
 
 	case "INT":
 		return LiteralExpr{Type: Int, Value: node.GetValue()}, nil
+	case "TRUE", "FALSE":
+		return LiteralExpr{Type: Bool, Value: node.GetValue()}, nil
 	case "STRING":
 		return LiteralExpr{Type: String, Value: node.GetValue()}, nil
+	case "NULL":
+		return LiteralExpr{Type: Object, Value: node.GetValue()}, nil
 
 	default:
 		return nil, fmt.Errorf("unrecognized node '%s' in expression", node.GetName())
