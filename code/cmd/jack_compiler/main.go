@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"its-hmny.dev/nand2tetris/pkg/jack"
+	"its-hmny.dev/nand2tetris/pkg/vm"
 
 	"github.com/teris-io/cli"
 )
@@ -67,6 +68,30 @@ func Handler(args []string, options map[string]string) int {
 			fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
 			return -1
 		}
+	}
+
+	// Instantiate a lowerer to convert the program from Jack to Vm
+	lowerer := jack.NewLowerer(program)
+	// Lowers the jack.Program to an in-memory/IR representation of its Vm counterpart 'vm.Program'.
+	vmProgram, err := lowerer.Lowerer()
+	if err != nil {
+		fmt.Printf("ERROR: Unable to complete 'lowering' pass: %s\n", err)
+		return -1
+	}
+
+	// Now, instantiates a code generator for the Vm (compiled) program
+	codegen := vm.NewCodeGenerator(vmProgram)
+	// Iterates over each instruction and spits out the relative textual representation.
+	compiled, err := codegen.Generate()
+	if err != nil {
+		fmt.Printf("ERROR: Unable to complete 'codegen' pass: %s\n", err)
+		return -1
+	}
+
+	for _, comp := range compiled {
+		line := fmt.Sprintf("%s\n", comp)
+		// output.Write([]byte(line))
+		fmt.Print(line)
 	}
 
 	return 0
