@@ -39,7 +39,7 @@ func (cg *CodeGenerator) Generate() (map[string][]string, error) {
 			case ArithmeticOp:
 				generated, err = cg.GenerateArithmeticOp(tOperation)
 			case LabelDecl:
-				generated, err = cg.GenerateLabelDeclaration(tOperation)
+				generated, err = cg.GenerateLabelDecl(tOperation)
 			case GotoOp:
 				generated, err = cg.GenerateGotoOp(tOperation)
 			case FuncDecl:
@@ -63,35 +63,59 @@ func (cg *CodeGenerator) Generate() (map[string][]string, error) {
 
 // Specialized function to convert a 'MemoryOp' operation to the VM format.
 func (cg *CodeGenerator) GenerateMemoryOp(op MemoryOp) (string, error) {
-	return "", fmt.Errorf("not implemented yet")
+	// Bound checking on segment that do have an upperbound to the allowed offsets
+	if op.Segment == Pointer && op.Offset > 1 {
+		return "", fmt.Errorf("invalid 'pointer' offset, got %d", op.Offset)
+	}
+	if op.Segment == Temp && op.Offset > 7 {
+		return "", fmt.Errorf("invalid 'temp' offset, got %d", op.Offset)
+	}
+
+	return fmt.Sprintf("%s %s %d", string(op.Operation), string(op.Segment), op.Offset), nil
 }
 
 // Specialized function to convert a 'ArithmeticOp' operation to the VM format.
 func (cg *CodeGenerator) GenerateArithmeticOp(op ArithmeticOp) (string, error) {
-	return "", fmt.Errorf("not implemented yet")
+	return string(op.Operation), nil
 }
 
-// Specialized function to convert a 'LabelDeclaration' operation to the VM format.
-func (cg *CodeGenerator) GenerateLabelDeclaration(op LabelDecl) (string, error) {
-	return "", fmt.Errorf("not implemented yet")
+// Specialized function to convert a 'LabelDecl' operation to the VM format.
+func (cg *CodeGenerator) GenerateLabelDecl(op LabelDecl) (string, error) {
+	if op.Name == "" {
+		return "", fmt.Errorf("unable to produce empty label declaration")
+	}
+
+	return fmt.Sprintf("label %s", op.Name), nil
 }
 
 // Specialized function to convert a 'GotoOp' operation to the VM format.
 func (cg *CodeGenerator) GenerateGotoOp(op GotoOp) (string, error) {
-	return "", fmt.Errorf("not implemented yet")
+	if op.Label == "" {
+		return "", fmt.Errorf("unable to produce empty jump label")
+	}
+
+	return fmt.Sprintf("%s %s", string(op.Jump), op.Label), nil
 }
 
 // Specialized function to convert a 'FuncDecl' operation to the VM format.
 func (cg *CodeGenerator) GenerateFuncDecl(op FuncDecl) (string, error) {
-	return "", fmt.Errorf("not implemented yet")
+	if op.Name == "" {
+		return "", fmt.Errorf("unable to produce empty function declaration")
+	}
+
+	return fmt.Sprintf("function %s %d", op.Name, op.NLocal), nil
 }
 
 // Specialized function to convert a 'ReturnOp' operation to the VM format.
 func (cg *CodeGenerator) GenerateReturnOp(op ReturnOp) (string, error) {
-	return "", fmt.Errorf("not implemented yet")
+	return "return", nil
 }
 
 // Specialized function to convert a 'FuncCallOp' operation to the VM format.
 func (cg *CodeGenerator) GenerateFuncCallOp(op FuncCallOp) (string, error) {
-	return "", fmt.Errorf("not implemented yet")
+	if op.Name == "" {
+		return "", fmt.Errorf("unable to produce empty function call")
+	}
+
+	return fmt.Sprintf("call %s %d", op.Name, op.NArgs), nil
 }
