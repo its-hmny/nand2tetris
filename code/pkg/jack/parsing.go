@@ -238,52 +238,43 @@ func (p *Parser) FromSource(source []byte) (pc.Queryable, bool) {
 // one by one each subtree and retuning a 'jack.Class' that can be used as in-memory and
 // type-safe AST not dependent on the parsing library used.
 func (p *Parser) FromAST(root pc.Queryable) (Class, error) {
-	class := Class{Fields: make(map[string]Variable), Subroutines: make(map[string]Subroutine)}
-
 	if root.GetName() != "class_decl" {
 		return Class{}, fmt.Errorf("expected node 'class_decl', found %s", root.GetName())
 	}
+	if len(root.GetChildren()) != 7 {
+		return Class{}, fmt.Errorf("expected node with 7 leaf, got %d", len(root.GetChildren()))
+	}
 
-	for _, child := range root.GetChildren() {
-		switch child.GetName() {
-		case "file_header", "comment": // File headers is just a lot of comments and are just skipped
+	class := Class{
+		Name:        root.GetChildren()[3].GetValue(),
+		Fields:      map[string]Variable{},
+		Subroutines: map[string]Subroutine{},
+	}
+
+	// Field declaration subtree, appends 'jack.Variable' to 'class.Fields'
+	for _, node := range root.GetChildren()[4].GetChildren() {
+		if node.GetName() == "sl_comment" || node.GetName() == "ml_comment" { // Skip comments
 			continue
-
-		case "CLASS", "LBRACE", "RBRACE": // Syntactic sugar is just skipped
-			continue
-
-		case "IDENT": // Comment nodes in the AST are just skipped
-			class.Name = child.GetValue()
-
-		case "fields_or_comments": // Field declaration subtree, appends 'jack.Variable' to 'class.Fields'
-			for _, node := range child.GetChildren() {
-				if node.GetName() == "sl_comment" || node.GetName() == "ml_comment" { // Skip comments
-					continue
-				}
-				fields, err := p.HandleFieldDecl(node)
-				if err != nil {
-					return Class{}, err
-				}
-				for _, field := range fields {
-					class.Fields[field.Name] = field
-				}
-			}
-
-		case "routines_or_comments": // Method declaration subtree, appends 'jack.Subroutine' to 'class.Subroutines'
-			for _, node := range child.GetChildren() {
-				if node.GetName() == "sl_comment" || node.GetName() == "ml_comment" { // Skip comments
-					continue
-				}
-				subroutine, err := p.HandleSubroutineDecl(node)
-				if err != nil {
-					return Class{}, err
-				}
-				class.Subroutines[subroutine.Name] = subroutine
-			}
-
-		default: // Error case, unrecognized subtree in the AST
-			return Class{}, fmt.Errorf("unrecognized node '%s'", child.GetName())
 		}
+		fields, err := p.HandleFieldDecl(node)
+		if err != nil {
+			return Class{}, err
+		}
+		for _, field := range fields {
+			class.Fields[field.Name] = field
+		}
+	}
+
+	// Method declaration subtree, appends 'jack.Subroutine' to 'class.Subroutines'
+	for _, node := range root.GetChildren()[5].GetChildren() {
+		if node.GetName() == "sl_comment" || node.GetName() == "ml_comment" { // Skip comments
+			continue
+		}
+		subroutine, err := p.HandleSubroutineDecl(node)
+		if err != nil {
+			return Class{}, err
+		}
+		class.Subroutines[subroutine.Name] = subroutine
 	}
 
 	return class, nil
