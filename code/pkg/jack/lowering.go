@@ -241,4 +241,117 @@ func (l *Lowerer) HandleReturnStmt(statement ReturnStmt) ([]vm.Operation, error)
 	return append(ops, vm.ReturnOp{}), nil
 }
 
+// Generalized function to lower multiple expression types returning a 'vm.Operation' list.
+func (l *Lowerer) HandleExpression(expr Expression) ([]vm.Operation, error) {
+	switch tExpr := expr.(type) {
+	case VarExpr:
+		return l.HandleVarExpr(tExpr)
+	case LiteralExpr:
+		return l.HandleLiteralExpr(tExpr)
+	case ArrayExpr:
+		return l.HandleArrayExpr(tExpr)
+	case UnaryExpr:
+		return l.HandleUnaryExpr(tExpr)
+	case BinaryExpr:
+		return l.HandleBinaryExpr(tExpr)
+	case FuncCallExpr:
+		return l.HandleFuncCallExpr(tExpr)
+	default:
+		return nil, fmt.Errorf("unrecognized expression: %T", expr)
+	}
+}
 
+// Specialized function to convert a 'jack.VarExpr' to a list of 'vm.Operation'.
+func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
+	return nil, fmt.Errorf("not implemented yet")
+}
+
+// Specialized function to convert a 'jack.LiteralExpr' to a list of 'vm.Operation'.
+func (l *Lowerer) HandleLiteralExpr(expression LiteralExpr) ([]vm.Operation, error) {
+	return nil, fmt.Errorf("not implemented yet")
+}
+
+// Specialized function to convert a 'jack.ArrayExpr' to a list of 'vm.Operation'.
+func (l *Lowerer) HandleArrayExpr(expression ArrayExpr) ([]vm.Operation, error) {
+	return nil, fmt.Errorf("not implemented yet")
+}
+
+// Specialized function to convert a 'jack.UnaryExpr' to a list of 'vm.Operation'.
+func (l *Lowerer) HandleUnaryExpr(expression UnaryExpr) ([]vm.Operation, error) {
+	ops, err := l.HandleExpression(expression.Rhs)
+	if err != nil {
+		return nil, fmt.Errorf("error handling nested expression: %w", err)
+	}
+
+	switch expression.Type {
+	case Minus:
+		return append(ops, vm.ArithmeticOp{Operation: vm.Neg}), nil
+	case BoolNot:
+		return append(ops, vm.ArithmeticOp{Operation: vm.Not}), nil
+	default:
+		return nil, fmt.Errorf("unrecognized unary expression type: %s", expression.Type)
+	}
+}
+
+// Specialized function to convert a 'jack.BinaryExpr' to a list of 'vm.Operation'.
+func (l *Lowerer) HandleBinaryExpr(expression BinaryExpr) ([]vm.Operation, error) {
+	lhsOps, err := l.HandleExpression(expression.Lhs)
+	if err != nil {
+		return nil, fmt.Errorf("error handling nested LHS expression: %w", err)
+	}
+
+	rhsOps, err := l.HandleExpression(expression.Rhs)
+	if err != nil {
+		return nil, fmt.Errorf("error handling nested RHS expression: %w", err)
+	}
+
+	switch expression.Type {
+	case Plus:
+		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Add}), nil
+	case Minus:
+		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Sub}), nil
+	// TODO(hmny): Add support for 'Div' and 'Mul' by composing more basic operations
+	// case Divide:
+	// 	return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Div}), nil
+	// case Multiply:
+	// 	return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Mul}), nil
+	case BoolOr:
+		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Or}), nil
+	case BoolAnd:
+		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.And}), nil
+	case BoolNot:
+		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Not}), nil
+	case Equal:
+		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Eq}), nil
+	case LessThan:
+		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Lt}), nil
+	case GreatThan:
+		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Gt}), nil
+	default:
+		return nil, fmt.Errorf("unrecognized binary expression type: %s", expression.Type)
+	}
+}
+
+// Specialized function to convert a 'jack.FuncCallExpr' to a list of 'vm.Operation'.
+func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, error) {
+	argsInit, argsLen := []vm.Operation{}, len(expression.Arguments)
+
+	for _, expr := range expression.Arguments {
+		ops, err := l.HandleExpression(expr)
+		if err != nil {
+			return nil, fmt.Errorf("error handling argument expression: %w", err)
+		}
+
+		argsInit = append(argsInit, ops...)
+	}
+
+	if expression.IsExtCall {
+		// TODO (hmny): Add lookup of class type from variable identifier
+		fName := fmt.Sprintf("%s.%s", "Something", expression.FuncName)
+		return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
+	}
+
+	// TODO (hmny): Add lookup of class type from variable identifier
+	fName := fmt.Sprintf("%s.%s", "Something", expression.FuncName)
+	return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
+}
