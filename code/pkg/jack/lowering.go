@@ -17,6 +17,8 @@ import (
 // validating the input before proceeding with the processing.
 type Lowerer struct {
 	program Program
+
+	nRandomizer uint // Counter to randomize 'vm.LabelDecl(s)' with same name
 }
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
@@ -169,16 +171,17 @@ func (l *Lowerer) HandleWhileStmt(statement WhileStmt) ([]vm.Operation, error) {
 		blockOps = append(blockOps, ops...)
 	}
 
-	// TODO(hmny): Randomize the label names to avoid collisions
+	startIdx, endIdx := l.nRandomizer+1, l.nRandomizer+2
+	l.nRandomizer += 2 // ! Increment the randomizer for next use
 
 	return []vm.Operation{
-		vm.LabelDecl{Name: "WHILE_START"},
+		vm.LabelDecl{Name: fmt.Sprintf("WHILE_START_%d", startIdx)},
 		condOps,
 		vm.ArithmeticOp{Operation: vm.Neg},
-		vm.GotoOp{Label: "WHILE_END", Jump: vm.Conditional},
+		vm.GotoOp{Label: fmt.Sprintf("WHILE_END_%d", endIdx), Jump: vm.Conditional},
 		blockOps,
-		vm.GotoOp{Label: "WHILE_START", Jump: vm.Unconditional},
-		vm.LabelDecl{Name: "WHILE_END"},
+		vm.GotoOp{Label: fmt.Sprintf("WHILE_START_%d", startIdx), Jump: vm.Unconditional},
+		vm.LabelDecl{Name: fmt.Sprintf("WHILE_END_%d", endIdx)},
 	}, nil
 }
 
@@ -207,27 +210,30 @@ func (l *Lowerer) HandleIfStmt(statement IfStmt) ([]vm.Operation, error) {
 		elseOps = append(elseOps, ops...)
 	}
 
-	// TODO(hmny): Randomize the label names to avoid collisions
-
 	// If there's no else block, we can just implement one way fork in the control flow
 	if len(elseOps) == 0 {
+		elseIdx := l.nRandomizer + 1
+		l.nRandomizer += 1 // ! Increment the randomizer for next use
+
 		return []vm.Operation{
 			condOps,
 			vm.ArithmeticOp{Operation: vm.Neg},
-			vm.GotoOp{Label: "ELSE", Jump: vm.Conditional},
+			vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", elseIdx), Jump: vm.Conditional},
 			thenOps,
-			vm.LabelDecl{Name: "ELSE"},
+			vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", elseIdx)},
 		}, nil
 	}
 
 	// If there is an else block, we need to do a two way fork in the control flow
+	thenIdx, elseIdx := l.nRandomizer+1, l.nRandomizer+2
+	l.nRandomizer += 2 // ! Increment the randomizer for next use
 	return []vm.Operation{
 		condOps,
-		vm.GotoOp{Label: "THEN", Jump: vm.Conditional},
-		vm.GotoOp{Label: "ELSE", Jump: vm.Unconditional},
-		vm.LabelDecl{Name: "THEN"},
+		vm.GotoOp{Label: fmt.Sprintf("THEN_%d", thenIdx), Jump: vm.Conditional},
+		vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", elseIdx), Jump: vm.Unconditional},
+		vm.LabelDecl{Name: fmt.Sprintf("THEN_%d", thenIdx)},
 		thenOps,
-		vm.LabelDecl{Name: "ELSE"},
+		vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", elseIdx)},
 		elseOps,
 	}, nil
 }
@@ -357,11 +363,10 @@ func (l *Lowerer) HandleBinaryExpr(expression BinaryExpr) ([]vm.Operation, error
 		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Add}), nil
 	case Minus:
 		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Sub}), nil
-	// TODO(hmny): Add support for 'Div' and 'Mul' by composing more basic operations
-	// case Divide:
-	// 	return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Div}), nil
-	// case Multiply:
-	// 	return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Mul}), nil
+	case Divide:
+		return append(append(lhsOps, rhsOps...), vm.FuncCallOp{Name: "Math.divide", NArgs: 2}), nil
+	case Multiply:
+		return append(append(lhsOps, rhsOps...), vm.FuncCallOp{Name: "Math.multiply", NArgs: 2}), nil
 	case BoolOr:
 		return append(append(lhsOps, rhsOps...), vm.ArithmeticOp{Operation: vm.Or}), nil
 	case BoolAnd:
