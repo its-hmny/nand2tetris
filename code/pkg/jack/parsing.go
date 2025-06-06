@@ -289,8 +289,7 @@ func (Parser) HandleFieldDecl(node pc.Queryable) ([]Variable, error) {
 		return nil, fmt.Errorf("expected node with 4 leaf, got %d", len(node.GetChildren()))
 	}
 
-	fieldType := VarType(node.GetChildren()[0].GetValue())
-	dataType := DataType(node.GetChildren()[1].GetValue())
+	fieldType, dataType := VarType(node.GetChildren()[0].GetValue()), node.GetChildren()[1].GetValue()
 
 	nested, fields := node.GetChildren()[2].GetChildren(), []Variable{}
 	if len(nested) < 1 {
@@ -303,7 +302,13 @@ func (Parser) HandleFieldDecl(node pc.Queryable) ([]Variable, error) {
 			return nil, fmt.Errorf("expected node 'IDENT', got %s", child.GetName())
 		}
 
-		fields = append(fields, Variable{Name: child.GetValue(), Type: fieldType, DataType: dataType})
+		// Primitive data types (int, string, bool) are handled differently than complex objects
+		if builtin := DataType(dataType); builtin == Int || builtin == String || builtin == Bool {
+			fields = append(fields, Variable{Name: child.GetValue(), Type: fieldType, DataType: builtin})
+			continue
+		}
+
+		fields = append(fields, Variable{Name: child.GetValue(), Type: fieldType, DataType: Object, ClassName: dataType})
 	}
 
 	return fields, nil
@@ -330,10 +335,15 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 	// Iterate on the nested possible n declarations to extract all the variable names
 	nested, arguments := node.GetChildren()[4].GetChildren(), map[string]Variable{}
 	for _, child := range nested {
-		argType := DataType(child.GetChildren()[0].GetValue())
-		argName := child.GetChildren()[1].GetValue()
+		argType, argName := child.GetChildren()[0].GetValue(), child.GetChildren()[1].GetValue()
 
-		arguments[argName] = Variable{Name: argName, Type: Parameter, DataType: argType}
+		// Primitive data types (int, string, bool) are handled differently than complex objects
+		if builtin := DataType(argType); builtin == Int || builtin == String || builtin == Bool {
+			arguments[argName] = Variable{Name: argName, Type: Parameter, DataType: builtin}
+			continue
+		}
+
+		arguments[argName] = Variable{Name: argName, Type: Parameter, DataType: Object, ClassName: argType}
 	}
 
 	nested, statements := node.GetChildren()[7].GetChildren(), []Statement{}
@@ -429,7 +439,7 @@ func (p *Parser) HandleVarStmt(node pc.Queryable) (Statement, error) {
 		return nil, fmt.Errorf("expected node with 4 leaf, got %d", len(node.GetChildren()))
 	}
 
-	dataType := DataType(node.GetChildren()[1].GetValue())
+	dataType := node.GetChildren()[1].GetValue()
 
 	nested, variables := node.GetChildren()[2].GetChildren(), []Variable{}
 	if len(nested) < 1 {
@@ -441,8 +451,13 @@ func (p *Parser) HandleVarStmt(node pc.Queryable) (Statement, error) {
 		if child.GetName() != "IDENT" {
 			return nil, fmt.Errorf("expected node 'IDENT', got %s", child.GetName())
 		}
+		// Primitive data types (int, string, bool) are handled differently than complex objects
+		if builtin := DataType(dataType); builtin == Int || builtin == String || builtin == Bool {
+			variables = append(variables, Variable{Name: child.GetValue(), Type: Local, DataType: builtin})
+			continue
+		}
 
-		variables = append(variables, Variable{Name: child.GetValue(), Type: Local, DataType: dataType})
+		variables = append(variables, Variable{Name: child.GetValue(), Type: Local, DataType: Object, ClassName: dataType})
 	}
 
 	return VarStmt{Vars: variables}, nil
