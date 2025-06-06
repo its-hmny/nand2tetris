@@ -184,6 +184,7 @@ type DataType string // Enum to manage the operation allowed for an DataType
 const (
 	Int    DataType = "int"
 	Bool   DataType = "bool"
+	Char   DataType = "char"
 	Null   DataType = "null"
 	String DataType = "string"
 	Void   DataType = "void"

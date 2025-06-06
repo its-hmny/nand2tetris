@@ -2,6 +2,7 @@ package jack
 
 import (
 	"fmt"
+	"strconv"
 
 	"its-hmny.dev/nand2tetris/pkg/vm"
 )
@@ -268,7 +269,53 @@ func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.LiteralExpr' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleLiteralExpr(expression LiteralExpr) ([]vm.Operation, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	switch expression.Type {
+	case Int:
+		value, err := strconv.ParseUint(expression.Value, 10, 16)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing integer literal '%s': %w", expression.Value, err)
+		}
+
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(value)}}, nil
+
+	case Bool:
+		value, err := strconv.ParseBool(expression.Value)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing integer literal '%s': %w", expression.Value, err)
+		}
+
+		mapping := map[bool]uint16{true: 1, false: 0}
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: mapping[value]}}, nil
+
+	case Char:
+		if len(expression.Value) != 1 {
+			return nil, fmt.Errorf("error parsing char literal '%s'", expression.Value)
+		}
+
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(expression.Value[0])}}, nil
+
+	case Null: // TODO (hmny): Not sure that pushing just a simple 0 is enough or right
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: 0}}, nil
+
+	case String:
+		ops := []vm.Operation{
+			// Reserves/Allocates enough space for the entire string literal via the constructor
+			vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(len(expression.Value))},
+			vm.FuncCallOp{Name: "String.new", NArgs: 1},
+		}
+
+		for index, char := range expression.Value {
+			// Set each character in the string literal one by one until completion
+			ops = append(ops, vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(index)})
+			ops = append(ops, vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(char)})
+			ops = append(ops, vm.FuncCallOp{Name: "String.setCharAt", NArgs: 2})
+		}
+
+		return ops, nil
+
+	default:
+		return nil, fmt.Errorf("unrecognized literal expression type: %s", expression.Type)
+	}
 }
 
 // Specialized function to convert a 'jack.ArrayExpr' to a list of 'vm.Operation'.

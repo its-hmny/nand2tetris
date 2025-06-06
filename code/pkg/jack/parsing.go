@@ -88,13 +88,12 @@ var (
 	// ! The order of this PCs is important: by putting Int() before Float() we'll not be able to parse a float
 	// !completely because the integer part will be picked up by the Int() PC before given back control to PExpr.
 	pLiteral = ast.OrdChoice("literal", nil,
-		// Numeric literals (int and float) as well as string literals
-		pc.Float(), pc.Int(), pc.Token(`"(?:\\.|[^"\\])*"`, "STRING"),
-		// also we cover in this way boolean literal declaration (true | false)
-		pc.Token("true", "TRUE"), pc.Token("false", "FALSE"),
+		// Basic literals (int, char and bool)
+		pc.Int(), pc.Char(), pc.Token("true", "TRUE"), pc.Token("false", "FALSE"),
 		// also here we parse 'null' and 'this
 		pc.Token("null", "NULL"), pc.Token("this", "THIS"),
-		// TODO (hmny): Should we also add char literal PC
+		// finally we parse string literals
+		pc.Token(`"(?:\\.|[^"\\])*"`, "STRING"),
 	)
 
 	pArrayExpr = ast.And("array_expr", nil, pIdent, pc.Atom("[", "RSQUARE"), &pExpr, pc.Atom("]", "LSQUARE"))
@@ -303,7 +302,7 @@ func (Parser) HandleFieldDecl(node pc.Queryable) ([]Variable, error) {
 		}
 
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := DataType(dataType); builtin == Int || builtin == String || builtin == Bool {
+		if builtin := DataType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
 			fields = append(fields, Variable{Name: child.GetValue(), Type: fieldType, DataType: builtin})
 			continue
 		}
@@ -338,7 +337,7 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 		argType, argName := child.GetChildren()[0].GetValue(), child.GetChildren()[1].GetValue()
 
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := DataType(argType); builtin == Int || builtin == String || builtin == Bool {
+		if builtin := DataType(argType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
 			arguments[argName] = Variable{Name: argName, Type: Parameter, DataType: builtin}
 			continue
 		}
@@ -452,7 +451,7 @@ func (p *Parser) HandleVarStmt(node pc.Queryable) (Statement, error) {
 			return nil, fmt.Errorf("expected node 'IDENT', got %s", child.GetName())
 		}
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := DataType(dataType); builtin == Int || builtin == String || builtin == Bool {
+		if builtin := DataType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
 			variables = append(variables, Variable{Name: child.GetValue(), Type: Local, DataType: builtin})
 			continue
 		}
@@ -638,10 +637,12 @@ func (p *Parser) HandleExpression(node pc.Queryable) (Expression, error) {
 
 	case "INT":
 		return LiteralExpr{Type: Int, Value: node.GetValue()}, nil
+	case "CHAR":
+		return LiteralExpr{Type: Char, Value: node.GetValue()}, nil
 	case "TRUE", "FALSE":
 		return LiteralExpr{Type: Bool, Value: node.GetValue()}, nil
 	case "STRING":
-		return LiteralExpr{Type: String, Value: node.GetValue()}, nil
+		return LiteralExpr{Type: String, Value: strings.Trim(node.GetValue(), `"`)}, nil
 	case "NULL":
 		return LiteralExpr{Type: Object, Value: node.GetValue()}, nil
 
