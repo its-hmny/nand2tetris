@@ -108,7 +108,6 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 	defer l.scopes.Pop() // Before returning we pop the scope from the stack and return back to the previous one
 
 	fName, fBody := fmt.Sprintf("%s.%s", l.classModule, subroutine.Name), []vm.Operation{}
-
 	for _, stmt := range subroutine.Statements {
 		ops, err := l.HandleStatement(stmt)
 		if err != nil {
@@ -117,7 +116,7 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 		fBody = append(fBody, ops...)
 	}
 
-	return []vm.Operation{vm.FuncDecl{Name: fName, NLocal: uint8(len(scope))}, fBody}, nil
+	return append([]vm.Operation{vm.FuncDecl{Name: fName, NLocal: uint8(len(scope))}}, fBody...), nil
 }
 
 // Generalized function to lower multiple statements types returning a 'vm.Operation' list.
@@ -150,7 +149,7 @@ func (l *Lowerer) HandleDoStmt(statement DoStmt) ([]vm.Operation, error) {
 	// Do statements do not return a value, so we can just return the operations
 	// TODO (hmny): Not sure about which segment I'll need to pop from, for now I assume Temp
 	// TODO (hmny): Not sure about which offset I'll need to pop off, for now I assume 1
-	return []vm.Operation{ops, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Temp, Offset: 1}}, nil
+	return append(ops, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Temp, Offset: 1}), nil
 }
 
 // Specialized function to convert a 'jack.VarStmt' to a list of 'vm.Operation'.
@@ -196,15 +195,15 @@ func (l *Lowerer) HandleWhileStmt(statement WhileStmt) ([]vm.Operation, error) {
 	startIdx, endIdx := l.nRandomizer+1, l.nRandomizer+2
 	l.nRandomizer += 2 // ! Increment the randomizer for next use
 
-	return []vm.Operation{
-		vm.LabelDecl{Name: fmt.Sprintf("WHILE_START_%d", startIdx)},
-		condOps,
+	return append(append(append(append(
+		[]vm.Operation{vm.LabelDecl{Name: fmt.Sprintf("WHILE_START_%d", startIdx)}},
+		condOps...),
 		vm.ArithmeticOp{Operation: vm.Neg},
-		vm.GotoOp{Label: fmt.Sprintf("WHILE_END_%d", endIdx), Jump: vm.Conditional},
-		blockOps,
+		vm.GotoOp{Label: fmt.Sprintf("WHILE_END_%d", endIdx), Jump: vm.Conditional}),
+		blockOps...),
 		vm.GotoOp{Label: fmt.Sprintf("WHILE_START_%d", startIdx), Jump: vm.Unconditional},
 		vm.LabelDecl{Name: fmt.Sprintf("WHILE_END_%d", endIdx)},
-	}, nil
+	), nil
 }
 
 // Specialized function to convert a 'jack.IfStmt' to a list of 'vm.Operation'.
@@ -237,27 +236,28 @@ func (l *Lowerer) HandleIfStmt(statement IfStmt) ([]vm.Operation, error) {
 		elseIdx := l.nRandomizer + 1
 		l.nRandomizer += 1 // ! Increment the randomizer for next use
 
-		return []vm.Operation{
+		return append(append(append(
 			condOps,
 			vm.ArithmeticOp{Operation: vm.Neg},
-			vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", elseIdx), Jump: vm.Conditional},
-			thenOps,
+			vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", elseIdx), Jump: vm.Conditional}),
+			thenOps...),
 			vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", elseIdx)},
-		}, nil
+		), nil
 	}
 
 	// If there is an else block, we need to do a two way fork in the control flow
 	thenIdx, elseIdx := l.nRandomizer+1, l.nRandomizer+2
 	l.nRandomizer += 2 // ! Increment the randomizer for next use
-	return []vm.Operation{
+
+	return append(append(append(append(
 		condOps,
 		vm.GotoOp{Label: fmt.Sprintf("THEN_%d", thenIdx), Jump: vm.Conditional},
 		vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", elseIdx), Jump: vm.Unconditional},
-		vm.LabelDecl{Name: fmt.Sprintf("THEN_%d", thenIdx)},
-		thenOps,
-		vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", elseIdx)},
-		elseOps,
-	}, nil
+		vm.LabelDecl{Name: fmt.Sprintf("THEN_%d", thenIdx)}),
+		thenOps...),
+		vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", elseIdx)}),
+		elseOps...,
+	), nil
 }
 
 // Specialized function to convert a 'jack.ReturnStmt' to a list of 'vm.Operation'.
