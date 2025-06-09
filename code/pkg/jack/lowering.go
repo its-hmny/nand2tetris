@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"its-hmny.dev/nand2tetris/pkg/utils"
 	"its-hmny.dev/nand2tetris/pkg/vm"
 )
 
@@ -19,6 +20,8 @@ type Lowerer struct {
 	program Program
 
 	nRandomizer uint // Counter to randomize 'vm.LabelDecl(s)' with same name
+
+	scopes utils.Stack[map[string]Variable] // List of active scopes to lookup variables given the current context
 }
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
@@ -33,27 +36,14 @@ func NewLowerer(p Program) Lowerer {
 func (l *Lowerer) Lowerer() (vm.Program, error) {
 	program := vm.Program{}
 
-	if l.program == nil || len(l.program) == 0 {
-		return nil, fmt.Errorf("the given 'program' is empty")
+	if len(l.program) == 0 {
+		return nil, fmt.Errorf("the given 'program' is empty or nil")
 	}
 
 	for name, class := range l.program {
-		operations := []vm.Operation{}
-
-		for _, field := range class.Fields {
-			ops, err := l.HandleFieldDecl(field)
-			if err != nil {
-				return nil, fmt.Errorf("error handling field declaration in class '%s': %w", name, err)
-			}
-			operations = append(operations, ops...)
-		}
-
-		for _, subroutine := range class.Subroutines {
-			ops, err := l.HandleSubroutine(subroutine)
-			if err != nil {
-				return nil, fmt.Errorf("error handling subroutine '%s' in class '%s': %w", subroutine.Name, name, err)
-			}
-			operations = append(operations, ops...)
+		operations, err := l.HandleClass(class)
+		if err != nil {
+			return nil, fmt.Errorf("error handling lowering of class '%s': %w", name, err)
 		}
 
 		program[name] = vm.Module(operations)
@@ -62,32 +52,40 @@ func (l *Lowerer) Lowerer() (vm.Program, error) {
 	return program, nil
 }
 
-// Specialized function to convert a 'jack.FieldDecl' node to a list of 'vm.Operation'.
-func (l *Lowerer) HandleFieldDecl(field Variable) ([]vm.Operation, error) {
-	return nil, fmt.Errorf("not implemented yet")
+// Specialized function to convert a 'jack.Class' node to a list of 'vm.Operation'.
+func (l *Lowerer) HandleClass(class Class) ([]vm.Operation, error) {
+	l.scopes.Push(class.Fields) // Add the generated scope to the top of the stack, before processing the statements
+	defer l.scopes.Pop()        // Before returning we pop the scope from the stack and return back to the previous one
+
+	operations := []vm.Operation{}
+	for _, subroutine := range class.Subroutines {
+		ops, err := l.HandleSubroutine(subroutine)
+		if err != nil {
+			return nil, fmt.Errorf("error handling subroutine '%s' in class '%s': %w", subroutine.Name, class.Name, err)
+		}
+		operations = append(operations, ops...)
+	}
+
+	return operations, nil
 }
 
 // Specialized function to convert a 'jack.Subroutine' node to a list of 'vm.Operation'.
-func (l *Lowerer) HandleSubroutine(routine Subroutine) ([]vm.Operation, error) {
-	localVars := map[string]bool{}
-	for _, stmt := range routine.Statements {
-		// For multiple var declarations we register each new variable in the map/set
+func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error) {
+	scope := map[string]Variable{}
+	for _, stmt := range subroutine.Statements {
 		if varStmt, isVarStmt := stmt.(VarStmt); isVarStmt {
-			for _, variable := range varStmt.Vars {
-				localVars[variable.Name] = true
+			for _, variable := range varStmt.Vars { // We replicate all var declaration in the function scope
+				scope[variable.Name] = variable
 			}
-		}
-		// For let declarations we register the new variable in the map/set
-		if letStmt, isLetStmt := stmt.(LetStmt); isLetStmt {
-			// ! Here we support only VarExpr because ArrayExpr would mean that the array has been
-			// ! already declared either in a previous VarStmt or LetStmt, making it redundant.
-			localVars[letStmt.Lhs.(VarExpr).Var] = true
 		}
 	}
 
-	fDecl, fBody := vm.FuncDecl{Name: routine.Name, NLocal: uint8(len(localVars))}, []vm.Operation{}
+	l.scopes.Push(scope) // Add the generated scope to the top of the stack, before processing the statements
+	defer l.scopes.Pop() // Before returning we pop the scope from the stack and return back to the previous one
 
-	for _, stmt := range routine.Statements {
+	fDecl, fBody := vm.FuncDecl{Name: subroutine.Name, NLocal: uint8(len(scope))}, []vm.Operation{}
+
+	for _, stmt := range subroutine.Statements {
 		ops, err := l.HandleStatement(stmt)
 		if err != nil {
 			return nil, fmt.Errorf("error handling nested statement %T': %w", stmt, err)
@@ -95,7 +93,7 @@ func (l *Lowerer) HandleSubroutine(routine Subroutine) ([]vm.Operation, error) {
 		fBody = append(fBody, ops...)
 	}
 
-	return append([]vm.Operation{fDecl}, fBody...), nil
+	return []vm.Operation{fDecl, fBody}, nil
 }
 
 // Generalized function to lower multiple statements types returning a 'vm.Operation' list.
