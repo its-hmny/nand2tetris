@@ -19,6 +19,10 @@ import (
 type Lowerer struct {
 	program Program
 
+	// Keeps track of the class (.jack file) we're lowering at the moment used
+	// to convert internal function calls (e.g. div(X, y) => Math.div(x,y))
+	classModule string
+
 	nRandomizer uint // Counter to randomize 'vm.LabelDecl(s)' with same name
 
 	scopes utils.Stack[map[string]Variable] // List of active scopes to lookup variables given the current context
@@ -41,6 +45,8 @@ func (l *Lowerer) Lowerer() (vm.Program, error) {
 	}
 
 	for name, class := range l.program {
+		l.classModule = class.Name // Keep track of the current class module being processed
+
 		operations, err := l.HandleClass(class)
 		if err != nil {
 			return nil, fmt.Errorf("error handling lowering of class '%s': %w", name, err)
@@ -50,6 +56,19 @@ func (l *Lowerer) Lowerer() (vm.Program, error) {
 	}
 
 	return program, nil
+}
+
+// Searches for a variable by name iteratively in all scopes, starting from the most nested one going upwards.
+func (l *Lowerer) ResolveVariable(name string) (Variable, error) {
+	for scope := range l.scopes.Iterator() {
+		for name, variable := range scope {
+			if variable.Name == name {
+				return variable, nil
+			}
+		}
+	}
+
+	return Variable{}, fmt.Errorf("variable '%s' undeclared, not found in any scope", name)
 }
 
 // Specialized function to convert a 'jack.Class' node to a list of 'vm.Operation'.
@@ -396,12 +415,18 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	}
 
 	if expression.IsExtCall {
-		// TODO (hmny): Add lookup of class type from variable identifier
-		fName := fmt.Sprintf("%s.%s", "Something", expression.FuncName)
+		variable, err := l.ResolveVariable(expression.Var)
+		if err != nil {
+			return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
+		}
+		if variable.Type != VarType(Object) {
+			return nil, fmt.Errorf("variable '%s' is not an object: %w", expression.Var, err)
+		}
+
+		fName := fmt.Sprintf("%s.%s", variable.ClassName, expression.FuncName)
 		return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
 	}
 
-	// TODO (hmny): Add lookup of class type from variable identifier
-	fName := fmt.Sprintf("%s.%s", "Something", expression.FuncName)
+	fName := fmt.Sprintf("%s.%s", l.classModule, expression.FuncName)
 	return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
 }
