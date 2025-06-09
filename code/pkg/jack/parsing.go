@@ -245,7 +245,7 @@ func (p *Parser) FromAST(root pc.Queryable) (Class, error) {
 	}
 
 	class := Class{
-		Name:        root.GetChildren()[3].GetValue(),
+		Name:        root.GetChildren()[2].GetValue(),
 		Fields:      map[string]Variable{},
 		Subroutines: map[string]Subroutine{},
 	}

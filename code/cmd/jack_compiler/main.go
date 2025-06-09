@@ -88,10 +88,24 @@ func Handler(args []string, options map[string]string) int {
 		return -1
 	}
 
-	for _, comp := range compiled {
-		line := fmt.Sprintf("%s\n", comp)
-		// output.Write([]byte(line))
-		fmt.Print(line)
+	for _, tu := range TUs {
+		module, ok := compiled[path.Base(tu)]
+		if !ok {
+			fmt.Printf("ERROR: Unable to compiled module for class file '%s'\n", tu)
+			return -1
+		}
+
+		output, err := os.Create(fmt.Sprintf("%s.vm", strings.TrimSuffix(tu, ".jack")))
+		if err != nil {
+			fmt.Printf("ERROR: Unable to open output file: %s\n", err)
+			return -1
+		}
+		defer output.Close()
+
+		for _, ops := range module {
+			line := fmt.Sprintf("%s\n", ops)
+			output.Write([]byte(line))
+		}
 	}
 
 	return 0

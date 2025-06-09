@@ -7,6 +7,15 @@ import (
 type Stack[T any] struct{ elements []T }
 
 // Returns the element at the top of the stack without removing it
+func NewStack[T any](init ...T) Stack[T] {
+	if len(init) == 0 {
+		return Stack[T]{}
+	}
+
+	return Stack[T]{elements: init}
+}
+
+// Returns the element at the top of the stack without removing it
 func (stack *Stack[T]) Top() (T, error) {
 	if stack.Count() == 0 {
 		var zero T

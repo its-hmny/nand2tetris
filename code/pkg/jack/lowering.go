@@ -31,7 +31,12 @@ type Lowerer struct {
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
 // Requires the argument Program to be not nil nor empty.
 func NewLowerer(p Program) Lowerer {
-	return Lowerer{program: p}
+	builtin := map[string]Variable{
+		"Output": {Name: "Output", Type: Static, DataType: Object, ClassName: "Output"},
+		// TODO (hmny): Add more builtin variables as needed
+	}
+
+	return Lowerer{program: p, scopes: utils.NewStack(builtin)}
 }
 
 // Triggers the lowering process. It iterates class by class and then statement by statement
@@ -102,7 +107,7 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 	l.scopes.Push(scope) // Add the generated scope to the top of the stack, before processing the statements
 	defer l.scopes.Pop() // Before returning we pop the scope from the stack and return back to the previous one
 
-	fDecl, fBody := vm.FuncDecl{Name: subroutine.Name, NLocal: uint8(len(scope))}, []vm.Operation{}
+	fName, fBody := fmt.Sprintf("%s.%s", l.classModule, subroutine.Name), []vm.Operation{}
 
 	for _, stmt := range subroutine.Statements {
 		ops, err := l.HandleStatement(stmt)
@@ -112,7 +117,7 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 		fBody = append(fBody, ops...)
 	}
 
-	return []vm.Operation{fDecl, fBody}, nil
+	return []vm.Operation{vm.FuncDecl{Name: fName, NLocal: uint8(len(scope))}, fBody}, nil
 }
 
 // Generalized function to lower multiple statements types returning a 'vm.Operation' list.
@@ -257,6 +262,10 @@ func (l *Lowerer) HandleIfStmt(statement IfStmt) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.ReturnStmt' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleReturnStmt(statement ReturnStmt) ([]vm.Operation, error) {
+	if statement.Expr == nil {
+		return []vm.Operation{vm.ReturnOp{}}, nil // No expression means just a return
+	}
+
 	ops, err := l.HandleExpression(statement.Expr)
 	if err != nil {
 		return nil, fmt.Errorf("error handling return expression: %w", err)
@@ -419,7 +428,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 		if err != nil {
 			return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
 		}
-		if variable.Type != VarType(Object) {
+		if variable.DataType != Object {
 			return nil, fmt.Errorf("variable '%s' is not an object: %w", expression.Var, err)
 		}
 
