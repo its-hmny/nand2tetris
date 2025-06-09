@@ -146,10 +146,8 @@ func (l *Lowerer) HandleDoStmt(statement DoStmt) ([]vm.Operation, error) {
 		return nil, fmt.Errorf("error handling nested function call expression: %w", err)
 	}
 
-	// Do statements do not return a value, so we can just return the operations
-	// TODO (hmny): Not sure about which segment I'll need to pop from, for now I assume Temp
-	// TODO (hmny): Not sure about which offset I'll need to pop off, for now I assume 1
-	return append(ops, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Temp, Offset: 1}), nil
+	// Do statements do not return a value, so we can just drop whatever has been returned
+	return append(ops, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Temp, Offset: 0}), nil
 }
 
 // Specialized function to convert a 'jack.VarStmt' to a list of 'vm.Operation'.
@@ -262,8 +260,11 @@ func (l *Lowerer) HandleIfStmt(statement IfStmt) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.ReturnStmt' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleReturnStmt(statement ReturnStmt) ([]vm.Operation, error) {
-	if statement.Expr == nil {
-		return []vm.Operation{vm.ReturnOp{}}, nil // No expression means just a return
+	if statement.Expr == nil { // No expression means just a zero-value return
+		return []vm.Operation{
+			vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: 0},
+			vm.ReturnOp{},
+		}, nil
 	}
 
 	ops, err := l.HandleExpression(statement.Expr)
