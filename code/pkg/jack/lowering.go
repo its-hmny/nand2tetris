@@ -32,8 +32,14 @@ type Lowerer struct {
 // Requires the argument Program to be not nil nor empty.
 func NewLowerer(p Program) Lowerer {
 	builtin := map[string]Variable{
-		"Output": {Name: "Output", Type: Static, DataType: Object, ClassName: "Output"},
-		// TODO (hmny): Add more builtin variables as needed
+		"Sys":      {Name: "Sys", Type: Static, DataType: Object, ClassName: "Sys"},
+		"Math":     {Name: "Math", Type: Static, DataType: Object, ClassName: "Math"},
+		"Array":    {Name: "Array", Type: Static, DataType: Object, ClassName: "Array"},
+		"Output":   {Name: "Output", Type: Static, DataType: Object, ClassName: "Output"},
+		"Memory":   {Name: "Memory", Type: Static, DataType: Object, ClassName: "Memory"},
+		"Screen":   {Name: "Screen", Type: Static, DataType: Object, ClassName: "Screen"},
+		"String":   {Name: "String", Type: Static, DataType: Object, ClassName: "String"},
+		"Keyboard": {Name: "Keyboard", Type: Static, DataType: Object, ClassName: "Keyboard"},
 	}
 
 	return Lowerer{program: p, scopes: utils.NewStack(builtin)}
@@ -159,18 +165,17 @@ func (l *Lowerer) HandleVarStmt(statement VarStmt) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.LetStmt' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
-	rhsOps, err := l.HandleExpression(statement.Rhs)
-	if err != nil {
-		return nil, fmt.Errorf("error handling RHS expression: %w", err)
-	}
-
 	lhsOps, err := l.HandleExpression(statement.Lhs)
 	if err != nil {
 		return nil, fmt.Errorf("error handling LHS expression: %w", err)
 	}
 
-	// TODO(hmny): Add some glue code here to move RHS in LHS location
-	return []vm.Operation{rhsOps, lhsOps}, nil
+	rhsOps, err := l.HandleExpression(statement.Rhs)
+	if err != nil {
+		return nil, fmt.Errorf("error handling RHS expression: %w", err)
+	}
+
+	return append(rhsOps, lhsOps...), nil // TODO (hmny): Still some things to go here
 }
 
 // Specialized function to convert a 'jack.WhileStmt' to a list of 'vm.Operation'.
@@ -430,9 +435,10 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 			return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
 		}
 		if variable.DataType != Object {
-			return nil, fmt.Errorf("variable '%s' is not an object: %w", expression.Var, err)
+			return nil, fmt.Errorf("variable '%s' is not an object", expression.Var)
 		}
 
+		// TODO (hmny): Pretty sure here I have to do something with the this pointer
 		fName := fmt.Sprintf("%s.%s", variable.ClassName, expression.FuncName)
 		return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
 	}

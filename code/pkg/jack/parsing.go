@@ -702,7 +702,7 @@ func (p *Parser) HandleBinaryExpr(node pc.Queryable) (Expression, error) {
 		return nil, fmt.Errorf("failed to handle left-hand side expression: %w", err)
 	}
 
-	exprType := ExprType(strings.ToLower((node.GetChildren()[1].GetValue())))
+	exprType := ExprType(strings.ToLower((node.GetChildren()[1].GetName())))
 
 	rhs, err := p.HandleExpression(node.GetChildren()[2])
 	if err != nil {
