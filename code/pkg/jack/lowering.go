@@ -195,17 +195,16 @@ func (l *Lowerer) HandleWhileStmt(statement WhileStmt) ([]vm.Operation, error) {
 		blockOps = append(blockOps, ops...)
 	}
 
-	startIdx, endIdx := l.nRandomizer+1, l.nRandomizer+2
-	l.nRandomizer += 2 // ! Increment the randomizer for next use
+	defer func() { l.nRandomizer += 2 }() // ! Increment the randomizer for next use
 
 	return append(append(append(append(
-		[]vm.Operation{vm.LabelDecl{Name: fmt.Sprintf("WHILE_START_%d", startIdx)}},
+		[]vm.Operation{vm.LabelDecl{Name: fmt.Sprintf("WHILE_START_%d", l.nRandomizer)}},
 		condOps...),
 		vm.ArithmeticOp{Operation: vm.Neg},
-		vm.GotoOp{Label: fmt.Sprintf("WHILE_END_%d", endIdx), Jump: vm.Conditional}),
+		vm.GotoOp{Label: fmt.Sprintf("WHILE_END_%d", l.nRandomizer+1), Jump: vm.Conditional}),
 		blockOps...),
-		vm.GotoOp{Label: fmt.Sprintf("WHILE_START_%d", startIdx), Jump: vm.Unconditional},
-		vm.LabelDecl{Name: fmt.Sprintf("WHILE_END_%d", endIdx)},
+		vm.GotoOp{Label: fmt.Sprintf("WHILE_START_%d", l.nRandomizer), Jump: vm.Unconditional},
+		vm.LabelDecl{Name: fmt.Sprintf("WHILE_END_%d", l.nRandomizer+1)},
 	), nil
 }
 
@@ -236,29 +235,27 @@ func (l *Lowerer) HandleIfStmt(statement IfStmt) ([]vm.Operation, error) {
 
 	// If there's no else block, we can just implement one way fork in the control flow
 	if len(elseOps) == 0 {
-		elseIdx := l.nRandomizer + 1
-		l.nRandomizer += 1 // ! Increment the randomizer for next use
+		defer func() { l.nRandomizer += 1 }() // ! Increment the randomizer for next use
 
 		return append(append(append(
 			condOps,
 			vm.ArithmeticOp{Operation: vm.Neg},
-			vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", elseIdx), Jump: vm.Conditional}),
+			vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", l.nRandomizer), Jump: vm.Conditional}),
 			thenOps...),
-			vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", elseIdx)},
+			vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", l.nRandomizer)},
 		), nil
 	}
 
 	// If there is an else block, we need to do a two way fork in the control flow
-	thenIdx, elseIdx := l.nRandomizer+1, l.nRandomizer+2
-	l.nRandomizer += 2 // ! Increment the randomizer for next use
+	defer func() { l.nRandomizer += 2 }() // ! Increment the randomizer for next use
 
 	return append(append(append(append(
 		condOps,
-		vm.GotoOp{Label: fmt.Sprintf("THEN_%d", thenIdx), Jump: vm.Conditional},
-		vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", elseIdx), Jump: vm.Unconditional},
-		vm.LabelDecl{Name: fmt.Sprintf("THEN_%d", thenIdx)}),
+		vm.GotoOp{Label: fmt.Sprintf("THEN_%d", l.nRandomizer), Jump: vm.Conditional},
+		vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", l.nRandomizer+1), Jump: vm.Unconditional},
+		vm.LabelDecl{Name: fmt.Sprintf("THEN_%d", l.nRandomizer)}),
 		thenOps...),
-		vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", elseIdx)}),
+		vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", l.nRandomizer+1)}),
 		elseOps...,
 	), nil
 }
@@ -342,11 +339,10 @@ func (l *Lowerer) HandleLiteralExpr(expression LiteralExpr) ([]vm.Operation, err
 			vm.FuncCallOp{Name: "String.new", NArgs: 1},
 		}
 
-		for index, char := range expression.Value {
+		for _, char := range expression.Value {
 			// Set each character in the string literal one by one until completion
-			ops = append(ops, vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(index)})
 			ops = append(ops, vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(char)})
-			ops = append(ops, vm.FuncCallOp{Name: "String.setCharAt", NArgs: 2})
+			ops = append(ops, vm.FuncCallOp{Name: "String.appendChar", NArgs: 2})
 		}
 
 		return ops, nil
