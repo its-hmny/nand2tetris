@@ -7,12 +7,12 @@ import (
 type Stack[T any] struct{ elements []T }
 
 // Returns the element at the top of the stack without removing it
-func NewStack[T any](init ...T) Stack[T] {
+func NewStack[T any](init ...T) *Stack[T] {
 	if len(init) == 0 {
-		return Stack[T]{}
+		return &Stack[T]{}
 	}
 
-	return Stack[T]{elements: init}
+	return &Stack[T]{elements: init}
 }
 
 // Returns the element at the top of the stack without removing it
@@ -51,10 +51,10 @@ func (stack *Stack[T]) Pop() (T, error) {
 	return top, nil
 }
 
-func (stack *Stack[T]) Iterator() func(yield func(T) bool) {
-	return func(yield func(T) bool) {
+func (stack *Stack[T]) Iterator() func(yield func(index int, value T) bool) {
+	return func(yield func(index int, value T) bool) {
 		for i := len(stack.elements) - 1; i >= 0; i-- {
-			if !yield(stack.elements[i]) {
+			if !yield(i, stack.elements[i]) {
 				return
 			}
 		}

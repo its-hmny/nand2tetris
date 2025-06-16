@@ -19,30 +19,45 @@ import (
 type Lowerer struct {
 	program Program
 
-	// Keeps track of the class (.jack file) we're lowering at the moment used
-	// to convert internal function calls (e.g. div(X, y) => Math.div(x,y))
+	// Keeps track of the class (.jack file) we're lowering at the moment,
+	// used to convert internal function calls (e.g. div(X, y) => Math.div(x,y))
 	classModule string
+	// Keeps track of the scope (in this case only a subroutine) we're lowering
+	// at the moment, used to track active variable declaration in the ScopeTable
+	classScope string
 
 	nRandomizer uint // Counter to randomize 'vm.LabelDecl(s)' with same name
 
-	scopes utils.Stack[map[string]Variable] // List of active scopes to lookup variables given the current context
+	scopes ScopeTable // List of active scopes to lookup variables given the current context
 }
+
+type ActiveEntry struct {
+	ScopeName string
+	Variable  Variable
+}
+
+type ScopeTable map[VarType]*utils.Stack[ActiveEntry]
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
 // Requires the argument Program to be not nil nor empty.
 func NewLowerer(p Program) Lowerer {
-	builtin := map[string]Variable{
-		"Sys":      {Name: "Sys", Type: Static, DataType: Object, ClassName: "Sys"},
-		"Math":     {Name: "Math", Type: Static, DataType: Object, ClassName: "Math"},
-		"Array":    {Name: "Array", Type: Static, DataType: Object, ClassName: "Array"},
-		"Output":   {Name: "Output", Type: Static, DataType: Object, ClassName: "Output"},
-		"Memory":   {Name: "Memory", Type: Static, DataType: Object, ClassName: "Memory"},
-		"Screen":   {Name: "Screen", Type: Static, DataType: Object, ClassName: "Screen"},
-		"String":   {Name: "String", Type: Static, DataType: Object, ClassName: "String"},
-		"Keyboard": {Name: "Keyboard", Type: Static, DataType: Object, ClassName: "Keyboard"},
+	builtin := ScopeTable{
+		Local:     utils.NewStack[ActiveEntry](),
+		Field:     utils.NewStack[ActiveEntry](),
+		Parameter: utils.NewStack[ActiveEntry](),
+		Static: utils.NewStack[ActiveEntry](
+			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Sys", Type: Static, DataType: Object, ClassName: "Sys"}},
+			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Math", Type: Static, DataType: Object, ClassName: "Math"}},
+			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Array", Type: Static, DataType: Object, ClassName: "Array"}},
+			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Output", Type: Static, DataType: Object, ClassName: "Output"}},
+			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Memory", Type: Static, DataType: Object, ClassName: "Memory"}},
+			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Screen", Type: Static, DataType: Object, ClassName: "Screen"}},
+			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "String", Type: Static, DataType: Object, ClassName: "String"}},
+			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Keyboard", Type: Static, DataType: Object, ClassName: "Keyboard"}},
+		),
 	}
 
-	return Lowerer{program: p, scopes: utils.NewStack(builtin)}
+	return Lowerer{program: p, scopes: builtin}
 }
 
 // Triggers the lowering process. It iterates class by class and then statement by statement
@@ -50,14 +65,11 @@ func NewLowerer(p Program) Lowerer {
 // a recursive descent parser but for lowering), this means the AST is visited in DFS order.
 func (l *Lowerer) Lowerer() (vm.Program, error) {
 	program := vm.Program{}
-
 	if len(l.program) == 0 {
 		return nil, fmt.Errorf("the given 'program' is empty or nil")
 	}
 
 	for name, class := range l.program {
-		l.classModule = class.Name // Keep track of the current class module being processed
-
 		operations, err := l.HandleClass(class)
 		if err != nil {
 			return nil, fmt.Errorf("error handling lowering of class '%s': %w", name, err)
@@ -70,24 +82,34 @@ func (l *Lowerer) Lowerer() (vm.Program, error) {
 }
 
 // Searches for a variable by name iteratively in all scopes, starting from the most nested one going upwards.
-func (l *Lowerer) ResolveVariable(name string) (Variable, error) {
-	for scope := range l.scopes.Iterator() {
-		for name, variable := range scope {
-			if variable.Name == name {
-				return variable, nil
+func (l *Lowerer) ResolveVariable(name string) (uint16, Variable, error) {
+	for _, vartype := range []VarType{Local, Parameter, Field, Static} {
+		for idx, entry := range l.scopes[vartype].Iterator() {
+			if entry.Variable.Name == name {
+				return uint16(idx), entry.Variable, nil
 			}
+
 		}
 	}
 
-	return Variable{}, fmt.Errorf("variable '%s' undeclared, not found in any scope", name)
+	return 0, Variable{}, fmt.Errorf("variable '%s' undeclared, not found in any scope", name)
 }
 
 // Specialized function to convert a 'jack.Class' node to a list of 'vm.Operation'.
 func (l *Lowerer) HandleClass(class Class) ([]vm.Operation, error) {
-	l.scopes.Push(class.Fields) // Add the generated scope to the top of the stack, before processing the statements
-	defer l.scopes.Pop()        // Before returning we pop the scope from the stack and return back to the previous one
+	l.classModule, l.classScope = class.Name, "Global"      // Keep track of the current scope being processed
+	defer func() { l.classModule, l.classScope = "", "" }() // Reset the function name after processing
 
 	operations := []vm.Operation{}
+
+	for _, field := range class.Fields {
+		ops, err := l.HandleVarStmt(VarStmt{Vars: []Variable{field}})
+		if err != nil {
+			return nil, fmt.Errorf("error handling field '%s' in class '%s': %w", field.Name, class.Name, err)
+		}
+		operations = append(operations, ops...)
+	}
+
 	for _, subroutine := range class.Subroutines {
 		ops, err := l.HandleSubroutine(subroutine)
 		if err != nil {
@@ -101,17 +123,8 @@ func (l *Lowerer) HandleClass(class Class) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.Subroutine' node to a list of 'vm.Operation'.
 func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error) {
-	scope := map[string]Variable{}
-	for _, stmt := range subroutine.Statements {
-		if varStmt, isVarStmt := stmt.(VarStmt); isVarStmt {
-			for _, variable := range varStmt.Vars { // We replicate all var declaration in the function scope
-				scope[variable.Name] = variable
-			}
-		}
-	}
-
-	l.scopes.Push(scope) // Add the generated scope to the top of the stack, before processing the statements
-	defer l.scopes.Pop() // Before returning we pop the scope from the stack and return back to the previous one
+	l.classModule, l.classScope = l.classModule, subroutine.Name // Keep track of the current subroutine function being processed
+	defer func() { l.classModule, l.classScope = "", "" }()      // Reset the function name after processing
 
 	fName, fBody := fmt.Sprintf("%s.%s", l.classModule, subroutine.Name), []vm.Operation{}
 	for _, stmt := range subroutine.Statements {
@@ -122,7 +135,17 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 		fBody = append(fBody, ops...)
 	}
 
-	return append([]vm.Operation{vm.FuncDecl{Name: fName, NLocal: uint8(len(scope))}}, fBody...), nil
+	// We need to count the number of local variable to be allocated for a function as part of its vm.FuncDecl
+	nLocal, currentScope := 0, fmt.Sprintf("%s.%s", l.classModule, l.classScope)
+	for _, active := range l.scopes {
+		for _, entry := range active.Iterator() {
+			if entry.ScopeName == currentScope {
+				nLocal++
+			}
+		}
+	}
+
+	return append([]vm.Operation{vm.FuncDecl{Name: fName, NLocal: uint8(nLocal)}}, fBody...), nil
 }
 
 // Generalized function to lower multiple statements types returning a 'vm.Operation' list.
@@ -158,9 +181,14 @@ func (l *Lowerer) HandleDoStmt(statement DoStmt) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.VarStmt' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleVarStmt(statement VarStmt) ([]vm.Operation, error) {
-	// ! Variable declaration does not produce any operation, it is just a declaration that will be
-	// ! used later in the program. We could return an empty slice or nil, but let's be explicit.
-	return []vm.Operation{}, nil
+	for _, variable := range statement.Vars {
+		// Like this we're actually supporting shadowing of variables, so if a variable
+		// with the same name is already present in the current scope, we just temporarily
+		// override it with the most update one instead of returning an error (like Go does BTW).
+		scope := fmt.Sprintf("%s.%s", l.classModule, l.classScope)
+		l.scopes[variable.Type].Push(ActiveEntry{ScopeName: scope, Variable: variable})
+	}
+	return []vm.Operation{}, nil // No operations needed for variable declaration, just update the scope
 }
 
 // Specialized function to convert a 'jack.LetStmt' to a list of 'vm.Operation'.
@@ -426,7 +454,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	}
 
 	if expression.IsExtCall {
-		variable, err := l.ResolveVariable(expression.Var)
+		_, variable, err := l.ResolveVariable(expression.Var)
 		if err != nil {
 			return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
 		}
