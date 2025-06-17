@@ -148,11 +148,11 @@ const (
 
 	BoolOr  ExprType = "bool_or"
 	BoolAnd ExprType = "bool_and"
-	BoolNot ExprType = "bool_not"
+	BoolNot ExprType = "bool_neg"
 
 	Equal     ExprType = "equal"
 	LessThan  ExprType = "less_than"
-	GreatThan ExprType = "great_than"
+	GreatThan ExprType = "greater_than"
 )
 
 // ----------------------------------------------------------------------------

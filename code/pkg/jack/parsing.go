@@ -679,7 +679,7 @@ func (p *Parser) HandleUnaryExpr(node pc.Queryable) (Expression, error) {
 		return nil, fmt.Errorf("expected node with 2 leaf, got %d", len(node.GetChildren()))
 	}
 
-	exprType := ExprType(strings.ToLower((node.GetChildren()[0].GetValue())))
+	exprType := ExprType(strings.ToLower((node.GetChildren()[0].GetName())))
 
 	rhs, err := p.HandleExpression(node.GetChildren()[1])
 	if err != nil {

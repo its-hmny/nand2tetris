@@ -45,7 +45,7 @@ func NewLowerer(p Program) Lowerer {
 		Local:     utils.NewStack[ActiveEntry](),
 		Field:     utils.NewStack[ActiveEntry](),
 		Parameter: utils.NewStack[ActiveEntry](),
-		Static: utils.NewStack[ActiveEntry](
+		Static: utils.NewStack(
 			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Sys", Type: Static, DataType: Object, ClassName: "Sys"}},
 			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Math", Type: Static, DataType: Object, ClassName: "Math"}},
 			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Array", Type: Static, DataType: Object, ClassName: "Array"}},
@@ -211,6 +211,8 @@ func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
 			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Local, Offset: offset}), nil
 		case Parameter:
 			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Argument, Offset: offset}), nil
+		case Field:
+			return []vm.Operation{vm.MemoryOp{Operation: vm.Pop, Segment: vm.This, Offset: offset}}, nil
 		default:
 			return nil, fmt.Errorf("variable type '%s' is not supported yet", variable.Type)
 		}
@@ -364,6 +366,10 @@ func (l *Lowerer) HandleExpression(expr Expression) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.VarExpr' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
+	if expression.Var == "this" {
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.This, Offset: 0}}, nil
+	}
+
 	offset, variable, err := l.ResolveVariable(expression.Var)
 	if err != nil {
 		return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
@@ -374,6 +380,8 @@ func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Local, Offset: offset}}, nil
 	case Parameter:
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Argument, Offset: offset}}, nil
+	case Field:
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.This, Offset: offset}}, nil
 	default:
 		return nil, fmt.Errorf("variable type '%s' is not supported yet2", variable.Type)
 	}
