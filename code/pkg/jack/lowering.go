@@ -126,6 +126,15 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 	l.classModule, l.classScope = l.classModule, subroutine.Name // Keep track of the current subroutine function being processed
 	defer func() { l.classModule, l.classScope = "", "" }()      // Reset the function name after processing
 
+	// We add to the current scope also all of the arguments of the subroutine
+	for _, arg := range subroutine.Arguments {
+		// Like this we're actually supporting shadowing of variables, so if a variable
+		// with the same name is already present in the current scope, we just temporarily
+		// override it with the most update one instead of returning an error (like Go does
+		scope := fmt.Sprintf("%s.%s", l.classModule, l.classScope)
+		l.scopes[arg.Type].Push(ActiveEntry{ScopeName: scope, Variable: arg})
+	}
+
 	fName, fBody := fmt.Sprintf("%s.%s", l.classModule, subroutine.Name), []vm.Operation{}
 	for _, stmt := range subroutine.Statements {
 		ops, err := l.HandleStatement(stmt)
@@ -139,7 +148,7 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 	nLocal, currentScope := 0, fmt.Sprintf("%s.%s", l.classModule, l.classScope)
 	for _, active := range l.scopes {
 		for _, entry := range active.Iterator() {
-			if entry.ScopeName == currentScope {
+			if entry.Variable.Type == Local && entry.ScopeName == currentScope {
 				nLocal++
 			}
 		}
