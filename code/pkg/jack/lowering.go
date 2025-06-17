@@ -536,11 +536,16 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 		argsInit = append(argsInit, ops...)
 	}
 
-	if expression.IsExtCall {
-		_, variable, err := l.ResolveVariable(expression.Var)
-		if err != nil {
-			return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
-		}
+	if !expression.IsExtCall { // Instance-to-instance function call
+		fName := fmt.Sprintf("%s.%s", l.classModule, expression.FuncName)
+		return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
+	}
+
+	// We have an external function call and we check whether the target is a specific class instance.
+	// In order to check whether we're hitting or not a class instance we check if in the scope(s) there's
+	// an active variable with the same name as our expression.Var. This will also give us information about
+	// how to populate the 'this', given that we will call only subroutine of Type = Method in this code path..
+	if _, variable, _ := l.ResolveVariable(expression.Var); variable != (Variable{}) {
 		if variable.DataType != Object {
 			return nil, fmt.Errorf("variable '%s' is not an object", expression.Var)
 		}
@@ -550,6 +555,35 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 		return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
 	}
 
-	fName := fmt.Sprintf("%s.%s", l.classModule, expression.FuncName)
-	return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
+	// If we manage to reach here we are calling either a constructor or a function (like a static method).
+	// This means that there will be no 'this' pointer to set and we can just call the function directly basically.
+	// In case of a constructor the new problem is to allocate memory externally and then call the constructor to
+	// set it as per its code logic, that's why we further fork the codepath based on the subroutine type.
+	if class, isClass := l.program[fmt.Sprintf("%s.jack", expression.Var)]; expression.IsExtCall && isClass {
+		routine, exists := class.Subroutines[expression.FuncName]
+		if !exists {
+			return nil, fmt.Errorf("subroutine '%s' not found in class '%s'", expression.FuncName, class.Name)
+		}
+
+		if routine.Type == Function {
+			fName := fmt.Sprintf("%s.%s", l.classModule, expression.FuncName)
+			return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
+		}
+
+		if routine.Type == Constructor {
+			return append(argsInit,
+				// Allocates enough memory to host the class fields
+				// TODO (hmny): We should not allocate memory for static fields I guess
+				vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(len(class.Fields))},
+				vm.FuncCallOp{Name: "Memory.alloc", NArgs: 1},
+				// Set the 'this' pointer to the newly allocated memory
+				vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 0},
+				vm.FuncCallOp{Name: fmt.Sprintf("%s.new", class.Name), NArgs: uint8(argsLen)},
+			), nil
+		}
+
+		return nil, fmt.Errorf("subroutine '%s' in class '%s' is not a function or constructor, got %s", expression.FuncName, class.Name, routine.Type)
+	}
+
+	return nil, fmt.Errorf("unrecognized function call expression: %s", expression.FuncName)
 }
