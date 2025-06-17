@@ -327,7 +327,19 @@ func (l *Lowerer) HandleExpression(expr Expression) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.VarExpr' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	offset, variable, err := l.ResolveVariable(expression.Var)
+	if err != nil {
+		return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
+	}
+
+	switch variable.Type {
+	case Local:
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Local, Offset: offset}}, nil
+	case Parameter:
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Argument, Offset: offset}}, nil
+	default:
+		return nil, fmt.Errorf("variable type '%s' is not supported yet2", variable.Type)
+	}
 }
 
 // Specialized function to convert a 'jack.LiteralExpr' to a list of 'vm.Operation'.
@@ -382,7 +394,24 @@ func (l *Lowerer) HandleLiteralExpr(expression LiteralExpr) ([]vm.Operation, err
 
 // Specialized function to convert a 'jack.ArrayExpr' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleArrayExpr(expression ArrayExpr) ([]vm.Operation, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	baseOps, err := l.HandleVarExpr(VarExpr{Var: expression.Var})
+	if err != nil {
+		return nil, fmt.Errorf("error handling base variable expression: %w", err)
+	}
+
+	// Handle the index expression to get the offset of the array element
+	indexOps, err := l.HandleExpression(expression.Index)
+	if err != nil {
+		return nil, fmt.Errorf("error handling index expression: %w", err)
+	}
+
+	// We need to add the index to the base address of the array
+	return append(append(indexOps, baseOps...),
+		vm.ArithmeticOp{Operation: vm.Add},
+		// Add the pointer + offset and then set the 'That' pointer to the memory location
+		vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 1},
+		vm.MemoryOp{Operation: vm.Push, Segment: vm.That, Offset: 0},
+	), nil
 }
 
 // Specialized function to convert a 'jack.UnaryExpr' to a list of 'vm.Operation'.
