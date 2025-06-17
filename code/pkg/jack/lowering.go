@@ -193,17 +193,54 @@ func (l *Lowerer) HandleVarStmt(statement VarStmt) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.LetStmt' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
-	lhsOps, err := l.HandleExpression(statement.Lhs)
-	if err != nil {
-		return nil, fmt.Errorf("error handling LHS expression: %w", err)
-	}
-
+	// This is just the value to be assigned, nothing difficult about it
 	rhsOps, err := l.HandleExpression(statement.Rhs)
 	if err != nil {
 		return nil, fmt.Errorf("error handling RHS expression: %w", err)
 	}
 
-	return append(rhsOps, lhsOps...), nil // TODO (hmny): Still some things to go here
+	// If it's a VarExpr then we somewhat reuse the same logic as HandleVarExpr, but we need to write memory instead of reading
+	if expr, isVarExpr := statement.Lhs.(VarExpr); isVarExpr {
+		offset, variable, err := l.ResolveVariable(expr.Var)
+		if err != nil {
+			return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expr.Var, err)
+		}
+
+		switch variable.Type {
+		case Local:
+			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Local, Offset: offset}), nil
+		case Parameter:
+			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Argument, Offset: offset}), nil
+		default:
+			return nil, fmt.Errorf("variable type '%s' is not supported yet", variable.Type)
+		}
+	}
+
+	// For ArrayExpr instead we reuse the pointer + offset logic from HandleArrayExpr but after that we write
+	// a bit of glue code to save the RHS on temporary memory before loading the new address and writing it
+	if expr, isArrayExpr := statement.Lhs.(ArrayExpr); isArrayExpr {
+		baseOps, err := l.HandleVarExpr(VarExpr{Var: expr.Var})
+		if err != nil {
+			return nil, fmt.Errorf("error handling base variable expression: %w", err)
+		}
+
+		// Handle the index expression to get the offset of the array element
+		indexOps, err := l.HandleExpression(expr.Index)
+		if err != nil {
+			return nil, fmt.Errorf("error handling index expression: %w", err)
+		}
+
+		writeOps := []vm.Operation{ // Will move the value to temp and the pop it into the array's cell (That pointer)
+			vm.MemoryOp{Operation: vm.Pop, Segment: vm.Temp, Offset: 0},
+			vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 1},
+			vm.MemoryOp{Operation: vm.Push, Segment: vm.Temp, Offset: 0},
+			vm.MemoryOp{Operation: vm.Pop, Segment: vm.That, Offset: 0},
+		}
+
+		return append(append(append(indexOps, baseOps...), rhsOps...), writeOps...), nil
+	}
+
+	return nil, fmt.Errorf("LHS expression must be either a 'VarExpr' or an 'ArrayExpr', got: %T", statement.Lhs)
 }
 
 // Specialized function to convert a 'jack.WhileStmt' to a list of 'vm.Operation'.
