@@ -123,8 +123,8 @@ func (l *Lowerer) HandleClass(class Class) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.Subroutine' node to a list of 'vm.Operation'.
 func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error) {
-	l.classModule, l.classScope = l.classModule, subroutine.Name // Keep track of the current subroutine function being processed
-	defer func() { l.classModule, l.classScope = "", "" }()      // Reset the function name after processing
+	l.classScope = subroutine.Name       // Keep track of the current subroutine function being processed
+	defer func() { l.classScope = "" }() // Reset the function name after processing
 
 	// We add to the current scope also all of the arguments of the subroutine
 	for _, arg := range subroutine.Arguments {
