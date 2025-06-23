@@ -222,6 +222,8 @@ func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
 			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Argument, Offset: offset}), nil
 		case Field:
 			return []vm.Operation{vm.MemoryOp{Operation: vm.Pop, Segment: vm.This, Offset: offset}}, nil
+		case Static:
+			return []vm.Operation{vm.MemoryOp{Operation: vm.Pop, Segment: vm.Static, Offset: offset}}, nil
 		default:
 			return nil, fmt.Errorf("variable type '%s' is not supported yet", variable.Type)
 		}
@@ -241,6 +243,9 @@ func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
 			return nil, fmt.Errorf("error handling index expression: %w", err)
 		}
 
+		// Calculates the specific element of array memory location that will be accessed later on
+		refOps := append(append(indexOps, baseOps...), vm.ArithmeticOp{Operation: vm.Add})
+
 		writeOps := []vm.Operation{ // Will move the value to temp and the pop it into the array's cell (That pointer)
 			vm.MemoryOp{Operation: vm.Pop, Segment: vm.Temp, Offset: 0},
 			vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 1},
@@ -248,7 +253,7 @@ func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
 			vm.MemoryOp{Operation: vm.Pop, Segment: vm.That, Offset: 0},
 		}
 
-		return append(append(append(indexOps, baseOps...), rhsOps...), writeOps...), nil
+		return append(append(refOps, rhsOps...), writeOps...), nil
 	}
 
 	return nil, fmt.Errorf("LHS expression must be either a 'VarExpr' or an 'ArrayExpr', got: %T", statement.Lhs)
@@ -391,6 +396,8 @@ func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Argument, Offset: offset}}, nil
 	case Field:
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.This, Offset: offset}}, nil
+	case Static:
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Static, Offset: offset}}, nil
 	default:
 		return nil, fmt.Errorf("variable type '%s' is not supported yet2", variable.Type)
 	}
