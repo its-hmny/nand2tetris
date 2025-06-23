@@ -557,9 +557,13 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 			return nil, fmt.Errorf("variable '%s' is not an object", expression.Var)
 		}
 
-		// TODO (hmny): Pretty sure here I have to do something with the this pointer
+		thisArg, err := l.HandleVarExpr(VarExpr{Var: expression.Var})
+		if err != nil {
+			return nil, fmt.Errorf("error handling variable expression for 'this' pointer: %w", err)
+		}
+
 		fName := fmt.Sprintf("%s.%s", variable.ClassName, expression.FuncName)
-		return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
+		return append(append(thisArg, argsInit...), vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen + 1)}), nil
 	}
 
 	// If we manage to reach here we are calling either a constructor or a function (like a static method).
@@ -573,20 +577,13 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 		}
 
 		if routine.Type == Function {
-			fName := fmt.Sprintf("%s.%s", l.classModule, expression.FuncName)
+			fName := fmt.Sprintf("%s.%s", class.Name, expression.FuncName)
 			return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
 		}
 
 		if routine.Type == Constructor {
-			return append(argsInit,
-				// Allocates enough memory to host the class fields
-				// TODO (hmny): We should not allocate memory for static fields I guess
-				vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(len(class.Fields))},
-				vm.FuncCallOp{Name: "Memory.alloc", NArgs: 1},
-				// Set the 'this' pointer to the newly allocated memory
-				vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 0},
-				vm.FuncCallOp{Name: fmt.Sprintf("%s.new", class.Name), NArgs: uint8(argsLen)},
-			), nil
+			fName := fmt.Sprintf("%s.new", class.Name) // All constructors are named 'new' in Jack
+			return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
 		}
 
 		return nil, fmt.Errorf("subroutine '%s' in class '%s' is not a function or constructor, got %s", expression.FuncName, class.Name, routine.Type)
