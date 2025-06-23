@@ -23,6 +23,8 @@ var JackCompiler = cli.New(Description).
 	// 'AsOptional()' allows to have more than one input .vm file
 	WithArg(cli.NewArg("inputs", "The source (.jack) files to be compiled").
 		AsOptional().WithType(cli.TypeString)).
+	WithOption(cli.NewOption("stdlib", "Uses the built-in ABI of the standard library for lowering").
+		WithType(cli.TypeBool)).
 	WithAction(Handler)
 
 func Handler(args []string, options map[string]string) int {
@@ -67,6 +69,15 @@ func Handler(args []string, options map[string]string) int {
 		if err != nil {
 			fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
 			return -1
+		}
+	}
+
+	// Adds to the jack.Program the stdlib ABI, this will help resolve stdlib functions w/o adding
+	// them to the final executable (they are ignored after the codegen phase). This will enable
+	// in future to compile project w/o defining the stdlib and assuming it can be 'linked' if needed.
+	if _, enabled := options["stdlib"]; enabled {
+		for name, class := range jack.StandardLibraryABI {
+			program[name] = class
 		}
 	}
 

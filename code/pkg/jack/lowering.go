@@ -44,17 +44,8 @@ func NewLowerer(p Program) Lowerer {
 	builtin := ScopeTable{
 		Local:     utils.NewStack[ActiveEntry](),
 		Field:     utils.NewStack[ActiveEntry](),
+		Static:    utils.NewStack[ActiveEntry](),
 		Parameter: utils.NewStack[ActiveEntry](),
-		Static: utils.NewStack(
-			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Sys", Type: Static, DataType: Object, ClassName: "Sys"}},
-			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Math", Type: Static, DataType: Object, ClassName: "Math"}},
-			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Array", Type: Static, DataType: Object, ClassName: "Array"}},
-			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Output", Type: Static, DataType: Object, ClassName: "Output"}},
-			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Memory", Type: Static, DataType: Object, ClassName: "Memory"}},
-			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Screen", Type: Static, DataType: Object, ClassName: "Screen"}},
-			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "String", Type: Static, DataType: Object, ClassName: "String"}},
-			ActiveEntry{ScopeName: "Global", Variable: Variable{Name: "Keyboard", Type: Static, DataType: Object, ClassName: "Keyboard"}},
-		),
 	}
 
 	return Lowerer{program: p, scopes: builtin}
