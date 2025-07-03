@@ -56,7 +56,7 @@ func (l *Lowerer) HandleClass(class Class) ([]vm.Operation, error) {
 
 	operations := []vm.Operation{}
 
-	for _, field := range class.Fields {
+	for _, field := range class.Fields.Entries() {
 		ops, err := l.HandleVarStmt(VarStmt{Vars: []Variable{field}})
 		if err != nil {
 			return nil, fmt.Errorf("error handling field '%s' in class '%s': %w", field.Name, class.Name, err)
@@ -64,7 +64,7 @@ func (l *Lowerer) HandleClass(class Class) ([]vm.Operation, error) {
 		operations = append(operations, ops...)
 	}
 
-	for _, subroutine := range class.Subroutines {
+	for _, subroutine := range class.Subroutines.Entries() {
 		ops, err := l.HandleSubroutine(subroutine)
 		if err != nil {
 			return nil, fmt.Errorf("error handling subroutine '%s' in class '%s': %w", subroutine.Name, class.Name, err)
@@ -514,7 +514,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	// In case of a constructor the new problem is to allocate memory externally and then call the constructor to
 	// set it as per its code logic, that's why we further fork the codepath based on the subroutine type.
 	if class, isClass := l.program[expression.Var]; expression.IsExtCall && isClass {
-		routine, exists := class.Subroutines[expression.FuncName]
+		routine, exists := class.Subroutines.Get(expression.FuncName)
 		if !exists {
 			return nil, fmt.Errorf("subroutine '%s' not found in class '%s'", expression.FuncName, class.Name)
 		}

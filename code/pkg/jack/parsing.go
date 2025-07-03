@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	pc "github.com/prataprc/goparsec"
+	"its-hmny.dev/nand2tetris/pkg/utils"
 )
 
 var ast = pc.NewAST("jack_program", 0)
@@ -246,8 +247,8 @@ func (p *Parser) FromAST(root pc.Queryable) (Class, error) {
 
 	class := Class{
 		Name:        root.GetChildren()[2].GetValue(),
-		Fields:      map[string]Variable{},
-		Subroutines: map[string]Subroutine{},
+		Fields:      utils.OrderedMap[string, Variable]{},
+		Subroutines: utils.OrderedMap[string, Subroutine]{},
 	}
 
 	// Field declaration subtree, appends 'jack.Variable' to 'class.Fields'
@@ -260,7 +261,7 @@ func (p *Parser) FromAST(root pc.Queryable) (Class, error) {
 			return Class{}, err
 		}
 		for _, field := range fields {
-			class.Fields[field.Name] = field
+			class.Fields.Set(field.Name, field)
 		}
 	}
 
@@ -273,7 +274,7 @@ func (p *Parser) FromAST(root pc.Queryable) (Class, error) {
 		if err != nil {
 			return Class{}, err
 		}
-		class.Subroutines[subroutine.Name] = subroutine
+		class.Subroutines.Set(subroutine.Name, subroutine)
 	}
 
 	return class, nil

@@ -1,5 +1,7 @@
 package jack
 
+import "its-hmny.dev/nand2tetris/pkg/utils"
+
 // ----------------------------------------------------------------------------
 // General information
 
@@ -26,9 +28,9 @@ type Program map[string]Class
 // Both Fields and Subroutines comes in a static variant (resp. static 'Variable' or function Subroutine) where
 // the instance of the class is not scoped to the single object instantiation but to the program as a whole
 type Class struct {
-	Name        string                // The class name or id, will also identify the instantiated object type
-	Fields      map[string]Variable   // The variable (static ors not) associated to the class or object instance
-	Subroutines map[string]Subroutine // The subroutines (static or not) associated to the class or object instance
+	Name        string                               // The class name or id, will also identify the instantiated object type
+	Fields      utils.OrderedMap[string, Variable]   // The variable (static ors not) associated to the class or object instance
+	Subroutines utils.OrderedMap[string, Subroutine] // The subroutines (static or not) associated to the class or object instance
 }
 
 // ----------------------------------------------------------------------------
