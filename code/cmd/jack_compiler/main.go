@@ -102,13 +102,15 @@ func Handler(args []string, options map[string]string) int {
 	}
 
 	for _, tu := range TUs {
-		module, ok := compiled[path.Base(tu)]
+		// Removes root directory and file extension to use as module name
+		filename, extension := path.Base(tu), path.Ext(tu)
+		module, ok := compiled[strings.TrimSuffix(filename, extension)]
 		if !ok {
-			fmt.Printf("ERROR: Unable to compiled module for class file '%s'\n", tu)
+			fmt.Printf("ERROR: Unable to compile module for class file '%s'\n", tu)
 			return -1
 		}
 
-		output, err := os.Create(fmt.Sprintf("%s.vm", strings.TrimSuffix(tu, ".jack")))
+		output, err := os.Create(fmt.Sprintf("%s.vm", strings.TrimSuffix(tu, extension)))
 		if err != nil {
 			fmt.Printf("ERROR: Unable to open output file: %s\n", err)
 			return -1

@@ -1,5 +1,5 @@
 {
-  "Array.jack": {
+  "Array": {
     "Name": "Array",
     "Fields": {},
     "Subroutines": {
@@ -26,7 +26,7 @@
       }
     }
   },
-  "Keyboard.jack": {
+  "Keyboard": {
     "Name": "Keyboard",
     "Fields": {},
     "Subroutines": {
@@ -81,7 +81,7 @@
       }
     }
   },
-  "Math.jack": {
+  "Math": {
     "Name": "Math",
     "Fields": {
       "n": {
@@ -215,7 +215,7 @@
       }
     }
   },
-  "Memory.jack": {
+  "Memory": {
     "Name": "Memory",
     "Fields": {},
     "Subroutines": {
@@ -290,7 +290,7 @@
       }
     }
   },
-  "Output.jack": {
+  "Output": {
     "Name": "Output",
     "Fields": {
       "charMaps": {
@@ -487,7 +487,7 @@
       }
     }
   },
-  "Screen.jack": {
+  "Screen": {
     "Name": "Screen",
     "Fields": {},
     "Subroutines": {
@@ -631,7 +631,7 @@
       }
     }
   },
-  "String.jack": {
+  "String": {
     "Name": "String",
     "Fields": {},
     "Subroutines": {
@@ -762,7 +762,7 @@
       }
     }
   },
-  "Sys.jack": {
+  "Sys": {
     "Name": "Sys",
     "Fields": {},
     "Subroutines": {
