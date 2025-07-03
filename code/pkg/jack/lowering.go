@@ -3,8 +3,8 @@ package jack
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
-	"its-hmny.dev/nand2tetris/pkg/utils"
 	"its-hmny.dev/nand2tetris/pkg/vm"
 )
 
@@ -17,38 +17,15 @@ import (
 // on it. For each operation node visited we produce a list of 'wm.Operation' as counterpart as well as
 // validating the input before proceeding with the processing.
 type Lowerer struct {
-	program Program
-
-	// Keeps track of the class (.jack file) we're lowering at the moment,
-	// used to convert internal function calls (e.g. div(X, y) => Math.div(x,y))
-	classModule string
-	// Keeps track of the scope (in this case only a subroutine) we're lowering
-	// at the moment, used to track active variable declaration in the ScopeTable
-	classScope string
-
-	nRandomizer uint // Counter to randomize 'vm.LabelDecl(s)' with same name
-
-	scopes ScopeTable // List of active scopes to lookup variables given the current context
+	program     Program    // The program to lower, it must be not nil nor empty
+	scopes      ScopeTable // Keeps track of the scopes and declared variables inside each one
+	nRandomizer uint       // Counter to randomize 'vm.LabelDecl(s)' with same name
 }
-
-type ActiveEntry struct {
-	ScopeName string
-	Variable  Variable
-}
-
-type ScopeTable map[VarType]*utils.Stack[ActiveEntry]
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
 // Requires the argument Program to be not nil nor empty.
 func NewLowerer(p Program) Lowerer {
-	builtin := ScopeTable{
-		Local:     utils.NewStack[ActiveEntry](),
-		Field:     utils.NewStack[ActiveEntry](),
-		Static:    utils.NewStack[ActiveEntry](),
-		Parameter: utils.NewStack[ActiveEntry](),
-	}
-
-	return Lowerer{program: p, scopes: builtin}
+	return Lowerer{program: p, scopes: ScopeTable{}}
 }
 
 // Triggers the lowering process. It iterates class by class and then statement by statement
@@ -72,24 +49,10 @@ func (l *Lowerer) Lowerer() (vm.Program, error) {
 	return program, nil
 }
 
-// Searches for a variable by name iteratively in all scopes, starting from the most nested one going upwards.
-func (l *Lowerer) ResolveVariable(name string) (uint16, Variable, error) {
-	for _, vartype := range []VarType{Local, Parameter, Field, Static} {
-		for idx, entry := range l.scopes[vartype].Iterator() {
-			if entry.Variable.Name == name {
-				return uint16(idx), entry.Variable, nil
-			}
-
-		}
-	}
-
-	return 0, Variable{}, fmt.Errorf("variable '%s' undeclared, not found in any scope", name)
-}
-
 // Specialized function to convert a 'jack.Class' node to a list of 'vm.Operation'.
 func (l *Lowerer) HandleClass(class Class) ([]vm.Operation, error) {
-	l.classModule, l.classScope = class.Name, "Global"      // Keep track of the current scope being processed
-	defer func() { l.classModule, l.classScope = "", "" }() // Reset the function name after processing
+	l.scopes.PushClassScope(class.Name) // Keep track of the current scope being processed
+	defer l.scopes.PopClassScope()      // Reset the function name after processing
 
 	operations := []vm.Operation{}
 
@@ -114,19 +77,18 @@ func (l *Lowerer) HandleClass(class Class) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.Subroutine' node to a list of 'vm.Operation'.
 func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error) {
-	l.classScope = subroutine.Name       // Keep track of the current subroutine function being processed
-	defer func() { l.classScope = "" }() // Reset the function name after processing
+	l.scopes.PushSubRoutineScope(subroutine.Name) // Keep track of the current subroutine function being processed
+	defer l.scopes.PopSubroutineScope()           // Reset the function name after processing
 
 	// We add to the current scope also all of the arguments of the subroutine
 	for _, arg := range subroutine.Arguments {
 		// Like this we're actually supporting shadowing of variables, so if a variable
 		// with the same name is already present in the current scope, we just temporarily
 		// override it with the most update one instead of returning an error (like Go does
-		scope := fmt.Sprintf("%s.%s", l.classModule, l.classScope)
-		l.scopes[arg.Type].Push(ActiveEntry{ScopeName: scope, Variable: arg})
+		l.scopes.RegisterVariable(arg)
 	}
 
-	fName, fBody := fmt.Sprintf("%s.%s", l.classModule, subroutine.Name), []vm.Operation{}
+	fName, fBody := l.scopes.GetScope(), []vm.Operation{}
 	for _, stmt := range subroutine.Statements {
 		ops, err := l.HandleStatement(stmt)
 		if err != nil {
@@ -135,17 +97,8 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 		fBody = append(fBody, ops...)
 	}
 
-	// We need to count the number of local variable to be allocated for a function as part of its vm.FuncDecl
-	nLocal, currentScope := 0, fmt.Sprintf("%s.%s", l.classModule, l.classScope)
-	for _, active := range l.scopes {
-		for _, entry := range active.Iterator() {
-			if entry.Variable.Type == Local && entry.ScopeName == currentScope {
-				nLocal++
-			}
-		}
-	}
-
-	return append([]vm.Operation{vm.FuncDecl{Name: fName, NLocal: uint8(nLocal)}}, fBody...), nil
+	fDecl := vm.FuncDecl{Name: fName, NLocal: uint8(l.scopes.local.entries.Count())}
+	return append([]vm.Operation{fDecl}, fBody...), nil
 }
 
 // Generalized function to lower multiple statements types returning a 'vm.Operation' list.
@@ -185,8 +138,7 @@ func (l *Lowerer) HandleVarStmt(statement VarStmt) ([]vm.Operation, error) {
 		// Like this we're actually supporting shadowing of variables, so if a variable
 		// with the same name is already present in the current scope, we just temporarily
 		// override it with the most update one instead of returning an error (like Go does BTW).
-		scope := fmt.Sprintf("%s.%s", l.classModule, l.classScope)
-		l.scopes[variable.Type].Push(ActiveEntry{ScopeName: scope, Variable: variable})
+		l.scopes.RegisterVariable(variable)
 	}
 	return []vm.Operation{}, nil // No operations needed for variable declaration, just update the scope
 }
@@ -201,7 +153,7 @@ func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
 
 	// If it's a VarExpr then we somewhat reuse the same logic as HandleVarExpr, but we need to write memory instead of reading
 	if expr, isVarExpr := statement.Lhs.(VarExpr); isVarExpr {
-		offset, variable, err := l.ResolveVariable(expr.Var)
+		offset, variable, err := l.scopes.ResolveVariable(expr.Var)
 		if err != nil {
 			return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expr.Var, err)
 		}
@@ -375,7 +327,7 @@ func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.This, Offset: 0}}, nil
 	}
 
-	offset, variable, err := l.ResolveVariable(expression.Var)
+	offset, variable, err := l.scopes.ResolveVariable(expression.Var)
 	if err != nil {
 		return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
 	}
@@ -535,7 +487,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	}
 
 	if !expression.IsExtCall { // Instance-to-instance function call
-		fName := fmt.Sprintf("%s.%s", l.classModule, expression.FuncName)
+		fName := strings.ReplaceAll(l.scopes.GetScope(), "Global", expression.FuncName)
 		return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
 	}
 
@@ -543,7 +495,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	// In order to check whether we're hitting or not a class instance we check if in the scope(s) there's
 	// an active variable with the same name as our expression.Var. This will also give us information about
 	// how to populate the 'this', given that we will call only subroutine of Type = Method in this code path..
-	if _, variable, _ := l.ResolveVariable(expression.Var); variable != (Variable{}) {
+	if _, variable, _ := l.scopes.ResolveVariable(expression.Var); variable != (Variable{}) {
 		if variable.DataType != Object {
 			return nil, fmt.Errorf("variable '%s' is not an object", expression.Var)
 		}
