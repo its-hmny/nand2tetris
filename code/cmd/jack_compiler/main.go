@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"its-hmny.dev/nand2tetris/pkg/jack"
+	"its-hmny.dev/nand2tetris/pkg/utils"
 	"its-hmny.dev/nand2tetris/pkg/vm"
 
 	"github.com/teris-io/cli"
@@ -78,8 +79,12 @@ func Handler(args []string, options map[string]string) int {
 	// them to the final executable (they are ignored after the codegen phase). This will enable
 	// in future to compile project w/o defining the stdlib and assuming it can be 'linked' if needed.
 	if _, enabled := options["stdlib"]; enabled {
-		for name, class := range jack.StandardLibraryABI {
-			program[name] = class
+		for name, abi := range jack.StandardLibraryABI {
+			def := jack.Class{Name: name, Subroutines: utils.OrderedMap[string, jack.Subroutine]{}}
+			for fName, subroutine := range abi {
+				def.Subroutines.Set(fName, subroutine)
+			}
+			program[name] = def
 		}
 	}
 

@@ -8,6 +8,6 @@ import (
 //go:embed stdlib.json
 var content string
 
-var StandardLibraryABI = map[string]Class{}
+var StandardLibraryABI = map[string]map[string]Subroutine{}
 
 func init() { json.Unmarshal([]byte(content), &StandardLibraryABI) }
