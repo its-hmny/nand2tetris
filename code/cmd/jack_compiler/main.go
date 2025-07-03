@@ -64,8 +64,10 @@ func Handler(args []string, options map[string]string) int {
 
 		// Instantiate a parser for the Vm program
 		parser := jack.NewParser(bytes.NewReader(content))
+		// Removes root directory and file extension to use as module name
+		filename, extension := path.Base(tu), path.Ext(tu)
 		// Parses the input file content and extract an AST (as a 'vm.Module') from it.
-		program[path.Base(tu)], err = parser.Parse()
+		program[strings.TrimSuffix(filename, extension)], err = parser.Parse()
 		if err != nil {
 			fmt.Printf("ERROR: Unable to complete 'parsing' pass: %s\n", err)
 			return -1

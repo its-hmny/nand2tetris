@@ -212,9 +212,9 @@ func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
 		case Parameter:
 			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Argument, Offset: offset}), nil
 		case Field:
-			return []vm.Operation{vm.MemoryOp{Operation: vm.Pop, Segment: vm.This, Offset: offset}}, nil
+			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.This, Offset: offset}), nil
 		case Static:
-			return []vm.Operation{vm.MemoryOp{Operation: vm.Pop, Segment: vm.Static, Offset: offset}}, nil
+			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Static, Offset: offset}), nil
 		default:
 			return nil, fmt.Errorf("variable type '%s' is not supported yet", variable.Type)
 		}
@@ -561,7 +561,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	// This means that there will be no 'this' pointer to set and we can just call the function directly basically.
 	// In case of a constructor the new problem is to allocate memory externally and then call the constructor to
 	// set it as per its code logic, that's why we further fork the codepath based on the subroutine type.
-	if class, isClass := l.program[fmt.Sprintf("%s.jack", expression.Var)]; expression.IsExtCall && isClass {
+	if class, isClass := l.program[expression.Var]; expression.IsExtCall && isClass {
 		routine, exists := class.Subroutines[expression.FuncName]
 		if !exists {
 			return nil, fmt.Errorf("subroutine '%s' not found in class '%s'", expression.FuncName, class.Name)
