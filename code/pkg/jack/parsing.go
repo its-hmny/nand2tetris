@@ -333,17 +333,17 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 	}
 
 	// Iterate on the nested possible n declarations to extract all the variable names
-	nested, arguments := node.GetChildren()[4].GetChildren(), map[string]Variable{}
+	nested, arguments := node.GetChildren()[4].GetChildren(), utils.OrderedMap[string, Variable]{}
 	for _, child := range nested {
 		argType, argName := child.GetChildren()[0].GetValue(), child.GetChildren()[1].GetValue()
 
 		// Primitive data types (int, string, bool) are handled differently than complex objects
 		if builtin := DataType(argType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
-			arguments[argName] = Variable{Name: argName, Type: Parameter, DataType: builtin}
+			arguments.Set(argName, Variable{Name: argName, Type: Parameter, DataType: builtin})
 			continue
 		}
 
-		arguments[argName] = Variable{Name: argName, Type: Parameter, DataType: Object, ClassName: argType}
+		arguments.Set(argName, Variable{Name: argName, Type: Parameter, DataType: Object, ClassName: argType})
 	}
 
 	nested, statements := node.GetChildren()[7].GetChildren(), []Statement{}

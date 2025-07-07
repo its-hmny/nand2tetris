@@ -45,8 +45,8 @@ type Subroutine struct {
 	Name string         // Name/id, w/ the class id will identify universally the subroutine
 	Type SubroutineType //Function type, used to determine the codegen strategy during compilation phase
 
-	Return    DataType            // The type of value returned by the procedure ('void' for no value)
-	Arguments map[string]Variable // The set of arguments to be provided and used during the execution
+	Return    DataType                           // The type of value returned by the procedure ('void' for no value)
+	Arguments utils.OrderedMap[string, Variable] // The set of arguments to be provided and used during the execution
 
 	Statements []Statement // The list of statements to be executed, a representation of the func program flow
 }
