@@ -80,6 +80,15 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 	l.scopes.PushSubRoutineScope(subroutine.Name) // Keep track of the current subroutine function being processed
 	defer l.scopes.PopSubroutineScope()           // Reset the function name after processing
 
+	// When dealing with methods subroutine, where the object instance fields are available to be both read and written,
+	// we will receive also the 'this' pointer as the first argument. The subroutine itself (in its prelude) will pop
+	// that address from the argument memory segment and set the 'this' pointer accordingly.
+	if subroutine.Type == Method {
+		// ! The name is left purposefully empty, because is just there as placeholder for the upcoming/real
+		// ! arguments that will be registered later on by iterating on the 'Subroutine.Arguments' field.
+		l.scopes.RegisterVariable(Variable{Name: "__obj", Type: Parameter, DataType: Object, ClassName: ""})
+	}
+
 	// We add to the current scope also all of the arguments of the subroutine
 	for _, arg := range subroutine.Arguments.Entries() {
 		// Like this we're actually supporting shadowing of variables, so if a variable
@@ -98,6 +107,18 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 	}
 
 	fDecl := vm.FuncDecl{Name: fName, NLocal: uint8(l.scopes.local.entries.Count())}
+
+	// By convention we'll receive the object instance pointer as the first argument on the stack. In order to
+	// access correctly the object instance fields, we need to set the 'this' pointer based on the address received.
+	if subroutine.Type == Method {
+		preludeOps := []vm.Operation{
+			vm.MemoryOp{Operation: vm.Push, Segment: vm.Argument, Offset: 0},
+			vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 0},
+		}
+
+		return append(append([]vm.Operation{fDecl}, preludeOps...), fBody...), nil
+	}
+
 	return append([]vm.Operation{fDecl}, fBody...), nil
 }
 
