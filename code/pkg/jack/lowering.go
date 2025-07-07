@@ -373,7 +373,10 @@ func (l *Lowerer) HandleLiteralExpr(expression LiteralExpr) ([]vm.Operation, err
 
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(expression.Value[0])}}, nil
 
-	case Null: // TODO (hmny): Not sure that pushing just a simple 0 is enough or right
+	case Object:
+		if expression.Value != "null" {
+			return nil, fmt.Errorf("object literal are not supported '%s'", expression.Value)
+		}
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: 0}}, nil
 
 	case String:
@@ -426,7 +429,7 @@ func (l *Lowerer) HandleUnaryExpr(expression UnaryExpr) ([]vm.Operation, error) 
 	}
 
 	switch expression.Type {
-	case Minus:
+	case Negation:
 		return append(ops, vm.ArithmeticOp{Operation: vm.Neg}), nil
 	case BoolNot:
 		return append(ops, vm.ArithmeticOp{Operation: vm.Not}), nil

@@ -144,9 +144,10 @@ type ExprType string // Enum to manage the operation allowed for an ExprType
 
 const (
 	Plus     ExprType = "plus"
-	Minus    ExprType = "minus" // Used both for subtraction (BinaryExpr) and arithmetic negation (UnaryExpr)
+	Minus    ExprType = "minus" // Used both for subtraction (BinaryExpr)
 	Divide   ExprType = "divide"
 	Multiply ExprType = "multiply"
+	Negation ExprType = "negation" // Used for arithmetic negation (UnaryExpr)
 
 	BoolOr  ExprType = "bool_or"
 	BoolAnd ExprType = "bool_and"
@@ -187,7 +188,6 @@ const (
 	Int    DataType = "int"
 	Bool   DataType = "bool"
 	Char   DataType = "char"
-	Null   DataType = "null"
 	String DataType = "string"
 	Void   DataType = "void"
 	Object DataType = "object"

@@ -101,7 +101,7 @@ var (
 
 	pUnaryExpr = ast.And("unary_expr", nil,
 		// Unary operations supported by the Jack language (boolean and arithmetic negation)
-		ast.OrdChoice("op", nil, pc.Atom("-", "ARITH_NEG"), pc.Atom("~", "BOOL_NEG")),
+		ast.OrdChoice("op", nil, pc.Atom("-", "NEGATION"), pc.Atom("~", "BOOL_NEG")),
 		&pTerm, // Nested subexpression or term to be evaluated
 	)
 
