@@ -535,7 +535,27 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	}
 
 	if !expression.IsExtCall { // Instance-to-instance function call
-		fName := strings.ReplaceAll(l.scopes.GetScope(), "Global", expression.FuncName)
+		// TODO (hmny): Pretty sure this can simplified and made more clear
+		className := strings.Split(l.scopes.GetScope(), ".")[0] // Get the class name from the scope
+
+		// Looks up whether the class and subroutine are defined and exists in the program.
+		class, exists := l.program[className]
+		if !exists {
+			return nil, fmt.Errorf("class defintion not found for '%s'", className)
+		}
+		routine, exists := class.Subroutines.Get(expression.FuncName)
+		if !exists {
+			return nil, fmt.Errorf("subroutine '%s' not found in class '%s'", expression.FuncName, className)
+		}
+
+		fName := fmt.Sprintf("%s.%s", className, expression.FuncName)
+
+		if routine.Type == Method {
+			// We push the 'this' pointer (already initialized) as the first argument to not break compatibility
+			thisOp := vm.MemoryOp{Operation: vm.Push, Segment: vm.Pointer, Offset: 0}
+			return append([]vm.Operation{thisOp}, append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen + 1)})...), nil
+		}
+
 		return append(argsInit, vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen)}), nil
 	}
 
