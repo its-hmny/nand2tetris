@@ -17,7 +17,9 @@ import (
 )
 
 var Description = strings.ReplaceAll(`
-TODO (hmny): Must add CLI tool description
+The Jack Compiler compiles programs (composed of multiple classes/files) written in
+the Jack language into VM modules that can be further elaborated. The Jack language
+is a higher-level OOP language tailored for use with the Hack computer architecture.
 `, "\n", " ")
 
 var JackCompiler = cli.New(Description).

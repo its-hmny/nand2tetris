@@ -120,10 +120,16 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 			return nil, fmt.Errorf("class '%s' not found", className)
 		}
 
+		nFields := uint16(0)
+		for _, field := range class.Fields.Entries() {
+			if field.Type == Field { // Count only the fields, not the static ones
+				nFields++
+			}
+		}
+
 		preludeOps := []vm.Operation{
-			// Each field is exactly one word long, so we can just enough memory as fields declared in the class
-			// TODO (hmny): We should filter out static fields given that they are shared between class instances.
-			vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(class.Fields.Size())},
+			// Each field is exactly one word long, so we can just allocate enough memory as fields declared in the class
+			vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: nFields},
 			vm.FuncCallOp{Name: "Memory.alloc", NArgs: 1},
 			// We then set the 'this' pointer to the base pointer of the newly allocated memory
 			vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 0},
@@ -369,7 +375,7 @@ func (l *Lowerer) HandleExpression(expr Expression) ([]vm.Operation, error) {
 // Specialized function to convert a 'jack.VarExpr' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
 	if expression.Var == "this" {
-		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.This, Offset: 0}}, nil
+		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Pointer, Offset: 0}}, nil
 	}
 
 	offset, variable, err := l.scopes.ResolveVariable(expression.Var)
