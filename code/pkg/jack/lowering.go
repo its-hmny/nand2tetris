@@ -108,6 +108,30 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 
 	fDecl := vm.FuncDecl{Name: fName, NLocal: uint8(l.scopes.local.entries.Count())}
 
+	// By convention, constructors will allocate the required memory for the object instance themselves and then set the
+	// desired values for each address based on their own code logic. This is different, for example, from C++ constructors
+	// where the memory is allocated externally by the caller (on the heap or the stack based on the code) and the constructor
+	// only deals with initializing each field of the object instance to the desired value,
+	if subroutine.Type == Constructor {
+		// TODO (hmny): Pretty sure this can simplified and made more clear
+		className := strings.Split(l.scopes.GetScope(), ".")[0] // Get the class name from the scope
+		class, exists := l.program[className]
+		if !exists {
+			return nil, fmt.Errorf("class '%s' not found", className)
+		}
+
+		preludeOps := []vm.Operation{
+			// Each field is exactly one word long, so we can just enough memory as fields declared in the class
+			// TODO (hmny): We should filter out static fields given that they are shared between class instances.
+			vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(class.Fields.Size())},
+			vm.FuncCallOp{Name: "Memory.alloc", NArgs: 1},
+			// We then set the 'this' pointer to the base pointer of the newly allocated memory
+			vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 0},
+		}
+
+		return append(append([]vm.Operation{fDecl}, preludeOps...), fBody...), nil
+	}
+
 	// By convention we'll receive the object instance pointer as the first argument on the stack. In order to
 	// access correctly the object instance fields, we need to set the 'this' pointer based on the address received.
 	if subroutine.Type == Method {
