@@ -2,9 +2,11 @@ package jack
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
+	"its-hmny.dev/nand2tetris/pkg/utils"
 	"its-hmny.dev/nand2tetris/pkg/vm"
 )
 
@@ -17,15 +19,36 @@ import (
 // on it. For each operation node visited we produce a list of 'wm.Operation' as counterpart as well as
 // validating the input before proceeding with the processing.
 type Lowerer struct {
-	program     Program    // The program to lower, it must be not nil nor empty
-	scopes      ScopeTable // Keeps track of the scopes and declared variables inside each one
-	nRandomizer uint       // Counter to randomize 'vm.LabelDecl(s)' with same name
+	program     utils.OrderedMap[string, Class] // The program to lower, it must be not nil nor empty
+	scopes      ScopeTable                      // Keeps track of the scopes and declared variables inside each one
+	nRandomizer uint                            // Counter to randomize 'vm.LabelDecl(s)' with same name
 }
 
 // Initializes and returns to the caller a brand new 'Lowerer' struct.
 // Requires the argument Program to be not nil nor empty.
 func NewLowerer(p Program) Lowerer {
-	return Lowerer{program: p, scopes: ScopeTable{}}
+	// ? Why do we convert from a jack.Program (wrapper type of a map[string]Class to an OrderedMap[string, Class]?
+	// Without doing this is impossible to have reproducible builds (and also meaningful test cases) because
+	// the Go built-in map is not ordered and non-deterministic, so the order of iteration of the classes can
+	// change on different runs, then what happens is that the label declarations will be different too since
+	// they are randomized with just a counter (the counter will have different values because it will be
+	// incremented a different number of times based on the order of the classes).
+	//
+	// The solution is simple: we order the map by its class name and store it in that order in the OrderedMap
+	// so that the order we decided we'll be maintained throughout the entire lowering process. The end result
+	// is that for the same input code we obtain always the same output code.
+
+	//* 1. From unsorted map to unsorted slice of MapEntry[string, Class] (used later bu OrderedMap)
+	classes := []utils.MapEntry[string, Class]{}
+	for _, class := range p {
+		classes = append(classes, utils.MapEntry[string, Class]{Key: class.Name, Value: class})
+	}
+
+	//* 2. We sort the slice by classname so that we have a reproducible order to use// 	//  map to unsorted slice of MapEntry[string, Class] (used later bu OrderedMap)
+	sort.Slice(classes, func(i, j int) bool { return sort.StringsAreSorted([]string{classes[i].Key, classes[j].Key}) })
+
+	//* 3. From sorted slice we create an order map where the insertion order and the alphabetic are the same
+	return Lowerer{program: utils.NewOrderedMapFromList(classes), scopes: ScopeTable{}}
 }
 
 // Triggers the lowering process. It iterates class by class and then statement by statement
@@ -33,11 +56,11 @@ func NewLowerer(p Program) Lowerer {
 // a recursive descent parser but for lowering), this means the AST is visited in DFS order.
 func (l *Lowerer) Lowerer() (vm.Program, error) {
 	program := vm.Program{}
-	if len(l.program) == 0 {
+	if l.program.Size() == 0 {
 		return nil, fmt.Errorf("the given 'program' is empty or nil")
 	}
 
-	for name, class := range l.program {
+	for name, class := range l.program.Entries() {
 		operations, err := l.HandleClass(class)
 		if err != nil {
 			return nil, fmt.Errorf("error handling lowering of class '%s': %w", name, err)
@@ -115,7 +138,7 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 	if subroutine.Type == Constructor {
 		// TODO (hmny): Pretty sure this can simplified and made more clear
 		className := strings.Split(l.scopes.GetScope(), ".")[0] // Get the class name from the scope
-		class, exists := l.program[className]
+		class, exists := l.program.Get(className)
 		if !exists {
 			return nil, fmt.Errorf("class '%s' not found", className)
 		}
@@ -545,7 +568,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 		className := strings.Split(l.scopes.GetScope(), ".")[0] // Get the class name from the scope
 
 		// Looks up whether the class and subroutine are defined and exists in the program.
-		class, exists := l.program[className]
+		class, exists := l.program.Get(className)
 		if !exists {
 			return nil, fmt.Errorf("class defintion not found for '%s'", className)
 		}
@@ -587,7 +610,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	// This means that there will be no 'this' pointer to set and we can just call the function directly basically.
 	// In case of a constructor the new problem is to allocate memory externally and then call the constructor to
 	// set it as per its code logic, that's why we further fork the codepath based on the subroutine type.
-	if class, isClass := l.program[expression.Var]; expression.IsExtCall && isClass {
+	if class, isClass := l.program.Get(expression.Var); expression.IsExtCall && isClass {
 		routine, exists := class.Subroutines.Get(expression.FuncName)
 		if !exists {
 			return nil, fmt.Errorf("subroutine '%s' not found in class '%s'", expression.FuncName, class.Name)

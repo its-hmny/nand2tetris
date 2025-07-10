@@ -1,0 +1,51 @@
+diff --git a/projects/09 - High-Level Language/06 - ComplexArrays/Main.vm b/projects/09 - High-Level Language/06 - ComplexArrays/Main.vm
+index 2bc4335..cc9b066 100644
+--- a/projects/09 - High-Level Language/06 - ComplexArrays/Main.vm	
++++ b/projects/09 - High-Level Language/06 - ComplexArrays/Main.vm	
+@@ -405,9 +405,8 @@ pop local 2
+ push local 2
+ push constant 0
+ eq
+-if-goto IF_TRUE0
+-goto IF_FALSE0
+-label IF_TRUE0
++neg
++if-goto ELSE_0
+ push local 0
+ push constant 10
+ call Main.fill 2
+@@ -464,7 +463,7 @@ pop temp 0
+ pop pointer 1
+ push temp 0
+ pop that 0
+-label IF_FALSE0
++label ELSE_0
+ push constant 44
+ call String.new 1
+ push constant 84
+@@ -677,12 +676,12 @@ push constant 2
+ call Math.multiply 2
+ return
+ function Main.fill 0
+-label WHILE_EXP0
++label WHILE_START_1
+ push argument 1
+ push constant 0
+ gt
+-not
+-if-goto WHILE_END0
++neg
++if-goto WHILE_END_2
+ push argument 1
+ push constant 1
+ sub
+@@ -696,7 +695,7 @@ pop temp 0
+ pop pointer 1
+ push temp 0
+ pop that 0
+-goto WHILE_EXP0
+-label WHILE_END0
++goto WHILE_START_1
++label WHILE_END_2
+ push constant 0
+ return

@@ -1,0 +1,52 @@
+diff --git a/projects/09 - High-Level Language/03 - Fraction/Fraction.vm b/projects/09 - High-Level Language/03 - Fraction/Fraction.vm
+index 2709f5e..a46d3eb 100644
+--- a/projects/09 - High-Level Language/03 - Fraction/Fraction.vm	
++++ b/projects/09 - High-Level Language/03 - Fraction/Fraction.vm	
+@@ -21,9 +21,8 @@ pop local 0
+ push local 0
+ push constant 1
+ gt
+-if-goto IF_TRUE0
+-goto IF_FALSE0
+-label IF_TRUE0
++neg
++if-goto ELSE_0
+ push this 0
+ push local 0
+ call Math.divide 2
+@@ -32,7 +31,7 @@ push this 1
+ push local 0
+ call Math.divide 2
+ pop this 1
+-label IF_FALSE0
++label ELSE_0
+ push constant 0
+ return
+ function Fraction.getNumerator 0
+@@ -91,13 +90,13 @@ pop temp 0
+ push constant 0
+ return
+ function Fraction.gcd 1
+-label WHILE_EXP0
++label WHILE_START_1
+ push argument 1
+ push constant 0
+ eq
+ not
+-not
+-if-goto WHILE_END0
++neg
++if-goto WHILE_END_2
+ push argument 0
+ push argument 1
+ push argument 0
+@@ -110,7 +109,7 @@ push argument 1
+ pop argument 0
+ push local 0
+ pop argument 1
+-goto WHILE_EXP0
+-label WHILE_END0
++goto WHILE_START_1
++label WHILE_END_2
+ push argument 0
+ return
