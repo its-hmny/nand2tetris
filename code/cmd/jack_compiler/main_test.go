@@ -7,12 +7,73 @@ import (
 	"testing"
 )
 
+// This test checks the output of mmy Jack Compiler against the pre generated output of the same Jack Compiler
+func TestJackCompiler(t *testing.T) {
+	test := func(inputs []string, output string, stdlib bool) {
+		options := map[string]string{"stdlib": fmt.Sprint(stdlib)}
+
+		status := Handler(inputs, options)
+		if status != 0 {
+			t.Fatalf("Unexpected exit status code: expected 0 got: %d", status)
+		}
+
+		cmd := exec.Command("git", "diff", "--exit-code", output)
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("The diff betweenthe generated code and the expected one do not match")
+		}
+	}
+	t.Run("ArrayTest", func(t *testing.T) {
+		base := "../../../projects/10 - Jack I: Syntax Analysis/01 - ArrayTest"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("ExpressionLessSquare", func(t *testing.T) {
+		base := "../../../projects/10 - Jack I: Syntax Analysis/02 - ExpressionLessSquare"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("Square", func(t *testing.T) {
+		base := "../../../projects/10 - Jack I: Syntax Analysis/03 - Square"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("Seven", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/01 - Seven"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("ConvertToBin", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/02 - ConvertToBin"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("Square", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/03 - Square"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("Average", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/04 - Average"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("Pong", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/05 - Pong"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("ComplexArrays", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/06 - ComplexArrays"
+		test([]string{base}, base, true)
+	})
+}
+
 // This test checks the output of mmy Jack Compiler against the built-in Jack Compiler from
 // the Nand2Tetris course. It runs the compiler on various Jack programs and compares the
 // generated VM code with the expected output  stored in the corresponding .diff files.
 // The test ensures that the Jack Compiler produces the same VM code for every run and
 // always has the same changes from the built-in compiler output.
-func TestJackCompilerAgainstBuiltIn(t *testing.T) {
+func TestAgainstBuiltIn(t *testing.T) {
 	test := func(inputs []string, output string, stdlib bool, test string) {
 		options := map[string]string{"stdlib": fmt.Sprint(stdlib)}
 
