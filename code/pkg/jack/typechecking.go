@@ -223,5 +223,160 @@ func (tc *TypeChecker) HandleReturnStmt(statement ReturnStmt) (bool, error) {
 
 // Generalized function to type-check multiple expression their final 'jack.DataType'.
 func (tc *TypeChecker) HandleExpression(expr Expression) (DataType, error) {
-	return DataType(""), fmt.Errorf("not implemented yet")
+	switch tExpr := expr.(type) {
+	case VarExpr:
+		return tc.HandleVarExpr(tExpr)
+	case LiteralExpr:
+		return tc.HandleLiteralExpr(tExpr)
+	case ArrayExpr:
+		return tc.HandleArrayExpr(tExpr)
+	case UnaryExpr:
+		return tc.HandleUnaryExpr(tExpr)
+	case BinaryExpr:
+		return tc.HandleBinaryExpr(tExpr)
+	case FuncCallExpr:
+		return tc.HandleFuncCallExpr(tExpr)
+	default:
+		return DataType(""), fmt.Errorf("unrecognized expression: %T", expr)
+	}
+}
+
+// Specialized function to extract the DataType of a 'jack.VarExpr'.
+func (tc *TypeChecker) HandleVarExpr(expression VarExpr) (DataType, error) {
+	if expression.Var == "this" {
+		return Object, nil // TODO (hmny): Should add also the custom type declared by the users
+	}
+
+	_, variable, err := tc.scopes.ResolveVariable(expression.Var)
+	if err != nil {
+		return DataType(""), fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
+	}
+
+	return variable.DataType, nil
+}
+
+// Specialized function to extract the DataType of a 'jack.LiteralExpr'.
+func (tc *TypeChecker) HandleLiteralExpr(expression LiteralExpr) (DataType, error) {
+	switch expression.Type {
+	case Int, Bool, Char, String:
+		return expression.Type, nil // Classic passthrough for built-in data types
+	case Object:
+		if expression.Value != "null" {
+			return DataType(""), fmt.Errorf("object literal are not supported '%s'", expression.Value)
+		}
+		return Object, nil
+	default:
+		return DataType(""), fmt.Errorf("unrecognized literal expression type: %s", expression.Type)
+	}
+}
+
+// Specialized function to extract the DataType of a 'jack.ArrayExpr'.
+func (tc *TypeChecker) HandleArrayExpr(expression ArrayExpr) (DataType, error) {
+	array, err := tc.HandleVarExpr(VarExpr{Var: expression.Var})
+	if err != nil {
+		return DataType(""), fmt.Errorf("error handling base variable expression: %w", err)
+	}
+
+	// Handle the index expression to get the offset of the array element
+	index, err := tc.HandleExpression(expression.Index)
+	if err != nil {
+		return DataType(""), fmt.Errorf("error handling index expression: %w", err)
+	}
+	if index != Int {
+		return DataType(""), fmt.Errorf("array index expression must be 'int', got %s", index)
+	}
+
+	return array, nil
+}
+
+// Specialized function to extract the DataType of a 'jack.ArrayExpr'.
+func (tc *TypeChecker) HandleUnaryExpr(expression UnaryExpr) (DataType, error) {
+	nested, err := tc.HandleExpression(expression.Rhs)
+	if err != nil {
+		return DataType(""), fmt.Errorf("error handling nested expression: %w", err)
+	}
+
+	switch expression.Type {
+	case Negation:
+		if nested != Int {
+			return DataType(""), fmt.Errorf("nested expression must be 'int', got %s", nested)
+		}
+		return Int, nil
+	case BoolNot:
+		if nested != Bool {
+			return DataType(""), fmt.Errorf("nested expression must be 'bool', got %s", nested)
+		}
+		return Bool, nil
+	default:
+		return DataType(""), fmt.Errorf("unrecognized unary expression type: %s", expression.Type)
+	}
+}
+
+// Specialized function to extract the DataType of a 'jack.BinaryExpr'.
+func (tc *TypeChecker) HandleBinaryExpr(expression BinaryExpr) (DataType, error) {
+	lhs, err := tc.HandleExpression(expression.Lhs)
+	if err != nil {
+		return DataType(""), fmt.Errorf("error handling nested LHS expression: %w", err)
+	}
+
+	rhs, err := tc.HandleExpression(expression.Rhs)
+	if err != nil {
+		return DataType(""), fmt.Errorf("error handling nested RHS expression: %w", err)
+	}
+
+	if rhs != lhs {
+		return DataType(""), fmt.Errorf("RHS and LHS should have same type, got %s and %s", rhs, lhs)
+	}
+
+	switch expression.Type {
+	case Plus, Minus, Divide, Multiply:
+		return rhs, nil // Also lhs should be fine since they are the same DataType
+	case BoolOr, BoolAnd, BoolNot:
+		return Bool, nil
+	case Equal, LessThan, GreatThan:
+		return Bool, nil
+	default:
+		return DataType(""), fmt.Errorf("unrecognized binary expression type: %s", expression.Type)
+	}
+}
+
+// Specialized function to extract the DataType of a 'jack.FuncCallExpr'.
+func (tc *TypeChecker) HandleFuncCallExpr(expression FuncCallExpr) (DataType, error) {
+	className := ""
+
+	if expression.IsExtCall {
+		_, variable, _ := tc.scopes.ResolveVariable(expression.Var)
+		if variable != (Variable{}) {
+			return DataType(""), fmt.Errorf("variable %s can't be found in program", expression.Var)
+		}
+		if variable.DataType != Object {
+			return DataType(""), fmt.Errorf("variable '%s' is not an object", expression.Var)
+		}
+		className = variable.ClassName
+	} else {
+		className = strings.Split(tc.scopes.GetScope(), ".")[0]
+	}
+
+	// Retrieve the current class and current subroutine information (checking for existence)
+	class, exists := tc.program[className]
+	if !exists {
+		return DataType(""), fmt.Errorf("class %s doesn't exists", className)
+	}
+	subroutine, exists := class.Subroutines.Get(expression.FuncName)
+	if !exists {
+		return DataType(""), fmt.Errorf("routine %s doesn't exists for class %s", expression.FuncName, className)
+	}
+
+	for idx, expr := range expression.Arguments {
+		arg, err := tc.HandleExpression(expr)
+		if err != nil {
+			return DataType(""), fmt.Errorf("error handling argument expression: %w", err)
+		}
+
+		if expected := subroutine.Arguments[idx].DataType; arg != expected {
+			return DataType(""), fmt.Errorf("error handling arg no. %d, expected %s but got %s", idx, expected, arg)
+		}
+	}
+
+	return subroutine.Return, nil
 }
