@@ -1,0 +1,121 @@
+diff --git a/projects/09 - High-Level Language/05 - ConvertToBin/Main.vm b/projects/09 - High-Level Language/05 - ConvertToBin/Main.vm
+index 43dbba8..8991fc2 100644
+--- a/projects/09 - High-Level Language/05 - ConvertToBin/Main.vm	
++++ b/projects/09 - High-Level Language/05 - ConvertToBin/Main.vm	
+@@ -1,8 +1,4 @@
+ function Main.main 1
+-push constant 8000
+-push constant 48
+-call Memory.poke 2
+-pop temp 0
+ push constant 8001
+ push constant 16
+ push constant 1
+@@ -18,13 +14,12 @@ pop temp 0
+ push constant 0
+ return
+ function Main.convert 3
+-push constant 0
+-not
++push constant 1
+ pop local 2
+-label WHILE_EXP0
++label WHILE_START_2
+ push local 2
+-not
+-if-goto WHILE_END0
++neg
++if-goto WHILE_END_3
+ push local 1
+ push constant 1
+ add
+@@ -36,65 +31,56 @@ push local 1
+ push constant 16
+ gt
+ not
+-if-goto IF_TRUE0
+-goto IF_FALSE0
+-label IF_TRUE0
++neg
++if-goto ELSE_1
+ push argument 0
+ push local 0
+ and
+ push constant 0
+ eq
+ not
+-if-goto IF_TRUE1
+-goto IF_FALSE1
+-label IF_TRUE1
++neg
++if-goto ELSE_0
+ push constant 8000
+ push local 1
+ add
+ push constant 1
+ call Memory.poke 2
+ pop temp 0
+-goto IF_END1
+-label IF_FALSE1
+ push constant 8000
+ push local 1
+ add
+ push constant 0
+ call Memory.poke 2
+ pop temp 0
+-label IF_END1
+-goto IF_END0
+-label IF_FALSE0
++label ELSE_0
+ push constant 0
+ pop local 2
+-label IF_END0
+-goto WHILE_EXP0
+-label WHILE_END0
++label ELSE_1
++goto WHILE_START_2
++label WHILE_END_3
+ push constant 0
+ return
+ function Main.nextMask 0
+ push argument 0
+ push constant 0
+ eq
+-if-goto IF_TRUE0
+-goto IF_FALSE0
+-label IF_TRUE0
++neg
++if-goto ELSE_4
+ push constant 1
+ return
+-goto IF_END0
+-label IF_FALSE0
+ push argument 0
+ push constant 2
+ call Math.multiply 2
+ return
+-label IF_END0
++label ELSE_4
+ function Main.fillMemory 0
+-label WHILE_EXP0
++label WHILE_START_5
+ push argument 1
+ push constant 0
+ gt
+-not
+-if-goto WHILE_END0
++neg
++if-goto WHILE_END_6
+ push argument 0
+ push argument 2
+ call Memory.poke 2
+@@ -107,7 +93,7 @@ push argument 0
+ push constant 1
+ add
+ pop argument 0
+-goto WHILE_EXP0
+-label WHILE_END0
++goto WHILE_START_5
++label WHILE_END_6
+ push constant 0
+ return
