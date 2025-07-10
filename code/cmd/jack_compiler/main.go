@@ -28,6 +28,8 @@ var JackCompiler = cli.New(Description).
 		AsOptional().WithType(cli.TypeString)).
 	WithOption(cli.NewOption("stdlib", "Uses the built-in ABI of the standard library for lowering").
 		WithType(cli.TypeBool)).
+	WithOption(cli.NewOption("typecheck", "Does a full type check of source code before emitting any output").
+		WithType(cli.TypeBool)).
 	WithAction(Handler)
 
 func Handler(args []string, options map[string]string) int {
@@ -87,6 +89,14 @@ func Handler(args []string, options map[string]string) int {
 				def.Subroutines.Set(fName, subroutine)
 			}
 			program[name] = def
+		}
+	}
+
+	if _, enabled := options["typecheck"]; enabled {
+		checker := jack.NewTypeChecker(program)
+		if _, err := checker.Check(); err != nil {
+			fmt.Printf("ERROR: Unable to complete 'typecheck' pass: %s\n", err)
+			return -1
 		}
 	}
 
