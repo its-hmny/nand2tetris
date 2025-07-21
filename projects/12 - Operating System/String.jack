@@ -12,53 +12,115 @@
  */
 class String {
 
-    /** constructs a new empty string with a maximum length of maxLength
-     *  and initial length of 0. */
+    field int size; // the size of the buffer (and upperbound to the string size)
+    field Array buffer; // the string's raw bytes
+
+    /** 
+     *  constructs a new empty string with a maximum length of
+     *  'maxLength' and initial length of 0.
+     */
     constructor String new(int maxLength) {
+        let size = maxLength;
+        let buffer = Memory.alloc(maxLength);
+        return this;
     }
 
     /** Disposes this string. */
     method void dispose() {
+        do Memory.deAlloc(buffer);
+        return;
     }
 
     /** Returns the current length of this string. */
     method int length() {
+        var int len; let len = 0;
+        while (~(buffer[len] = 0)) { let len = len + 1; }
+        return len;
     }
 
     /** Returns the character at the j-th location of this string. */
     method char charAt(int j) {
+        // out of bounds access to the string
+        if (j < 0 | j > length() | j = length()) { return 0; }
+
+        return buffer[j];
     }
 
     /** Sets the character at the j-th location of this string to c. */
     method void setCharAt(int j, char c) {
+        // out of bounds access to the string
+        if (j < 0 | j > length() | j = length()) { return; }
+
+        let buffer[j] = c;
+        return;
     }
 
     /** Appends c to this string's end and returns this string. */
     method String appendChar(char c) {
+        var int len; let len = length();
+        if (len < size) { let buffer[len] = c; }
+        return this;
     }
 
     /** Erases the last character from this string. */
     method void eraseLastChar() {
+        var int len; let len = length();
+        if (len > 0) { let buffer[len - 1] = 0; }
+        return;
     }
 
-    /** Returns the integer value of this string, 
-     *  until a non-digit character is detected. */
+    /** Returns the integer value of this string, until a non-digit character is detected. */
     method int intValue() {
+        var int i, val, sign; let i = 0; let val = 0; let sign = 1;
+
+        // Skips the 1st char when 'parsing' and set the sign to negative
+        if (buffer[0] = 45) {
+            let i = 1; let sign = -1;
+        }
+        
+        // '/' and ':' are the ASCII codes for 47 and 58, respectively,
+        // we can use them to check the range of digits is between 0 and 9
+        while ((i < length()) & (charAt(i) > 47) & (charAt(i) < 58)) {
+            let val = (val * 10) + (charAt(i) - 48);
+            let i = i + 1;
+        }
+
+        return sign * val;
     }
 
     /** Sets this string to hold a representation of the given value. */
     method void setInt(int val) {
+        // The 2nd let statement is a poor-man remainder op (read it as val % 10)
+        var int i, digit; let i = 0; let digit = val - ((val / 10) * 10);
+
+        if (val < 0) {
+            let i = 1; // start writing from the second char
+            let val = -val; // convert the value to be positive 
+            let buffer[0] = 45; // set the first char of the string to '-'
+        }
+
+        if (val < 10) {
+            let buffer[i] = val + 48; // convert the digit to its ASCII code
+            return; // no need to continue if the value is a single digit
+        }
+
+        do setInt(val / 10); // recursively call to set the next digit
+        do appendChar(digit + 48); // append the current digit as a char
+        return;
     }
 
     /** Returns the new line character. */
     function char newLine() {
+        return 10; // ASCII code for newline
     }
 
     /** Returns the backspace character. */
     function char backSpace() {
+        return 8; // ASCII code for backspace
     }
 
     /** Returns the double quote (") character. */
     function char doubleQuote() {
+        return 34; // ASCII code for double quote
     }
 }
