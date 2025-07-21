@@ -15,41 +15,95 @@ class Math {
 
     // Initializes the Math library.
     function void init() {
+        var int i; let i = 0;
+
+        // Number of bits in the Hack computer (also word size in the Hack architecture)
+        let n = 16; let powersOfTwo = Array.new(n);
+      
+        while (i < n) {
+            let powersOfTwo[i] = 1 * i;
+            let i = i + 1;
+        }
+        
+        return;
     }
 
-    /** Returns the product of x and y. 
+    /** 
+     *  Returns the product of x and y. 
      *  When a Jack compiler detects the multiplication operator '*'
      *  in an expression, it handles it by invoking this method. 
      *  Thus, in Jack, x * y and Math.multiply(x,y) return the same value.
      */
     function int multiply(int x, int y) {
+        var int j, sum, shiftedX;
+        let j = 0; let sum = 0; let shiftedX =  x;
+        
+        if (x = 0 | y = 0) { return 0; }
+
+        while (j < n) {
+            if ((y & powersOfTwo[j]) = 1)  {
+                let sum = sum + shiftedX;   
+            }
+            // There's no Math.pow nor Math.multiply, nor bitshifting operatins at this level
+            // leaving as only option for multiplication by two the classic addition.
+            let shiftedX = shiftedX + shiftedX;
+            let j = j + 1;
+        }
+
+        return sum;
     }
 
-    /** Returns the integer part of x / y.
+    /** 
+     *  Returns the integer part of x / y.
      *  When a Jack compiler detects the division operator '/'
      *  an an expression, it handles it by invoking this method.
      *  Thus, x/y and Math.divide(x,y) return the same value.
      */
     function int divide(int x, int y) {
+        var int q; let q = Math.divide(x, y * 2);
+        
+        if (y > x) { return 0; }
+        
+        if ((x - (2 * (q * y))) < y) {
+            return 2 * q;
+        } else {
+           return (2 * q) + 1;
+        }
     }
 
-    /** Returns the integer part of the square root of x.
-    */
+    /** Returns the integer part of the square root of x. */
     function int sqrt(int x) {
+        var int y, j, tmp, squared_tmp;
+        let y = 0; let j = (n / 2) - 1;
+
+        while (j > 0 | j = 0) {
+            // Get the current candidate of two (candadate for the square root)
+            let tmp = y + powersOfTwo[j]; let squared_tmp = tmp * tmp;
+            if (squared_tmp < x | squared_tmp = x) { 
+                let y = y + powersOfTwo[j];
+            }
+            
+            let j = j -1;
+        }
+
+        return y;
     }
 
-    /** Returns the greater value.
-    */
+    /** Returns the greater value. */
     function int max(int a, int b) {
+        if (a > b) { return a; } 
+        return b;
     }
 
-    /** Returns the smaller value.
-    */
+    /** Returns the smaller value. */
     function int min(int a, int b) {
+        if (a < b) { return a; }
+        return b;
     }
 
-    /** Returns the absolute value of x
-    */
+    /** Returns the absolute value of x */
     function int abs(int x) {
+        if (x < 0) { return -x; }
+        return x;
     }
 }
