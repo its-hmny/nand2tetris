@@ -405,7 +405,7 @@ pop local 2
 push local 2
 push constant 0
 eq
-neg
+not
 if-goto ELSE_0
 push local 0
 push constant 10
@@ -680,7 +680,7 @@ label WHILE_START_1
 push argument 1
 push constant 0
 gt
-neg
+not
 if-goto WHILE_END_2
 push argument 1
 push constant 1

@@ -90,20 +90,20 @@ return
 function PongGame.run 1
 push argument 0
 pop pointer 0
-label WHILE_START_27
+label WHILE_START_59
 push this 3
 not
-neg
-if-goto WHILE_END_28
-label WHILE_START_20
+not
+if-goto WHILE_END_60
+label WHILE_START_48
 push local 0
 push constant 0
 eq
 push this 3
 not
 and
-neg
-if-goto WHILE_END_21
+not
+if-goto WHILE_END_49
 call Keyboard.keyPressed 0
 pop local 0
 push this 0
@@ -115,37 +115,43 @@ pop temp 0
 push constant 50
 call Sys.wait 1
 pop temp 0
-goto WHILE_START_20
-label WHILE_END_21
+goto WHILE_START_48
+label WHILE_END_49
 push local 0
 push constant 130
 eq
-neg
-if-goto ELSE_24
+if-goto THEN_54
+goto ELSE_55
+label THEN_54
 push this 0
 push constant 1
 call Bat.setDirection 2
 pop temp 0
+goto END_56
+label ELSE_55
 push local 0
 push constant 132
 eq
-neg
-if-goto ELSE_23
+if-goto THEN_51
+goto ELSE_52
+label THEN_51
 push this 0
 push constant 2
 call Bat.setDirection 2
 pop temp 0
+goto END_53
+label ELSE_52
 push local 0
 push constant 140
 eq
-neg
-if-goto ELSE_22
+not
+if-goto ELSE_50
 push constant 1
 pop this 3
-label ELSE_22
-label ELSE_23
-label ELSE_24
-label WHILE_START_25
+label ELSE_50
+label END_53
+label END_56
+label WHILE_START_57
 push local 0
 push constant 0
 eq
@@ -153,8 +159,8 @@ not
 push this 3
 not
 and
-neg
-if-goto WHILE_END_26
+not
+if-goto WHILE_END_58
 call Keyboard.keyPressed 0
 pop local 0
 push this 0
@@ -166,13 +172,13 @@ pop temp 0
 push constant 50
 call Sys.wait 1
 pop temp 0
-goto WHILE_START_25
-label WHILE_END_26
-goto WHILE_START_27
-label WHILE_END_28
+goto WHILE_START_57
+label WHILE_END_58
+goto WHILE_START_59
+label WHILE_END_60
 push this 3
-neg
-if-goto ELSE_29
+not
+if-goto ELSE_61
 push constant 10
 push constant 27
 call Output.moveCursor 2
@@ -199,7 +205,7 @@ push constant 114
 call String.appendChar 2
 call Output.printString 1
 pop temp 0
-label ELSE_29
+label ELSE_61
 push constant 0
 return
 function PongGame.moveBall 5
@@ -216,8 +222,8 @@ push this 5
 eq
 not
 and
-neg
-if-goto ELSE_34
+not
+if-goto ELSE_68
 push this 2
 pop this 5
 push constant 0
@@ -237,8 +243,8 @@ pop local 4
 push this 2
 push constant 4
 eq
-neg
-if-goto ELSE_33
+not
+if-goto ELSE_67
 push local 1
 push local 4
 gt
@@ -249,29 +255,32 @@ or
 pop this 3
 push this 3
 not
-neg
-if-goto ELSE_32
+not
+if-goto ELSE_66
 push local 4
 push local 1
 push constant 10
 add
 lt
-neg
-if-goto ELSE_31
+if-goto THEN_63
+goto ELSE_64
+label THEN_63
 push constant 1
 neg
 pop local 0
+goto END_65
+label ELSE_64
 push local 3
 push local 2
 push constant 10
 sub
 gt
-neg
-if-goto ELSE_30
+not
+if-goto ELSE_62
 push constant 1
 pop local 0
-label ELSE_30
-label ELSE_31
+label ELSE_62
+label END_65
 push this 6
 push constant 2
 sub
@@ -291,12 +300,12 @@ pop temp 0
 push this 4
 call Output.printInt 1
 pop temp 0
-label ELSE_32
-label ELSE_33
+label ELSE_66
+label ELSE_67
 push this 1
 push local 0
 call Ball.bounce 2
 pop temp 0
-label ELSE_34
+label ELSE_68
 push constant 0
 return
