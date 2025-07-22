@@ -1,5 +1,5 @@
 diff --git a/projects/09 - High-Level Language/06 - ComplexArrays/Main.vm b/projects/09 - High-Level Language/06 - ComplexArrays/Main.vm
-index 2bc4335..cc9b066 100644
+index 2bc4335..c9f6520 100644
 --- a/projects/09 - High-Level Language/06 - ComplexArrays/Main.vm	
 +++ b/projects/09 - High-Level Language/06 - ComplexArrays/Main.vm	
 @@ -405,9 +405,8 @@ pop local 2
@@ -9,7 +9,7 @@ index 2bc4335..cc9b066 100644
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
++not
 +if-goto ELSE_0
  push local 0
  push constant 10
@@ -32,9 +32,8 @@ index 2bc4335..cc9b066 100644
  push argument 1
  push constant 0
  gt
--not
+ not
 -if-goto WHILE_END0
-+neg
 +if-goto WHILE_END_2
  push argument 1
  push constant 1

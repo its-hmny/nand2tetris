@@ -1,5 +1,5 @@
 diff --git a/projects/09 - High-Level Language/03 - Fraction/Fraction.vm b/projects/09 - High-Level Language/03 - Fraction/Fraction.vm
-index 2709f5e..a46d3eb 100644
+index 2709f5e..235a131 100644
 --- a/projects/09 - High-Level Language/03 - Fraction/Fraction.vm	
 +++ b/projects/09 - High-Level Language/03 - Fraction/Fraction.vm	
 @@ -21,9 +21,8 @@ pop local 0
@@ -9,7 +9,7 @@ index 2709f5e..a46d3eb 100644
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
++not
 +if-goto ELSE_0
  push this 0
  push local 0
@@ -33,9 +33,8 @@ index 2709f5e..a46d3eb 100644
  push constant 0
  eq
  not
--not
+ not
 -if-goto WHILE_END0
-+neg
 +if-goto WHILE_END_2
  push argument 0
  push argument 1

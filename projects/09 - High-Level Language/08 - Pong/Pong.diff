@@ -1,5 +1,5 @@
 diff --git a/projects/09 - High-Level Language/08 - Pong/Ball.vm b/projects/09 - High-Level Language/08 - Pong/Ball.vm
-index 8269c1c..c80249b 100644
+index 8269c1c..23872fa 100644
 --- a/projects/09 - High-Level Language/08 - Pong/Ball.vm	
 +++ b/projects/09 - High-Level Language/08 - Pong/Ball.vm	
 @@ -36,8 +36,7 @@ return
@@ -12,51 +12,57 @@ index 8269c1c..c80249b 100644
  call Screen.setColor 1
  pop temp 0
  push pointer 0
-@@ -105,9 +104,8 @@ push local 1
+@@ -105,9 +104,9 @@ push local 1
  lt
  pop this 7
  push this 7
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
-+if-goto ELSE_0
++if-goto THEN_0
++goto ELSE_1
++label THEN_0
  push local 0
  pop local 2
  push local 1
-@@ -122,8 +120,6 @@ push this 0
+@@ -122,8 +121,8 @@ push this 0
  push argument 1
  lt
  pop this 9
 -goto IF_END0
 -label IF_FALSE0
++goto END_2
++label ELSE_1
  push this 0
  push argument 1
  lt
-@@ -132,7 +128,7 @@ push this 1
+@@ -132,7 +131,7 @@ push this 1
  push argument 2
  lt
  pop this 9
 -label IF_END0
-+label ELSE_0
++label END_2
  push constant 2
  push local 1
  call Math.multiply 2
-@@ -160,142 +156,117 @@ pop temp 0
+@@ -160,142 +159,138 @@ pop temp 0
  push this 4
  push constant 0
  lt
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
-+if-goto ELSE_4
++if-goto THEN_12
++goto ELSE_13
++label THEN_12
  push this 4
  push this 5
  add
  pop this 4
 -goto IF_END0
 -label IF_FALSE0
++goto END_14
++label ELSE_13
  push this 4
  push this 6
  add
@@ -65,20 +71,24 @@ index 8269c1c..c80249b 100644
 -if-goto IF_TRUE1
 -goto IF_FALSE1
 -label IF_TRUE1
-+neg
-+if-goto ELSE_3
++if-goto THEN_9
++goto ELSE_10
++label THEN_9
  push this 7
 -if-goto IF_TRUE2
 -goto IF_FALSE2
 -label IF_TRUE2
-+neg
-+if-goto ELSE_1
++if-goto THEN_3
++goto ELSE_4
++label THEN_3
  push this 0
  push constant 4
  add
  pop this 0
 -goto IF_END2
 -label IF_FALSE2
++goto END_5
++label ELSE_4
  push this 1
  push constant 4
  add
@@ -86,19 +96,24 @@ index 8269c1c..c80249b 100644
 -label IF_END2
 -goto IF_END1
 -label IF_FALSE1
-+label ELSE_1
++label END_5
++goto END_11
++label ELSE_10
  push this 7
 -if-goto IF_TRUE3
 -goto IF_FALSE3
 -label IF_TRUE3
-+neg
-+if-goto ELSE_2
++if-goto THEN_6
++goto ELSE_7
++label THEN_6
  push this 0
  push constant 4
  sub
  pop this 0
 -goto IF_END3
 -label IF_FALSE3
++goto END_8
++label ELSE_7
  push this 1
  push constant 4
  sub
@@ -106,27 +121,31 @@ index 8269c1c..c80249b 100644
 -label IF_END3
 -label IF_END1
 -label IF_END0
-+label ELSE_2
-+label ELSE_3
-+label ELSE_4
++label END_8
++label END_11
++label END_14
  push this 8
 -if-goto IF_TRUE4
 -goto IF_FALSE4
 -label IF_TRUE4
-+neg
-+if-goto ELSE_7
++if-goto THEN_21
++goto ELSE_22
++label THEN_21
  push this 7
 -if-goto IF_TRUE5
 -goto IF_FALSE5
 -label IF_TRUE5
-+neg
-+if-goto ELSE_5
++if-goto THEN_15
++goto ELSE_16
++label THEN_15
  push this 1
  push constant 4
  add
  pop this 1
 -goto IF_END5
 -label IF_FALSE5
++goto END_17
++label ELSE_16
  push this 0
  push constant 4
  add
@@ -134,27 +153,32 @@ index 8269c1c..c80249b 100644
 -label IF_END5
 -goto IF_END4
 -label IF_FALSE4
-+label ELSE_5
++label END_17
++goto END_23
++label ELSE_22
  push this 7
 -if-goto IF_TRUE6
 -goto IF_FALSE6
 -label IF_TRUE6
-+neg
-+if-goto ELSE_6
++if-goto THEN_18
++goto ELSE_19
++label THEN_18
  push this 1
  push constant 4
  sub
  pop this 1
 -goto IF_END6
 -label IF_FALSE6
++goto END_20
++label ELSE_19
  push this 0
  push constant 4
  sub
  pop this 0
 -label IF_END6
 -label IF_END4
-+label ELSE_6
-+label ELSE_7
++label END_20
++label END_23
  push this 0
  push this 10
  gt
@@ -162,14 +186,14 @@ index 8269c1c..c80249b 100644
 -if-goto IF_TRUE7
 -goto IF_FALSE7
 -label IF_TRUE7
-+neg
-+if-goto ELSE_8
++not
++if-goto ELSE_24
  push constant 1
  pop this 14
  push this 10
  pop this 0
 -label IF_FALSE7
-+label ELSE_8
++label ELSE_24
  push this 0
  push this 11
  lt
@@ -177,14 +201,14 @@ index 8269c1c..c80249b 100644
 -if-goto IF_TRUE8
 -goto IF_FALSE8
 -label IF_TRUE8
-+neg
-+if-goto ELSE_9
++not
++if-goto ELSE_25
  push constant 2
  pop this 14
  push this 11
  pop this 0
 -label IF_FALSE8
-+label ELSE_9
++label ELSE_25
  push this 1
  push this 12
  gt
@@ -192,14 +216,14 @@ index 8269c1c..c80249b 100644
 -if-goto IF_TRUE9
 -goto IF_FALSE9
 -label IF_TRUE9
-+neg
-+if-goto ELSE_10
++not
++if-goto ELSE_26
  push constant 3
  pop this 14
  push this 12
  pop this 1
 -label IF_FALSE9
-+label ELSE_10
++label ELSE_26
  push this 1
  push this 13
  lt
@@ -207,121 +231,136 @@ index 8269c1c..c80249b 100644
 -if-goto IF_TRUE10
 -goto IF_FALSE10
 -label IF_TRUE10
-+neg
-+if-goto ELSE_11
++not
++if-goto ELSE_27
  push constant 4
  pop this 14
  push this 13
  pop this 1
 -label IF_FALSE10
-+label ELSE_11
++label ELSE_27
  push pointer 0
  call Ball.show 1
  pop temp 0
-@@ -315,13 +286,10 @@ pop local 3
+@@ -315,13 +310,13 @@ pop local 3
  push argument 1
  push constant 0
  eq
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
-+if-goto ELSE_13
++if-goto THEN_31
++goto ELSE_32
++label THEN_31
  push constant 10
  pop local 4
 -goto IF_END0
 -label IF_FALSE0
++goto END_33
++label ELSE_32
  push this 2
  push constant 0
  lt
-@@ -339,23 +307,19 @@ neg
+@@ -339,23 +334,23 @@ neg
  eq
  and
  or
 -if-goto IF_TRUE1
 -goto IF_FALSE1
 -label IF_TRUE1
-+neg
-+if-goto ELSE_12
++if-goto THEN_28
++goto ELSE_29
++label THEN_28
  push constant 20
  pop local 4
 -goto IF_END1
 -label IF_FALSE1
++goto END_30
++label ELSE_29
  push constant 5
  pop local 4
 -label IF_END1
 -label IF_END0
-+label ELSE_12
-+label ELSE_13
++label END_30
++label END_33
  push this 14
  push constant 1
  eq
 -if-goto IF_TRUE2
 -goto IF_FALSE2
 -label IF_TRUE2
-+neg
-+if-goto ELSE_16
++if-goto THEN_40
++goto ELSE_41
++label THEN_40
  push constant 506
  pop local 0
  push local 3
-@@ -371,14 +335,11 @@ push local 4
+@@ -371,14 +366,14 @@ push local 4
  call Math.multiply 2
  add
  pop local 1
 -goto IF_END2
 -label IF_FALSE2
++goto END_42
++label ELSE_41
  push this 14
  push constant 2
  eq
 -if-goto IF_TRUE3
 -goto IF_FALSE3
 -label IF_TRUE3
-+neg
-+if-goto ELSE_15
++if-goto THEN_37
++goto ELSE_38
++label THEN_37
  push constant 0
  pop local 0
  push local 3
-@@ -393,14 +354,11 @@ push local 4
+@@ -393,14 +388,14 @@ push local 4
  call Math.multiply 2
  add
  pop local 1
 -goto IF_END3
 -label IF_FALSE3
++goto END_39
++label ELSE_38
  push this 14
  push constant 3
  eq
 -if-goto IF_TRUE4
 -goto IF_FALSE4
 -label IF_TRUE4
-+neg
-+if-goto ELSE_14
++if-goto THEN_34
++goto ELSE_35
++label THEN_34
  push constant 250
  pop local 1
  push local 2
-@@ -416,8 +374,6 @@ push local 4
+@@ -416,8 +411,8 @@ push local 4
  call Math.multiply 2
  add
  pop local 0
 -goto IF_END4
 -label IF_FALSE4
++goto END_36
++label ELSE_35
  push constant 0
  pop local 1
  push local 2
-@@ -432,9 +388,9 @@ push local 4
+@@ -432,9 +427,9 @@ push local 4
  call Math.multiply 2
  add
  pop local 0
 -label IF_END4
 -label IF_END3
 -label IF_END2
-+label ELSE_14
-+label ELSE_15
-+label ELSE_16
++label END_36
++label END_39
++label END_42
  push pointer 0
  push local 0
  push local 1
 diff --git a/projects/09 - High-Level Language/08 - Pong/Bat.vm b/projects/09 - High-Level Language/08 - Pong/Bat.vm
-index f158c82..2a4bd6b 100644
+index f158c82..8ff58ac 100644
 --- a/projects/09 - High-Level Language/08 - Pong/Bat.vm	
 +++ b/projects/09 - High-Level Language/08 - Pong/Bat.vm	
 @@ -28,8 +28,7 @@ return
@@ -334,35 +373,36 @@ index f158c82..2a4bd6b 100644
  call Screen.setColor 1
  pop temp 0
  push pointer 0
-@@ -101,9 +100,8 @@ pop pointer 0
+@@ -101,9 +100,9 @@ pop pointer 0
  push this 4
  push constant 1
  eq
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
-+if-goto ELSE_19
++if-goto THEN_45
++goto ELSE_46
++label THEN_45
  push this 0
  push constant 4
  sub
-@@ -111,12 +109,11 @@ pop this 0
+@@ -111,12 +110,11 @@ pop this 0
  push this 0
  push constant 0
  lt
 -if-goto IF_TRUE1
 -goto IF_FALSE1
 -label IF_TRUE1
-+neg
-+if-goto ELSE_17
++not
++if-goto ELSE_43
  push constant 0
  pop this 0
 -label IF_FALSE1
-+label ELSE_17
++label ELSE_43
  push constant 0
  call Screen.setColor 1
  pop temp 0
-@@ -136,8 +133,7 @@ push this 3
+@@ -136,8 +134,7 @@ push this 3
  add
  call Screen.drawRectangle 4
  pop temp 0
@@ -372,34 +412,36 @@ index f158c82..2a4bd6b 100644
  call Screen.setColor 1
  pop temp 0
  push this 0
-@@ -150,8 +146,6 @@ push this 3
+@@ -150,8 +147,8 @@ push this 3
  add
  call Screen.drawRectangle 4
  pop temp 0
 -goto IF_END0
 -label IF_FALSE0
++goto END_47
++label ELSE_46
  push this 0
  push constant 4
  add
-@@ -161,14 +155,13 @@ push this 2
+@@ -161,14 +158,13 @@ push this 2
  add
  push constant 511
  gt
 -if-goto IF_TRUE2
 -goto IF_FALSE2
 -label IF_TRUE2
-+neg
-+if-goto ELSE_18
++not
++if-goto ELSE_44
  push constant 511
  push this 2
  sub
  pop this 0
 -label IF_FALSE2
-+label ELSE_18
++label ELSE_44
  push constant 0
  call Screen.setColor 1
  pop temp 0
-@@ -184,8 +177,7 @@ push this 3
+@@ -184,8 +180,7 @@ push this 3
  add
  call Screen.drawRectangle 4
  pop temp 0
@@ -409,81 +451,85 @@ index f158c82..2a4bd6b 100644
  call Screen.setColor 1
  pop temp 0
  push this 0
-@@ -202,6 +194,6 @@ push this 3
+@@ -202,6 +197,6 @@ push this 3
  add
  call Screen.drawRectangle 4
  pop temp 0
 -label IF_END0
-+label ELSE_19
++label END_47
  push constant 0
  return
 diff --git a/projects/09 - High-Level Language/08 - Pong/PongGame.vm b/projects/09 - High-Level Language/08 - Pong/PongGame.vm
-index 5bb75ec..71d03e1 100644
+index 5bb75ec..83495d2 100644
 --- a/projects/09 - High-Level Language/08 - Pong/PongGame.vm	
 +++ b/projects/09 - High-Level Language/08 - Pong/PongGame.vm	
-@@ -90,20 +90,20 @@ return
+@@ -90,12 +90,12 @@ return
  function PongGame.run 1
  push argument 0
  pop pointer 0
 -label WHILE_EXP0
-+label WHILE_START_27
++label WHILE_START_59
  push this 3
  not
--not
+ not
 -if-goto WHILE_END0
 -label WHILE_EXP1
-+neg
-+if-goto WHILE_END_28
-+label WHILE_START_20
++if-goto WHILE_END_60
++label WHILE_START_48
  push local 0
  push constant 0
  eq
- push this 3
+@@ -103,7 +103,7 @@ push this 3
  not
  and
--not
+ not
 -if-goto WHILE_END1
-+neg
-+if-goto WHILE_END_21
++if-goto WHILE_END_49
  call Keyboard.keyPressed 0
  pop local 0
  push this 0
-@@ -115,45 +115,37 @@ pop temp 0
+@@ -115,45 +115,43 @@ pop temp 0
  push constant 50
  call Sys.wait 1
  pop temp 0
 -goto WHILE_EXP1
 -label WHILE_END1
-+goto WHILE_START_20
-+label WHILE_END_21
++goto WHILE_START_48
++label WHILE_END_49
  push local 0
  push constant 130
  eq
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
-+if-goto ELSE_24
++if-goto THEN_54
++goto ELSE_55
++label THEN_54
  push this 0
  push constant 1
  call Bat.setDirection 2
  pop temp 0
 -goto IF_END0
 -label IF_FALSE0
++goto END_56
++label ELSE_55
  push local 0
  push constant 132
  eq
 -if-goto IF_TRUE1
 -goto IF_FALSE1
 -label IF_TRUE1
-+neg
-+if-goto ELSE_23
++if-goto THEN_51
++goto ELSE_52
++label THEN_51
  push this 0
  push constant 2
  call Bat.setDirection 2
  pop temp 0
 -goto IF_END1
 -label IF_FALSE1
++goto END_53
++label ELSE_52
  push local 0
  push constant 140
  eq
@@ -491,34 +537,31 @@ index 5bb75ec..71d03e1 100644
 -goto IF_FALSE2
 -label IF_TRUE2
 -push constant 0
--not
-+neg
-+if-goto ELSE_22
+ not
++if-goto ELSE_50
 +push constant 1
  pop this 3
 -label IF_FALSE2
 -label IF_END1
 -label IF_END0
 -label WHILE_EXP2
-+label ELSE_22
-+label ELSE_23
-+label ELSE_24
-+label WHILE_START_25
++label ELSE_50
++label END_53
++label END_56
++label WHILE_START_57
  push local 0
  push constant 0
  eq
-@@ -161,8 +153,8 @@ not
- push this 3
+@@ -162,7 +160,7 @@ push this 3
  not
  and
--not
+ not
 -if-goto WHILE_END2
-+neg
-+if-goto WHILE_END_26
++if-goto WHILE_END_58
  call Keyboard.keyPressed 0
  pop local 0
  push this 0
-@@ -174,14 +166,13 @@ pop temp 0
+@@ -174,14 +172,13 @@ pop temp 0
  push constant 50
  call Sys.wait 1
  pop temp 0
@@ -526,61 +569,61 @@ index 5bb75ec..71d03e1 100644
 -label WHILE_END2
 -goto WHILE_EXP0
 -label WHILE_END0
-+goto WHILE_START_25
-+label WHILE_END_26
-+goto WHILE_START_27
-+label WHILE_END_28
++goto WHILE_START_57
++label WHILE_END_58
++goto WHILE_START_59
++label WHILE_END_60
  push this 3
 -if-goto IF_TRUE3
 -goto IF_FALSE3
 -label IF_TRUE3
-+neg
-+if-goto ELSE_29
++not
++if-goto ELSE_61
  push constant 10
  push constant 27
  call Output.moveCursor 2
-@@ -208,7 +199,7 @@ push constant 114
+@@ -208,7 +205,7 @@ push constant 114
  call String.appendChar 2
  call Output.printString 1
  pop temp 0
 -label IF_FALSE3
-+label ELSE_29
++label ELSE_61
  push constant 0
  return
  function PongGame.moveBall 5
-@@ -225,9 +216,8 @@ push this 5
+@@ -225,9 +222,8 @@ push this 5
  eq
  not
  and
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
-+if-goto ELSE_34
++not
++if-goto ELSE_68
  push this 2
  pop this 5
  push constant 0
-@@ -247,9 +237,8 @@ pop local 4
+@@ -247,9 +243,8 @@ pop local 4
  push this 2
  push constant 4
  eq
 -if-goto IF_TRUE1
 -goto IF_FALSE1
 -label IF_TRUE1
-+neg
-+if-goto ELSE_33
++not
++if-goto ELSE_67
  push local 1
  push local 4
  gt
-@@ -260,34 +249,29 @@ or
+@@ -260,34 +255,32 @@ or
  pop this 3
  push this 3
  not
 -if-goto IF_TRUE2
 -goto IF_FALSE2
 -label IF_TRUE2
-+neg
-+if-goto ELSE_32
++not
++if-goto ELSE_66
  push local 4
  push local 1
  push constant 10
@@ -589,13 +632,16 @@ index 5bb75ec..71d03e1 100644
 -if-goto IF_TRUE3
 -goto IF_FALSE3
 -label IF_TRUE3
-+neg
-+if-goto ELSE_31
++if-goto THEN_63
++goto ELSE_64
++label THEN_63
  push constant 1
  neg
  pop local 0
 -goto IF_END3
 -label IF_FALSE3
++goto END_65
++label ELSE_64
  push local 3
  push local 2
  push constant 10
@@ -604,30 +650,30 @@ index 5bb75ec..71d03e1 100644
 -if-goto IF_TRUE4
 -goto IF_FALSE4
 -label IF_TRUE4
-+neg
-+if-goto ELSE_30
++not
++if-goto ELSE_62
  push constant 1
  pop local 0
 -label IF_FALSE4
 -label IF_END3
-+label ELSE_30
-+label ELSE_31
++label ELSE_62
++label END_65
  push this 6
  push constant 2
  sub
-@@ -307,12 +291,12 @@ pop temp 0
+@@ -307,12 +300,12 @@ pop temp 0
  push this 4
  call Output.printInt 1
  pop temp 0
 -label IF_FALSE2
 -label IF_FALSE1
-+label ELSE_32
-+label ELSE_33
++label ELSE_66
++label ELSE_67
  push this 1
  push local 0
  call Ball.bounce 2
  pop temp 0
 -label IF_FALSE0
-+label ELSE_34
++label ELSE_68
  push constant 0
  return

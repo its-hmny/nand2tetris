@@ -1,5 +1,5 @@
 diff --git a/projects/09 - High-Level Language/02 - Average/Main.vm b/projects/09 - High-Level Language/02 - Average/Main.vm
-index d5a4e07..42e9207 100644
+index d5a4e07..5de449d 100644
 --- a/projects/09 - High-Level Language/02 - Average/Main.vm	
 +++ b/projects/09 - High-Level Language/02 - Average/Main.vm	
 @@ -44,12 +44,12 @@ call Array.new 1
@@ -11,9 +11,8 @@ index d5a4e07..42e9207 100644
  push local 2
  push local 1
  lt
--not
+ not
 -if-goto WHILE_END0
-+neg
 +if-goto WHILE_END_1
  push local 2
  push local 0

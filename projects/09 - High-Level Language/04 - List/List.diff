@@ -1,5 +1,5 @@
 diff --git a/projects/09 - High-Level Language/04 - List/List.vm b/projects/09 - High-Level Language/04 - List/List.vm
-index 1a665ce..9811da7 100644
+index 1a665ce..ca30d2c 100644
 --- a/projects/09 - High-Level Language/04 - List/List.vm	
 +++ b/projects/09 - High-Level Language/04 - List/List.vm	
 @@ -23,13 +23,13 @@ push argument 0
@@ -12,9 +12,8 @@ index 1a665ce..9811da7 100644
  push constant 0
  eq
  not
--not
+ not
 -if-goto WHILE_END0
-+neg
 +if-goto WHILE_END_1
  push local 0
  call List.getData 1
@@ -37,7 +36,7 @@ index 1a665ce..9811da7 100644
 -if-goto IF_TRUE0
 -goto IF_FALSE0
 -label IF_TRUE0
-+neg
++not
 +if-goto ELSE_2
  push this 1
  call List.dispose 1
