@@ -71,8 +71,8 @@ add
 push constant 510
 lt
 and
-neg
-if-goto ELSE_4
+not
+if-goto ELSE_3
 push pointer 0
 call Square.erase 1
 pop temp 0
@@ -83,7 +83,7 @@ pop this 2
 push pointer 0
 call Square.draw 1
 pop temp 0
-label ELSE_4
+label ELSE_3
 push constant 0
 return
 function Square.decSize 0
@@ -92,8 +92,8 @@ pop pointer 0
 push this 2
 push constant 2
 gt
-neg
-if-goto ELSE_5
+not
+if-goto ELSE_4
 push pointer 0
 call Square.erase 1
 pop temp 0
@@ -104,7 +104,7 @@ pop this 2
 push pointer 0
 call Square.draw 1
 pop temp 0
-label ELSE_5
+label ELSE_4
 push constant 0
 return
 function Square.moveUp 0
@@ -113,8 +113,8 @@ pop pointer 0
 push this 1
 push constant 1
 gt
-neg
-if-goto ELSE_6
+not
+if-goto ELSE_5
 push constant 0
 call Screen.setColor 1
 pop temp 0
@@ -149,7 +149,7 @@ push constant 1
 add
 call Screen.drawRectangle 4
 pop temp 0
-label ELSE_6
+label ELSE_5
 push constant 0
 return
 function Square.moveDown 0
@@ -160,8 +160,8 @@ push this 2
 add
 push constant 254
 lt
-neg
-if-goto ELSE_7
+not
+if-goto ELSE_6
 push constant 0
 call Screen.setColor 1
 pop temp 0
@@ -196,7 +196,7 @@ push this 2
 add
 call Screen.drawRectangle 4
 pop temp 0
-label ELSE_7
+label ELSE_6
 push constant 0
 return
 function Square.moveLeft 0
@@ -205,8 +205,8 @@ pop pointer 0
 push this 0
 push constant 1
 gt
-neg
-if-goto ELSE_8
+not
+if-goto ELSE_7
 push constant 0
 call Screen.setColor 1
 pop temp 0
@@ -241,7 +241,7 @@ push this 2
 add
 call Screen.drawRectangle 4
 pop temp 0
-label ELSE_8
+label ELSE_7
 push constant 0
 return
 function Square.moveRight 0
@@ -252,8 +252,8 @@ push this 2
 add
 push constant 510
 lt
-neg
-if-goto ELSE_9
+not
+if-goto ELSE_8
 push constant 0
 call Screen.setColor 1
 pop temp 0
@@ -288,6 +288,6 @@ push this 2
 add
 call Screen.drawRectangle 4
 pop temp 0
-label ELSE_9
+label ELSE_8
 push constant 0
 return

@@ -48,7 +48,7 @@ label WHILE_START_0
 push local 2
 push local 1
 lt
-neg
+not
 if-goto WHILE_END_1
 push local 2
 push local 0
@@ -120,7 +120,7 @@ label WHILE_START_2
 push local 2
 push local 1
 lt
-neg
+not
 if-goto WHILE_END_3
 push local 3
 push local 2

@@ -11,8 +11,9 @@ push constant 0
 return
 function Main.test 4
 push local 0
-neg
-if-goto ELSE_0
+if-goto THEN_0
+goto ELSE_1
+label THEN_0
 push local 0
 pop local 2
 push local 1
@@ -25,8 +26,10 @@ pop temp 0
 pop pointer 1
 push temp 0
 pop that 0
+goto END_2
+label ELSE_1
 push local 0
 pop local 0
-label ELSE_0
+label END_2
 push constant 0
 return

@@ -23,33 +23,33 @@ function SquareGame.moveSquare 0
 push argument 0
 pop pointer 0
 push this 1
-neg
-if-goto ELSE_7
+not
+if-goto ELSE_9
 push this 0
 call Square.moveUp 1
 pop temp 0
-label ELSE_7
+label ELSE_9
 push this 1
-neg
-if-goto ELSE_8
+not
+if-goto ELSE_10
 push this 0
 call Square.moveDown 1
 pop temp 0
-label ELSE_8
+label ELSE_10
 push this 1
-neg
-if-goto ELSE_9
+not
+if-goto ELSE_11
 push this 0
 call Square.moveLeft 1
 pop temp 0
-label ELSE_9
+label ELSE_11
 push this 1
-neg
-if-goto ELSE_10
+not
+if-goto ELSE_12
 push this 0
 call Square.moveRight 1
 pop temp 0
-label ELSE_10
+label ELSE_12
 push this 1
 call Sys.wait 1
 pop temp 0
@@ -60,77 +60,77 @@ push argument 0
 pop pointer 0
 push local 0
 pop local 1
-label WHILE_START_22
+label WHILE_START_24
 push local 1
-neg
-if-goto WHILE_END_23
-label WHILE_START_11
+not
+if-goto WHILE_END_25
+label WHILE_START_13
 push local 0
-neg
-if-goto WHILE_END_12
+not
+if-goto WHILE_END_14
 push local 0
 pop local 0
 push pointer 0
 call SquareGame.moveSquare 1
 pop temp 0
-goto WHILE_START_11
-label WHILE_END_12
+goto WHILE_START_13
+label WHILE_END_14
 push local 0
-neg
-if-goto ELSE_13
+not
+if-goto ELSE_15
 push local 1
 pop local 1
-label ELSE_13
+label ELSE_15
 push local 0
-neg
-if-goto ELSE_14
+not
+if-goto ELSE_16
 push this 0
 call Square.decSize 1
 pop temp 0
-label ELSE_14
+label ELSE_16
 push local 0
-neg
-if-goto ELSE_15
+not
+if-goto ELSE_17
 push this 0
 call Square.incSize 1
 pop temp 0
-label ELSE_15
-push local 0
-neg
-if-goto ELSE_16
-push local 1
-pop this 1
-label ELSE_16
-push local 0
-neg
-if-goto ELSE_17
-push local 0
-pop this 1
 label ELSE_17
 push local 0
-neg
+not
 if-goto ELSE_18
-push this 0
+push local 1
 pop this 1
 label ELSE_18
 push local 0
-neg
+not
 if-goto ELSE_19
-push this 1
+push local 0
 pop this 1
 label ELSE_19
-label WHILE_START_20
 push local 0
-neg
-if-goto WHILE_END_21
+not
+if-goto ELSE_20
+push this 0
+pop this 1
+label ELSE_20
+push local 0
+not
+if-goto ELSE_21
+push this 1
+pop this 1
+label ELSE_21
+label WHILE_START_22
+push local 0
+not
+if-goto WHILE_END_23
 push local 0
 pop local 0
 push pointer 0
 call SquareGame.moveSquare 1
 pop temp 0
-goto WHILE_START_20
-label WHILE_END_21
 goto WHILE_START_22
 label WHILE_END_23
+goto WHILE_START_24
+label WHILE_END_25
 push constant 0
 return

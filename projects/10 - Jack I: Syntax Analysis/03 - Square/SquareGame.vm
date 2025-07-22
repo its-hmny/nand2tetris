@@ -28,39 +28,39 @@ pop pointer 0
 push this 1
 push constant 1
 eq
-neg
-if-goto ELSE_10
+not
+if-goto ELSE_9
 push this 0
 call Square.moveUp 1
 pop temp 0
-label ELSE_10
+label ELSE_9
 push this 1
 push constant 2
 eq
-neg
-if-goto ELSE_11
+not
+if-goto ELSE_10
 push this 0
 call Square.moveDown 1
 pop temp 0
-label ELSE_11
+label ELSE_10
 push this 1
 push constant 3
 eq
-neg
-if-goto ELSE_12
+not
+if-goto ELSE_11
 push this 0
 call Square.moveLeft 1
 pop temp 0
-label ELSE_12
+label ELSE_11
 push this 1
 push constant 4
 eq
-neg
-if-goto ELSE_13
+not
+if-goto ELSE_12
 push this 0
 call Square.moveRight 1
 pop temp 0
-label ELSE_13
+label ELSE_12
 push constant 5
 call Sys.wait 1
 pop temp 0
@@ -71,97 +71,97 @@ push argument 0
 pop pointer 0
 push constant 0
 pop local 1
-label WHILE_START_25
+label WHILE_START_24
 push local 1
 not
-neg
-if-goto WHILE_END_26
-label WHILE_START_14
+not
+if-goto WHILE_END_25
+label WHILE_START_13
 push local 0
 push constant 0
 eq
-neg
-if-goto WHILE_END_15
+not
+if-goto WHILE_END_14
 call Keyboard.keyPressed 0
 pop local 0
 push pointer 0
 call SquareGame.moveSquare 1
 pop temp 0
-goto WHILE_START_14
-label WHILE_END_15
+goto WHILE_START_13
+label WHILE_END_14
 push local 0
 push constant 81
 eq
-neg
-if-goto ELSE_16
+not
+if-goto ELSE_15
 push constant 1
 pop local 1
-label ELSE_16
+label ELSE_15
 push local 0
 push constant 90
 eq
-neg
-if-goto ELSE_17
+not
+if-goto ELSE_16
 push this 0
 call Square.decSize 1
 pop temp 0
-label ELSE_17
+label ELSE_16
 push local 0
 push constant 88
 eq
-neg
-if-goto ELSE_18
+not
+if-goto ELSE_17
 push this 0
 call Square.incSize 1
 pop temp 0
-label ELSE_18
+label ELSE_17
 push local 0
 push constant 131
 eq
-neg
-if-goto ELSE_19
+not
+if-goto ELSE_18
 push constant 1
 pop this 1
-label ELSE_19
+label ELSE_18
 push local 0
 push constant 133
 eq
-neg
-if-goto ELSE_20
+not
+if-goto ELSE_19
 push constant 2
 pop this 1
-label ELSE_20
+label ELSE_19
 push local 0
 push constant 130
 eq
-neg
-if-goto ELSE_21
+not
+if-goto ELSE_20
 push constant 3
 pop this 1
-label ELSE_21
+label ELSE_20
 push local 0
 push constant 132
 eq
-neg
-if-goto ELSE_22
+not
+if-goto ELSE_21
 push constant 4
 pop this 1
-label ELSE_22
-label WHILE_START_23
+label ELSE_21
+label WHILE_START_22
 push local 0
 push constant 0
 eq
 not
-neg
-if-goto WHILE_END_24
+not
+if-goto WHILE_END_23
 call Keyboard.keyPressed 0
 pop local 0
 push pointer 0
 call SquareGame.moveSquare 1
 pop temp 0
-goto WHILE_START_23
-label WHILE_END_24
-goto WHILE_START_25
-label WHILE_END_26
+goto WHILE_START_22
+label WHILE_END_23
+goto WHILE_START_24
+label WHILE_END_25
 push constant 0
 return
