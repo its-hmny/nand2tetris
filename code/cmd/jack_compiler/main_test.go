@@ -17,9 +17,9 @@ func TestJackCompiler(t *testing.T) {
 			t.Fatalf("Unexpected exit status code: expected 0 got: %d", status)
 		}
 
-		cmd := exec.Command("git", "diff", "--exit-code", output)
+		cmd := exec.Command("git", "diff", output)
 		if err := cmd.Run(); err != nil {
-			t.Fatalf("The diff betweenthe generated code and the expected one do not match")
+			t.Fatalf("The diff between the generated code and the expected one do not match")
 		}
 	}
 	t.Run("ArrayTest", func(t *testing.T) {
@@ -42,30 +42,31 @@ func TestJackCompiler(t *testing.T) {
 		test([]string{base}, base, true)
 	})
 
-	t.Run("ConvertToBin", func(t *testing.T) {
-		base := "../../../projects/11 - Jack II: Code Generation/02 - ConvertToBin"
-		test([]string{base}, base, true)
-	})
-
-	t.Run("Square", func(t *testing.T) {
-		base := "../../../projects/11 - Jack II: Code Generation/03 - Square"
-		test([]string{base}, base, true)
-	})
-
 	t.Run("Average", func(t *testing.T) {
-		base := "../../../projects/11 - Jack II: Code Generation/04 - Average"
+		base := "../../../projects/11 - Jack II: Code Generation/02 - Average"
 		test([]string{base}, base, true)
 	})
 
-	t.Run("Pong", func(t *testing.T) {
-		base := "../../../projects/11 - Jack II: Code Generation/05 - Pong"
+	t.Run("ConvertToBin", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/03 - ConvertToBin"
 		test([]string{base}, base, true)
 	})
 
 	t.Run("ComplexArrays", func(t *testing.T) {
-		base := "../../../projects/11 - Jack II: Code Generation/06 - ComplexArrays"
+		base := "../../../projects/11 - Jack II: Code Generation/04 - ComplexArrays"
 		test([]string{base}, base, true)
 	})
+
+	t.Run("Square", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/05 - Square"
+		test([]string{base}, base, true)
+	})
+
+	t.Run("Pong", func(t *testing.T) {
+		base := "../../../projects/11 - Jack II: Code Generation/06 - Pong"
+		test([]string{base}, base, true)
+	})
+
 }
 
 // This test checks the output of mmy Jack Compiler against the built-in Jack Compiler from
