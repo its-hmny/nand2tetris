@@ -197,7 +197,7 @@ func (l *Lowerer) HandleStatement(stmt Statement) ([]vm.Operation, error) {
 
 // Specialized function to convert a 'jack.DoStmt' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleDoStmt(statement DoStmt) ([]vm.Operation, error) {
-	ops, err := l.HandleExpression(statement.FuncCall)
+	ops, err := l.HandleFuncCallExpr(statement.FuncCall)
 	if err != nil {
 		return nil, fmt.Errorf("error handling nested function call expression: %w", err)
 	}
@@ -298,7 +298,7 @@ func (l *Lowerer) HandleWhileStmt(statement WhileStmt) ([]vm.Operation, error) {
 	return append(append(append(append(
 		[]vm.Operation{vm.LabelDecl{Name: fmt.Sprintf("WHILE_START_%d", l.nRandomizer)}},
 		condOps...),
-		vm.ArithmeticOp{Operation: vm.Neg},
+		vm.ArithmeticOp{Operation: vm.Not},
 		vm.GotoOp{Label: fmt.Sprintf("WHILE_END_%d", l.nRandomizer+1), Jump: vm.Conditional}),
 		blockOps...),
 		vm.GotoOp{Label: fmt.Sprintf("WHILE_START_%d", l.nRandomizer), Jump: vm.Unconditional},
@@ -337,7 +337,7 @@ func (l *Lowerer) HandleIfStmt(statement IfStmt) ([]vm.Operation, error) {
 
 		return append(append(append(
 			condOps,
-			vm.ArithmeticOp{Operation: vm.Neg},
+			vm.ArithmeticOp{Operation: vm.Not},
 			vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", l.nRandomizer), Jump: vm.Conditional}),
 			thenOps...),
 			vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", l.nRandomizer)},
@@ -345,16 +345,18 @@ func (l *Lowerer) HandleIfStmt(statement IfStmt) ([]vm.Operation, error) {
 	}
 
 	// If there is an else block, we need to do a two way fork in the control flow
-	defer func() { l.nRandomizer += 2 }() // ! Increment the randomizer for next use
+	defer func() { l.nRandomizer += 3 }() // ! Increment the randomizer for next use
 
-	return append(append(append(append(
+	return append(append(append(append(append(
 		condOps,
 		vm.GotoOp{Label: fmt.Sprintf("THEN_%d", l.nRandomizer), Jump: vm.Conditional},
 		vm.GotoOp{Label: fmt.Sprintf("ELSE_%d", l.nRandomizer+1), Jump: vm.Unconditional},
 		vm.LabelDecl{Name: fmt.Sprintf("THEN_%d", l.nRandomizer)}),
 		thenOps...),
+		vm.GotoOp{Label: fmt.Sprintf("END_%d", l.nRandomizer+2), Jump: vm.Unconditional},
 		vm.LabelDecl{Name: fmt.Sprintf("ELSE_%d", l.nRandomizer+1)}),
-		elseOps...,
+		elseOps...),
+		vm.LabelDecl{Name: fmt.Sprintf("END_%d", l.nRandomizer+2)},
 	), nil
 }
 

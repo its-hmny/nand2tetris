@@ -533,7 +533,7 @@ func (p *Parser) HandleIfStmt(node pc.Queryable) (Statement, error) {
 			if err != nil {
 				return IfStmt{}, fmt.Errorf("failed to handle statement in 'else' block: %w", err)
 			}
-			thenStmts = append(thenStmts, stmt)
+			elseStmts = append(elseStmts, stmt)
 		}
 	}
 
