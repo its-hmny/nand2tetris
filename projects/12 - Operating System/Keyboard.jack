@@ -75,7 +75,7 @@ class Keyboard {
         while (text.length() < 128 | text.length() = 128) {
             let c = Keyboard.keyPressed();
 
-            if (c = string.newLine()) { return text; } // Newline character
+            if (c = String.newLine()) { return text; } // Newline character
             if (c = String.backSpace()) { do text.eraseLastChar(); } // Backspace character
             else { do text.appendChar(c); } 
         }
