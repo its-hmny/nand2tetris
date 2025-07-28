@@ -15,13 +15,14 @@ class Math {
 
     // Initializes the Math library.
     function void init() {
-        var int i; let i = 0;
+        var int i, pow; let i = 0; let pow = 1;
 
         // Number of bits in the Hack computer (also word size in the Hack architecture)
         let n = 16; let powersOfTwo = Array.new(n);
       
         while (i < n) {
-            let powersOfTwo[i] = 1 * i;
+            let powersOfTwo[i] = pow;
+            let pow = pow + pow;
             let i = i + 1;
         }
         
@@ -41,7 +42,7 @@ class Math {
         if (x = 0 | y = 0) { return 0; }
 
         while (j < n) {
-            if ((y & powersOfTwo[j]) = 1)  {
+            if (y & powersOfTwo[j])  {
                 let sum = sum + shiftedX;   
             }
             // There's no Math.pow nor Math.multiply, nor bitshifting operatins at this level
@@ -60,14 +61,22 @@ class Math {
      *  Thus, x/y and Math.divide(x,y) return the same value.
      */
     function int divide(int x, int y) {
-        var int q; let q = Math.divide(x, y * 2);
+        var int absX, absY, q, sign;
+        let absX = Math.abs(x); let absY = Math.abs(y); 
+        let sign = 1; let q = 0;
         
-        if (y > x) { return 0; }
-        
-        if ((x - (2 * (q * y))) < y) {
-            return 2 * q;
+        if (absY > absX) { return 0; } // Early return in recursive calls
+
+        // When the sign is discordant we revert the sign variable and move forward with the
+        // absolute values. Before returning we will revert back to the final sign. Doing so
+        // will mean that we can support negative number somewhat easily.
+        if ((x < 0 & y > 0) | (x > 0 & y < 0)) { let sign = -1; }
+
+        let q = Math.divide(absX, absY + absY);  // Instead of 'q * 2' to avoid stack overflow
+        if ((absX - (2 * (q * absY))) < absY) {
+            return (q + q) * sign; // Instead of 'q * 2' to avoid stack overflow
         } else {
-           return (2 * q) + 1;
+           return ((q + q) + 1) * sign;  // Instead of 'q * 2' to avoid stack overflow
         }
     }
 
@@ -76,10 +85,11 @@ class Math {
         var int y, j, tmp, squared_tmp;
         let y = 0; let j = (n / 2) - 1;
 
-        while (j > 0 | j = 0) {
+        while ((j > 0) | (j = 0)) {
             // Get the current candidate of two (candadate for the square root)
             let tmp = y + powersOfTwo[j]; let squared_tmp = tmp * tmp;
-            if (squared_tmp < x | squared_tmp = x) { 
+            // The first check is against integer overflow that may happen
+            if ((squared_tmp > 0) & ((squared_tmp < x) | (squared_tmp = x))) { 
                 let y = y + powersOfTwo[j];
             }
             
