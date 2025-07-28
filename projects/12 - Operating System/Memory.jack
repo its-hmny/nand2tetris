@@ -10,33 +10,34 @@
  */ 
 class Memory {
 
-    static Array head; // The head (also base pointer) of the heap
+    static Array ram; // The ram (also base pointer) of the heap
+    static Array heap; // The ram (also base pointer) of the heap
 
     /** Initializes the class. */
     function void init() {
-        let head = 2048;
+        let ram = 0; let heap = 2048;
         return;
     }
 
     /** Returns the RAM value at the given address. */
     function int peek(int address) {
         // Out of bounds access to the heap
-        if (address < 2048 | address > 16384) { return 0; }
-        return head[address];
+        // if ((address + 2048) < 2048 | (address + 2048) > 16384) { return 0; }
+        return ram[address];
     }
 
     /** Sets the RAM value at the given address to the given value. */
     function void poke(int address, int value) {
         // Out of bounds access zto the heap
-        if (address < 2048 | address > 16384) { return; }
-        let head[address] = value;
+        // if ((address + 2048) < 2048 | (address + 2048) > 16384) { return; }
+        let ram[address] = value;
         return;
     }
 
     /** Finds an available RAM block of the given size and returns a reference to its base address. */
     function int alloc(int size) {
-        var int pointer; let pointer = head; // TODO (hmny): This just a temporary bump allocator a more long term solution will come in due time
-        let head = head + size;
+        var int pointer; let pointer = heap; // TODO (hmny): This just a temporary bump allocator a more long term solution will come in due time
+        let heap = heap + size;
         return pointer;
     }
 

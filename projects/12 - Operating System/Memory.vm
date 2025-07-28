@@ -1,22 +1,11 @@
 function Memory.init 0
-push constant 2048
+push constant 0
 pop static 0
+push constant 2048
+pop static 1
 push constant 0
 return
 function Memory.peek 0
-push argument 0
-push constant 2048
-lt
-push argument 0
-or
-push constant 16384
-gt
-if-goto IF_TRUE0
-goto IF_FALSE0
-label IF_TRUE0
-push constant 0
-return
-label IF_FALSE0
 push argument 0
 push static 0
 add
@@ -24,19 +13,6 @@ pop pointer 1
 push that 0
 return
 function Memory.poke 0
-push argument 0
-push constant 2048
-lt
-push argument 0
-or
-push constant 16384
-gt
-if-goto IF_TRUE0
-goto IF_FALSE0
-label IF_TRUE0
-push constant 0
-return
-label IF_FALSE0
 push argument 0
 push static 0
 add
@@ -48,12 +24,12 @@ pop that 0
 push constant 0
 return
 function Memory.alloc 1
-push static 0
+push static 1
 pop local 0
-push static 0
+push static 1
 push argument 0
 add
-pop static 0
+pop static 1
 push local 0
 return
 function Memory.deAlloc 0
