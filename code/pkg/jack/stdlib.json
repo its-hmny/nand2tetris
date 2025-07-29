@@ -3,22 +3,30 @@
     "dispose": {
       "Name": "dispose",
       "Type": "method",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "new": {
       "Name": "new",
       "Type": "function",
-      "Return": "Array",
-      "Arguments": {
-        "size": {
-          "Name": "size",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "Array",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "size",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     }
   },
@@ -26,50 +34,69 @@
     "init": {
       "Name": "init",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "keyPressed": {
       "Name": "keyPressed",
       "Type": "function",
-      "Return": "char",
-      "Arguments": {},
+      "Return": {
+        "Main": "char",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "readChar": {
       "Name": "readChar",
       "Type": "function",
-      "Return": "char",
-      "Arguments": {},
+      "Return": {
+        "Main": "char",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "readInt": {
       "Name": "readInt",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "message": {
-          "Name": "message",
-          "Type": "parameter",
-          "DataType": "object",
-          "ClassName": "String"
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "message",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "String",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "readLine": {
       "Name": "readLine",
       "Type": "function",
-      "Return": "String",
-      "Arguments": {
-        "message": {
-          "Name": "message",
-          "Type": "parameter",
-          "DataType": "object",
-          "ClassName": "String"
-        }
+      "Return": {
+        "Main": "String",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "message",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "String",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     }
   },
@@ -77,116 +104,157 @@
     "abs": {
       "Name": "abs",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "x": {
-          "Name": "x",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "x",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "divide": {
       "Name": "divide",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "x": {
-          "Name": "x",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "y": {
-          "Name": "y",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "x",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "y",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "init": {
       "Name": "init",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "max": {
       "Name": "max",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "a": {
-          "Name": "a",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "b": {
-          "Name": "b",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "a",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "b",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "min": {
       "Name": "min",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "a": {
-          "Name": "a",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "b": {
-          "Name": "b",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "a",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "b",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "multiply": {
       "Name": "multiply",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "x": {
-          "Name": "x",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "y": {
-          "Name": "y",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "x",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "y",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "sqrt": {
       "Name": "sqrt",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "x": {
-          "Name": "x",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "x",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     }
   },
@@ -194,70 +262,95 @@
     "alloc": {
       "Name": "alloc",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "size": {
-          "Name": "size",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "size",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "deAlloc": {
       "Name": "deAlloc",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "o": {
-          "Name": "o",
-          "Type": "parameter",
-          "DataType": "object",
-          "ClassName": "Array"
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "o",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "object",
+            "Subtype": "Array"
+          }
+        }
+      ],
       "Statements": []
     },
     "init": {
       "Name": "init",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "peek": {
       "Name": "peek",
       "Type": "function",
-      "Return": "int",
-      "Arguments": {
-        "address": {
-          "Name": "address",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "address",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "poke": {
       "Name": "poke",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "address": {
-          "Name": "address",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "value": {
-          "Name": "value",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "address",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "value",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     }
   },
@@ -265,185 +358,251 @@
     "backSpace": {
       "Name": "backSpace",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "create": {
       "Name": "create",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "a": {
-          "Name": "a",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "b": {
-          "Name": "b",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "c": {
-          "Name": "c",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "d": {
-          "Name": "d",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "e": {
-          "Name": "e",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "f": {
-          "Name": "f",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "g": {
-          "Name": "g",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "h": {
-          "Name": "h",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "i": {
-          "Name": "i",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "index": {
-          "Name": "index",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "j": {
-          "Name": "j",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "k": {
-          "Name": "k",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "index",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "a",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "b",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "c",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "d",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "e",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "f",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "g",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "h",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "i",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "j",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "k",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "getMap": {
       "Name": "getMap",
       "Type": "function",
-      "Return": "Array",
-      "Arguments": {
-        "c": {
-          "Name": "c",
-          "Type": "parameter",
-          "DataType": "char",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "Array",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "c",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "char",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "init": {
       "Name": "init",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "initMap": {
       "Name": "initMap",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "moveCursor": {
       "Name": "moveCursor",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "i": {
-          "Name": "i",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "j": {
-          "Name": "j",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "i",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "j",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "printChar": {
       "Name": "printChar",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "c": {
-          "Name": "c",
-          "Type": "parameter",
-          "DataType": "char",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "c",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "char",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "printInt": {
       "Name": "printInt",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "i": {
-          "Name": "i",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "i",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "printString": {
       "Name": "printString",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "s": {
-          "Name": "s",
-          "Type": "parameter",
-          "DataType": "object",
-          "ClassName": "String"
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "s",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "String",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "println": {
       "Name": "println",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     }
   },
@@ -451,139 +610,188 @@
     "clearScreen": {
       "Name": "clearScreen",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "drawCircle": {
       "Name": "drawCircle",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "r": {
-          "Name": "r",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "x": {
-          "Name": "x",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "y": {
-          "Name": "y",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "x",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "y",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "r",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "drawLine": {
       "Name": "drawLine",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "x1": {
-          "Name": "x1",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "x2": {
-          "Name": "x2",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "y1": {
-          "Name": "y1",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "y2": {
-          "Name": "y2",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "x1",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "y1",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "x2",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "y2",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "drawPixel": {
       "Name": "drawPixel",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "x": {
-          "Name": "x",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "y": {
-          "Name": "y",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "x",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "y",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "drawRectangle": {
       "Name": "drawRectangle",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "x1": {
-          "Name": "x1",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "x2": {
-          "Name": "x2",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "y1": {
-          "Name": "y1",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        },
-        "y2": {
-          "Name": "y2",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "x1",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "y1",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "x2",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "y2",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "init": {
       "Name": "init",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "setColor": {
       "Name": "setColor",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "b": {
-          "Name": "b",
-          "Type": "parameter",
-          "DataType": "object",
-          "ClassName": "boolean"
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "b",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "boolean",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     }
   },
@@ -591,126 +799,174 @@
     "appendChar": {
       "Name": "appendChar",
       "Type": "method",
-      "Return": "String",
-      "Arguments": {
-        "c": {
-          "Name": "c",
-          "Type": "parameter",
-          "DataType": "char",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "String",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "c",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "char",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "backSpace": {
       "Name": "backSpace",
       "Type": "function",
-      "Return": "char",
-      "Arguments": {},
+      "Return": {
+        "Main": "char",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "charAt": {
       "Name": "charAt",
       "Type": "method",
-      "Return": "char",
-      "Arguments": {
-        "j": {
-          "Name": "j",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "char",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "j",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "dispose": {
       "Name": "dispose",
       "Type": "method",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "doubleQuote": {
       "Name": "doubleQuote",
       "Type": "function",
-      "Return": "char",
-      "Arguments": {},
+      "Return": {
+        "Main": "char",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "eraseLastChar": {
       "Name": "eraseLastChar",
       "Type": "method",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "intValue": {
       "Name": "intValue",
       "Type": "method",
-      "Return": "int",
-      "Arguments": {},
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "length": {
       "Name": "length",
       "Type": "method",
-      "Return": "int",
-      "Arguments": {},
+      "Return": {
+        "Main": "int",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "new": {
       "Name": "new",
       "Type": "constructor",
-      "Return": "String",
-      "Arguments": {
-        "maxLength": {
-          "Name": "maxLength",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "String",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "maxLength",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "newLine": {
       "Name": "newLine",
       "Type": "function",
-      "Return": "char",
-      "Arguments": {},
+      "Return": {
+        "Main": "char",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "setCharAt": {
       "Name": "setCharAt",
       "Type": "method",
-      "Return": "void",
-      "Arguments": {
-        "c": {
-          "Name": "c",
-          "Type": "parameter",
-          "DataType": "char",
-          "ClassName": ""
-        },
-        "j": {
-          "Name": "j",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "j",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        },
+        {
+          "Name": "c",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "char",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "setInt": {
       "Name": "setInt",
       "Type": "method",
-      "Return": "void",
-      "Arguments": {
-        "val": {
-          "Name": "val",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "val",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     }
   },
@@ -718,43 +974,59 @@
     "error": {
       "Name": "error",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "errorCode": {
-          "Name": "errorCode",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "errorCode",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     },
     "halt": {
       "Name": "halt",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "init": {
       "Name": "init",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {},
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
+      },
+      "Arguments": [],
       "Statements": []
     },
     "wait": {
       "Name": "wait",
       "Type": "function",
-      "Return": "void",
-      "Arguments": {
-        "duration": {
-          "Name": "duration",
-          "Type": "parameter",
-          "DataType": "int",
-          "ClassName": ""
-        }
+      "Return": {
+        "Main": "void",
+        "Subtype": ""
       },
+      "Arguments": [
+        {
+          "Name": "duration",
+          "VarType": "parameter",
+          "DataType": {
+            "Main": "int",
+            "Subtype": ""
+          }
+        }
+      ],
       "Statements": []
     }
   }
