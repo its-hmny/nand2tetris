@@ -303,12 +303,12 @@ func (Parser) HandleFieldDecl(node pc.Queryable) ([]Variable, error) {
 		}
 
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := DataType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
-			fields = append(fields, Variable{Name: child.GetValue(), Type: fieldType, DataType: builtin})
+		if builtin := MainType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
+			fields = append(fields, Variable{Name: child.GetValue(), VarType: fieldType, DataType: DataType{Main: builtin}})
 			continue
 		}
 
-		fields = append(fields, Variable{Name: child.GetValue(), Type: fieldType, DataType: Object, ClassName: dataType})
+		fields = append(fields, Variable{Name: child.GetValue(), VarType: fieldType, DataType: DataType{Main: Object, Subtype: dataType}})
 	}
 
 	return fields, nil
@@ -324,7 +324,7 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 	}
 
 	routineType := SubroutineType(node.GetChildren()[0].GetValue())
-	returnType := DataType(node.GetChildren()[1].GetValue())
+	returnType := MainType(node.GetChildren()[1].GetValue())
 	routineName := node.GetChildren()[2].GetValue()
 
 	// All constructors must be named 'new', so we actively check for that
@@ -333,17 +333,17 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 	}
 
 	// Iterate on the nested possible n declarations to extract all the variable names
-	nested, arguments := node.GetChildren()[4].GetChildren(), utils.OrderedMap[string, Variable]{}
+	nested, arguments := node.GetChildren()[4].GetChildren(), []Variable{}
 	for _, child := range nested {
 		argType, argName := child.GetChildren()[0].GetValue(), child.GetChildren()[1].GetValue()
 
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := DataType(argType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
-			arguments.Set(argName, Variable{Name: argName, Type: Parameter, DataType: builtin})
+		if builtin := MainType(argType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
+			arguments = append(arguments, Variable{Name: argName, VarType: Parameter, DataType: DataType{Main: builtin}})
 			continue
 		}
 
-		arguments.Set(argName, Variable{Name: argName, Type: Parameter, DataType: Object, ClassName: argType})
+		arguments = append(arguments, Variable{Name: argName, VarType: Parameter, DataType: DataType{Main: Object, Subtype: argType}})
 	}
 
 	nested, statements := node.GetChildren()[7].GetChildren(), []Statement{}
@@ -360,7 +360,7 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 		}
 	}
 
-	return Subroutine{Name: routineName, Type: routineType, Return: returnType, Arguments: arguments, Statements: statements}, nil
+	return Subroutine{Name: routineName, Type: routineType, Return: DataType{Main: returnType}, Arguments: arguments, Statements: statements}, nil
 }
 
 // Generalized function to dispatch and convert between multiple statements types returning a 'jack.Statement'.
@@ -452,12 +452,12 @@ func (p *Parser) HandleVarStmt(node pc.Queryable) (Statement, error) {
 			return nil, fmt.Errorf("expected node 'IDENT', got %s", child.GetName())
 		}
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := DataType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
-			variables = append(variables, Variable{Name: child.GetValue(), Type: Local, DataType: builtin})
+		if builtin := MainType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
+			variables = append(variables, Variable{Name: child.GetValue(), VarType: Local, DataType: DataType{Main: builtin}})
 			continue
 		}
 
-		variables = append(variables, Variable{Name: child.GetValue(), Type: Local, DataType: Object, ClassName: dataType})
+		variables = append(variables, Variable{Name: child.GetValue(), VarType: Local, DataType: DataType{Main: Object, Subtype: dataType}})
 	}
 
 	return VarStmt{Vars: variables}, nil
@@ -637,15 +637,15 @@ func (p *Parser) HandleExpression(node pc.Queryable) (Expression, error) {
 		return VarExpr{Var: "this"}, nil
 
 	case "INT":
-		return LiteralExpr{Type: Int, Value: node.GetValue()}, nil
+		return LiteralExpr{Type: DataType{Main: Int}, Value: node.GetValue()}, nil
 	case "CHAR":
-		return LiteralExpr{Type: Char, Value: node.GetValue()}, nil
+		return LiteralExpr{Type: DataType{Main: Char}, Value: node.GetValue()}, nil
 	case "TRUE", "FALSE":
-		return LiteralExpr{Type: Bool, Value: node.GetValue()}, nil
+		return LiteralExpr{Type: DataType{Main: Bool}, Value: node.GetValue()}, nil
 	case "STRING":
-		return LiteralExpr{Type: String, Value: strings.Trim(node.GetValue(), `"`)}, nil
+		return LiteralExpr{Type: DataType{Main: String}, Value: strings.Trim(node.GetValue(), `"`)}, nil
 	case "NULL":
-		return LiteralExpr{Type: Object, Value: node.GetValue()}, nil
+		return LiteralExpr{Type: DataType{Main: Object}, Value: node.GetValue()}, nil
 
 	default:
 		return nil, fmt.Errorf("unrecognized node '%s' in expression", node.GetName())

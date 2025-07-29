@@ -109,11 +109,11 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 	if subroutine.Type == Method {
 		// ! The name is left purposefully empty, because is just there as placeholder for the upcoming/real
 		// ! arguments that will be registered later on by iterating on the 'Subroutine.Arguments' field.
-		l.scopes.RegisterVariable(Variable{Name: "__obj", Type: Parameter, DataType: Object, ClassName: ""})
+		l.scopes.RegisterVariable(Variable{Name: "__obj", VarType: Parameter, DataType: DataType{Main: Object, Subtype: ""}})
 	}
 
 	// We add to the current scope also all of the arguments of the subroutine
-	for _, arg := range subroutine.Arguments.Entries() {
+	for _, arg := range subroutine.Arguments {
 		// Like this we're actually supporting shadowing of variables, so if a variable
 		// with the same name is already present in the current scope, we just temporarily
 		// override it with the most update one instead of returning an error (like Go does
@@ -145,7 +145,7 @@ func (l *Lowerer) HandleSubroutine(subroutine Subroutine) ([]vm.Operation, error
 
 		nFields := uint16(0)
 		for _, field := range class.Fields.Entries() {
-			if field.Type == Field { // Count only the fields, not the static ones
+			if field.VarType == Field { // Count only the fields, not the static ones
 				nFields++
 			}
 		}
@@ -232,7 +232,7 @@ func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
 			return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expr.Var, err)
 		}
 
-		switch variable.Type {
+		switch variable.VarType {
 		case Local:
 			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Local, Offset: offset}), nil
 		case Parameter:
@@ -242,7 +242,7 @@ func (l *Lowerer) HandleLetStmt(statement LetStmt) ([]vm.Operation, error) {
 		case Static:
 			return append(rhsOps, vm.MemoryOp{Operation: vm.Pop, Segment: vm.Static, Offset: offset}), nil
 		default:
-			return nil, fmt.Errorf("variable type '%s' is not supported yet", variable.Type)
+			return nil, fmt.Errorf("variable type '%s' is not supported yet", variable.VarType)
 		}
 	}
 
@@ -408,7 +408,7 @@ func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
 		return nil, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
 	}
 
-	switch variable.Type {
+	switch variable.VarType {
 	case Local:
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Local, Offset: offset}}, nil
 	case Parameter:
@@ -418,13 +418,13 @@ func (l *Lowerer) HandleVarExpr(expression VarExpr) ([]vm.Operation, error) {
 	case Static:
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Static, Offset: offset}}, nil
 	default:
-		return nil, fmt.Errorf("variable type '%s' is not supported yet2", variable.Type)
+		return nil, fmt.Errorf("variable type '%s' is not supported yet2", variable.VarType)
 	}
 }
 
 // Specialized function to convert a 'jack.LiteralExpr' to a list of 'vm.Operation'.
 func (l *Lowerer) HandleLiteralExpr(expression LiteralExpr) ([]vm.Operation, error) {
-	switch expression.Type {
+	switch expression.Type.Main {
 	case Int:
 		value, err := strconv.ParseUint(expression.Value, 10, 16)
 		if err != nil {
@@ -595,7 +595,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 	// an active variable with the same name as our expression.Var. This will also give us information about
 	// how to populate the 'this', given that we will call only subroutine of Type = Method in this code path..
 	if _, variable, _ := l.scopes.ResolveVariable(expression.Var); variable != (Variable{}) {
-		if variable.DataType != Object {
+		if variable.DataType.Main != Object {
 			return nil, fmt.Errorf("variable '%s' is not an object", expression.Var)
 		}
 
@@ -604,7 +604,7 @@ func (l *Lowerer) HandleFuncCallExpr(expression FuncCallExpr) ([]vm.Operation, e
 			return nil, fmt.Errorf("error handling variable expression for 'this' pointer: %w", err)
 		}
 
-		fName := fmt.Sprintf("%s.%s", variable.ClassName, expression.FuncName)
+		fName := fmt.Sprintf("%s.%s", variable.DataType.Subtype, expression.FuncName)
 		return append(append(thisArg, argsInit...), vm.FuncCallOp{Name: fName, NArgs: uint8(argsLen + 1)}), nil
 	}
 

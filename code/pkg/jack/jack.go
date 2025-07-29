@@ -45,8 +45,8 @@ type Subroutine struct {
 	Name string         // Name/id, w/ the class id will identify universally the subroutine
 	Type SubroutineType //Function type, used to determine the codegen strategy during compilation phase
 
-	Return    DataType                           // The type of value returned by the procedure ('void' for no value)
-	Arguments utils.OrderedMap[string, Variable] // The set of arguments to be provided and used during the execution
+	Return    DataType   // The type of value returned by the procedure ('void' for no value)
+	Arguments []Variable // The set of arguments to be provided and used during the execution
 
 	Statements []Statement // The list of statements to be executed, a representation of the func program flow
 }
@@ -167,10 +167,9 @@ const (
 // - Static & instanced fields for classes
 // - Local variables and parameters for subroutines
 type Variable struct {
-	Name      string   // The var name, acts as identifier in the scope it is declared
-	Type      VarType  // The variable type helps determine the scope of the variable
-	DataType  DataType // The data type defines how to read or cast the value contained by the variable
-	ClassName string   // The additional and specific class type if (DataType = Object)
+	Name     string   // The var name, acts as identifier in the scope it is declared
+	VarType  VarType  // The variable type helps determine the scope of the variable
+	DataType DataType // The data type defines how to read or cast the value contained by the variable
 }
 
 type VarType string // Enum to manage the operation allowed for an VarType
@@ -182,13 +181,18 @@ const (
 	Parameter VarType = "parameter"
 )
 
-type DataType string // Enum to manage the operation allowed for an DataType
+type DataType struct {
+	Main    MainType // The main type: primitive types + generic/complex ones like object and arrays
+	Subtype string   // Nested subtype: specific class name when Main = Object, else empty
+}
+
+type MainType string // Enum to manage the operation allowed for an DataType
 
 const (
-	Int    DataType = "int"
-	Bool   DataType = "bool"
-	Char   DataType = "char"
-	String DataType = "string"
-	Void   DataType = "void"
-	Object DataType = "object"
+	Int    MainType = "int"
+	Char   MainType = "char"
+	Bool   MainType = "boolean"
+	String MainType = "String"
+	Void   MainType = "void"
+	Object MainType = "object"
 )

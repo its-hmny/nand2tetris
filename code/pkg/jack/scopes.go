@@ -57,7 +57,7 @@ func (st *ScopeTable) GetScope() string {
 }
 
 func (st *ScopeTable) RegisterVariable(new Variable) {
-	switch new.Type {
+	switch new.VarType {
 	case Local:
 		st.local.entries.Push(new)
 	case Field:

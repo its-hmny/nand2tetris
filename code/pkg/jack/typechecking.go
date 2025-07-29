@@ -58,7 +58,7 @@ func (tc *TypeChecker) HandleSubroutine(subroutine Subroutine) (bool, error) {
 	defer tc.scopes.PopSubroutineScope()           // Reset the function name after processing
 
 	// We add to the current scope also all of the arguments of the subroutine
-	for _, arg := range subroutine.Arguments.Entries() {
+	for _, arg := range subroutine.Arguments {
 		// Like this we're actually supporting shadowing of variables, so if a variable
 		// with the same name is already present in the current scope, we just temporarily
 		// override it with the most update one instead of returning an error (like Go does
@@ -145,7 +145,7 @@ func (tc *TypeChecker) HandleIfStmt(statement IfStmt) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("error handling if condition expression: %w", err)
 	}
-	if cond != Bool {
+	if cond != (DataType{Main: Bool}) {
 		return false, fmt.Errorf("if expression should be boolean expression, got %s", cond)
 	}
 
@@ -172,7 +172,7 @@ func (tc *TypeChecker) HandleWhileStmt(statement WhileStmt) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("error handling while condition expression: %w", err)
 	}
-	if cond != Bool {
+	if cond != (DataType{Main: Bool}) {
 		return false, fmt.Errorf("while expression should be boolean expression, got %s", cond)
 	}
 
@@ -202,10 +202,10 @@ func (tc *TypeChecker) HandleReturnStmt(statement ReturnStmt) (bool, error) {
 	}
 
 	// No expression means just void and hence type check always pass
-	if subroutine.Return == Void && statement.Expr == nil {
+	if subroutine.Return == (DataType{Main: Void}) && statement.Expr == nil {
 		return true, nil
 	}
-	if subroutine.Return == Void && statement.Expr != nil {
+	if subroutine.Return == (DataType{Main: Void}) && statement.Expr != nil {
 		return false, fmt.Errorf("return type of function is void but an expr has been provided")
 	}
 
@@ -237,19 +237,19 @@ func (tc *TypeChecker) HandleExpression(expr Expression) (DataType, error) {
 	case FuncCallExpr:
 		return tc.HandleFuncCallExpr(tExpr)
 	default:
-		return DataType(""), fmt.Errorf("unrecognized expression: %T", expr)
+		return DataType{}, fmt.Errorf("unrecognized expression: %T", expr)
 	}
 }
 
 // Specialized function to extract the DataType of a 'jack.VarExpr'.
 func (tc *TypeChecker) HandleVarExpr(expression VarExpr) (DataType, error) {
 	if expression.Var == "this" {
-		return Object, nil // TODO (hmny): Should add also the custom type declared by the users
+		return DataType{Main: Object, Subtype: ""}, nil // TODO (hmny): Should add also the custom type declared by the users
 	}
 
 	_, variable, err := tc.scopes.ResolveVariable(expression.Var)
 	if err != nil {
-		return DataType(""), fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
+		return DataType{}, fmt.Errorf("error resolving variable '%s' in array expression: %w", expression.Var, err)
 	}
 
 	return variable.DataType, nil
@@ -257,16 +257,16 @@ func (tc *TypeChecker) HandleVarExpr(expression VarExpr) (DataType, error) {
 
 // Specialized function to extract the DataType of a 'jack.LiteralExpr'.
 func (tc *TypeChecker) HandleLiteralExpr(expression LiteralExpr) (DataType, error) {
-	switch expression.Type {
+	switch expression.Type.Main {
 	case Int, Bool, Char, String:
 		return expression.Type, nil // Classic passthrough for built-in data types
 	case Object:
 		if expression.Value != "null" {
-			return DataType(""), fmt.Errorf("object literal are not supported '%s'", expression.Value)
+			return DataType{}, fmt.Errorf("object literal are not supported '%s'", expression.Value)
 		}
-		return Object, nil
+		return DataType{Main: Object, Subtype: ""}, nil // TODO (hmny): Should add also the custom type declared by the users
 	default:
-		return DataType(""), fmt.Errorf("unrecognized literal expression type: %s", expression.Type)
+		return DataType{}, fmt.Errorf("unrecognized literal expression type: %s", expression.Type)
 	}
 }
 
@@ -274,16 +274,16 @@ func (tc *TypeChecker) HandleLiteralExpr(expression LiteralExpr) (DataType, erro
 func (tc *TypeChecker) HandleArrayExpr(expression ArrayExpr) (DataType, error) {
 	array, err := tc.HandleVarExpr(VarExpr{Var: expression.Var})
 	if err != nil {
-		return DataType(""), fmt.Errorf("error handling base variable expression: %w", err)
+		return DataType{}, fmt.Errorf("error handling base variable expression: %w", err)
 	}
 
 	// Handle the index expression to get the offset of the array element
 	index, err := tc.HandleExpression(expression.Index)
 	if err != nil {
-		return DataType(""), fmt.Errorf("error handling index expression: %w", err)
+		return DataType{}, fmt.Errorf("error handling index expression: %w", err)
 	}
-	if index != Int {
-		return DataType(""), fmt.Errorf("array index expression must be 'int', got %s", index)
+	if index != (DataType{Main: Int}) {
+		return DataType{}, fmt.Errorf("array index expression must be 'int', got %s", index)
 	}
 
 	return array, nil
@@ -293,22 +293,22 @@ func (tc *TypeChecker) HandleArrayExpr(expression ArrayExpr) (DataType, error) {
 func (tc *TypeChecker) HandleUnaryExpr(expression UnaryExpr) (DataType, error) {
 	nested, err := tc.HandleExpression(expression.Rhs)
 	if err != nil {
-		return DataType(""), fmt.Errorf("error handling nested expression: %w", err)
+		return DataType{}, fmt.Errorf("error handling nested expression: %w", err)
 	}
 
 	switch expression.Type {
 	case Negation:
-		if nested != Int {
-			return DataType(""), fmt.Errorf("nested expression must be 'int', got %s", nested)
+		if nested != (DataType{Main: Int}) {
+			return DataType{}, fmt.Errorf("nested expression must be 'int', got %s", nested)
 		}
-		return Int, nil
+		return DataType{Main: Int}, nil
 	case BoolNot:
-		if nested != Bool {
-			return DataType(""), fmt.Errorf("nested expression must be 'bool', got %s", nested)
+		if nested != (DataType{Main: Bool}) {
+			return DataType{}, fmt.Errorf("nested expression must be 'bool', got %s", nested)
 		}
-		return Bool, nil
+		return DataType{Main: Bool}, nil
 	default:
-		return DataType(""), fmt.Errorf("unrecognized unary expression type: %s", expression.Type)
+		return DataType{}, fmt.Errorf("unrecognized unary expression type: %s", expression.Type)
 	}
 }
 
@@ -316,27 +316,27 @@ func (tc *TypeChecker) HandleUnaryExpr(expression UnaryExpr) (DataType, error) {
 func (tc *TypeChecker) HandleBinaryExpr(expression BinaryExpr) (DataType, error) {
 	lhs, err := tc.HandleExpression(expression.Lhs)
 	if err != nil {
-		return DataType(""), fmt.Errorf("error handling nested LHS expression: %w", err)
+		return DataType{}, fmt.Errorf("error handling nested LHS expression: %w", err)
 	}
 
 	rhs, err := tc.HandleExpression(expression.Rhs)
 	if err != nil {
-		return DataType(""), fmt.Errorf("error handling nested RHS expression: %w", err)
+		return DataType{}, fmt.Errorf("error handling nested RHS expression: %w", err)
 	}
 
 	if rhs != lhs {
-		return DataType(""), fmt.Errorf("RHS and LHS should have same type, got %s and %s", rhs, lhs)
+		return DataType{}, fmt.Errorf("RHS and LHS should have same type, got %s and %s", rhs, lhs)
 	}
 
 	switch expression.Type {
 	case Plus, Minus, Divide, Multiply:
 		return rhs, nil // Also lhs should be fine since they are the same DataType
 	case BoolOr, BoolAnd, BoolNot:
-		return Bool, nil
+		return DataType{Main: Bool}, nil
 	case Equal, LessThan, GreatThan:
-		return Bool, nil
+		return DataType{Main: Bool}, nil
 	default:
-		return DataType(""), fmt.Errorf("unrecognized binary expression type: %s", expression.Type)
+		return DataType{}, fmt.Errorf("unrecognized binary expression type: %s", expression.Type)
 	}
 }
 
@@ -347,12 +347,12 @@ func (tc *TypeChecker) HandleFuncCallExpr(expression FuncCallExpr) (DataType, er
 	if expression.IsExtCall {
 		_, variable, _ := tc.scopes.ResolveVariable(expression.Var)
 		if variable != (Variable{}) {
-			return DataType(""), fmt.Errorf("variable %s can't be found in program", expression.Var)
+			return DataType{}, fmt.Errorf("variable %s can't be found in program", expression.Var)
 		}
-		if variable.DataType != Object {
-			return DataType(""), fmt.Errorf("variable '%s' is not an object", expression.Var)
+		if variable.DataType.Main != Object {
+			return DataType{}, fmt.Errorf("variable '%s' is not an object", expression.Var)
 		}
-		className = variable.ClassName
+		className = variable.DataType.Subtype
 	} else {
 		className = strings.Split(tc.scopes.GetScope(), ".")[0]
 	}
@@ -360,21 +360,21 @@ func (tc *TypeChecker) HandleFuncCallExpr(expression FuncCallExpr) (DataType, er
 	// Retrieve the current class and current subroutine information (checking for existence)
 	class, exists := tc.program[className]
 	if !exists {
-		return DataType(""), fmt.Errorf("class %s doesn't exists", className)
+		return DataType{}, fmt.Errorf("class %s doesn't exists", className)
 	}
 	subroutine, exists := class.Subroutines.Get(expression.FuncName)
 	if !exists {
-		return DataType(""), fmt.Errorf("routine %s doesn't exists for class %s", expression.FuncName, className)
+		return DataType{}, fmt.Errorf("routine %s doesn't exists for class %s", expression.FuncName, className)
 	}
 
 	for idx, expr := range expression.Arguments {
 		arg, err := tc.HandleExpression(expr)
 		if err != nil {
-			return DataType(""), fmt.Errorf("error handling argument expression: %w", err)
+			return DataType{}, fmt.Errorf("error handling argument expression: %w", err)
 		}
 
 		if expected := subroutine.Arguments[idx].DataType; arg != expected {
-			return DataType(""), fmt.Errorf("error handling arg no. %d, expected %s but got %s", idx, expected, arg)
+			return DataType{}, fmt.Errorf("error handling arg no. %d, expected %s but got %s", idx, expected, arg)
 		}
 	}
 
