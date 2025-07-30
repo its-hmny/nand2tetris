@@ -230,7 +230,7 @@ func (p *Parser) FromSource(source []byte) (pc.Queryable, bool) {
 	if os.Getenv("PRINT_AST") != "" {
 		ast.Prettyprint()
 	}
-	// TODO (hmny): This hardcoding to true should be changed
+
 	return root, true // Success is based on the reaching of 'EOF'
 }
 
