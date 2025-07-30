@@ -186,13 +186,27 @@ type DataType struct {
 	Subtype string   // Nested subtype: specific class name when Main = Object, else empty
 }
 
+func (actual DataType) Matches(expected DataType) bool {
+	if actual.Main == Wildcard || expected.Main == Wildcard {
+		return true
+	}
+	if expected.Main == Array && actual.Main == Object {
+		return true // Allows downcasting from Objects to raw memory cells
+	}
+
+	return actual == expected
+}
+
 type MainType string // Enum to manage the operation allowed for an DataType
 
 const (
 	Int    MainType = "int"
 	Char   MainType = "char"
-	Bool   MainType = "boolean"
-	String MainType = "String"
 	Void   MainType = "void"
-	Object MainType = "object"
+	Bool   MainType = "boolean"
+	Array  MainType = "Array"
+	Object MainType = "Object"
+	String MainType = "String"
+
+	Wildcard MainType = "*" // Used to skip/ignore typechecking validation (e.g. on null literals or array access)
 )

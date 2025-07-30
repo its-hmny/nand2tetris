@@ -128,7 +128,7 @@ func (tc *TypeChecker) HandleLetStmt(statement LetStmt) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("error resolving variable '%s' in let expression: %w", expr.Var, err)
 		}
-		if variable.DataType != rhs {
+		if !variable.DataType.Matches(rhs) {
 			return false, fmt.Errorf("expected variable '%s' to be of type %s, got %s", expr.Var, variable.DataType, rhs)
 		}
 
@@ -142,7 +142,7 @@ func (tc *TypeChecker) HandleLetStmt(statement LetStmt) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("error resolving variable '%s' in let expression: %w", expr.Var, err)
 		}
-		if variable.DataType != (DataType{Main: Object, Subtype: "Array"}) { // TODO (hmny): Array should be its own MainType and not a derived one
+		if !variable.DataType.Matches(DataType{Main: Array, Subtype: ""}) { // TODO (hmny): Array should be its own MainType and not a derived one
 			return false, fmt.Errorf("expected variable '%s' to be of type %s, got %s", expr.Var, variable.DataType, rhs)
 		}
 
@@ -150,7 +150,7 @@ func (tc *TypeChecker) HandleLetStmt(statement LetStmt) (bool, error) {
 		if err != nil {
 			return false, fmt.Errorf("error handling index expression: %w", err)
 		}
-		if index != (DataType{Main: Int}) {
+		if !index.Matches(DataType{Main: Int}) {
 			return false, fmt.Errorf("array index expression must be 'int', got %s", expr.Index)
 		}
 
@@ -166,7 +166,7 @@ func (tc *TypeChecker) HandleIfStmt(statement IfStmt) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("error handling if condition expression: %w", err)
 	}
-	if cond != (DataType{Main: Bool}) {
+	if !cond.Matches(DataType{Main: Bool}) {
 		return false, fmt.Errorf("if expression should be boolean expression, got %s", cond)
 	}
 
@@ -193,7 +193,7 @@ func (tc *TypeChecker) HandleWhileStmt(statement WhileStmt) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("error handling while condition expression: %w", err)
 	}
-	if cond != (DataType{Main: Bool}) {
+	if !cond.Matches(DataType{Main: Bool}) {
 		return false, fmt.Errorf("while expression should be boolean expression, got %s", cond)
 	}
 
@@ -223,10 +223,10 @@ func (tc *TypeChecker) HandleReturnStmt(statement ReturnStmt) (bool, error) {
 	}
 
 	// No expression means just void and hence type check always pass
-	if subroutine.Return == (DataType{Main: Void}) && statement.Expr == nil {
+	if subroutine.Return.Matches(DataType{Main: Void}) && statement.Expr == nil {
 		return true, nil
 	}
-	if subroutine.Return == (DataType{Main: Void}) && statement.Expr != nil {
+	if subroutine.Return.Matches(DataType{Main: Void}) && statement.Expr != nil {
 		return false, fmt.Errorf("return type of function is void but an expr has been provided")
 	}
 
@@ -235,7 +235,7 @@ func (tc *TypeChecker) HandleReturnStmt(statement ReturnStmt) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("error handling return expression: %w", err)
 	}
-	if ret != subroutine.Return {
+	if !subroutine.Return.Matches(ret) {
 		return false, fmt.Errorf("expected return type %s, got %s", subroutine.Return, ret)
 	}
 
@@ -287,7 +287,7 @@ func (tc *TypeChecker) HandleLiteralExpr(expression LiteralExpr) (DataType, erro
 		if expression.Value != "null" {
 			return DataType{}, fmt.Errorf("object literal are not supported '%s'", expression.Value)
 		}
-		return DataType{Main: Object, Subtype: "Null"}, nil // TODO (hmny): Not sure if this is the correct way to handle null literal tbh
+		return DataType{Main: Wildcard}, nil // TODO (hmny): Not sure if this is the correct way to handle null literal tbh
 	default:
 		return DataType{}, fmt.Errorf("unrecognized literal expression type: %s", expression.Type)
 	}
@@ -299,17 +299,20 @@ func (tc *TypeChecker) HandleArrayExpr(expression ArrayExpr) (DataType, error) {
 	if err != nil {
 		return DataType{}, fmt.Errorf("error handling base variable expression: %w", err)
 	}
+	if !array.Matches(DataType{Main: Array, Subtype: ""}) {
+		return DataType{}, fmt.Errorf("variable %s must be an array, got %s", expression.Var, array.Main)
+	}
 
 	// Handle the index expression to get the offset of the array element
 	index, err := tc.HandleExpression(expression.Index)
 	if err != nil {
 		return DataType{}, fmt.Errorf("error handling index expression: %w", err)
 	}
-	if index != (DataType{Main: Int}) {
+	if !index.Matches(DataType{Main: Int}) {
 		return DataType{}, fmt.Errorf("array index expression must be 'int', got %s", index)
 	}
 
-	return array, nil
+	return DataType{Main: Wildcard}, nil
 }
 
 // Specialized function to extract the DataType of a 'jack.ArrayExpr'.
@@ -321,12 +324,12 @@ func (tc *TypeChecker) HandleUnaryExpr(expression UnaryExpr) (DataType, error) {
 
 	switch expression.Type {
 	case Negation:
-		if nested != (DataType{Main: Int}) {
+		if !nested.Matches(DataType{Main: Int}) {
 			return DataType{}, fmt.Errorf("nested expression must be 'int', got %s", nested)
 		}
 		return DataType{Main: Int}, nil
 	case BoolNot:
-		if nested != (DataType{Main: Bool}) {
+		if !nested.Matches(DataType{Main: Bool}) {
 			return DataType{}, fmt.Errorf("nested expression must be 'bool', got %s", nested)
 		}
 		return DataType{Main: Bool}, nil
@@ -347,7 +350,7 @@ func (tc *TypeChecker) HandleBinaryExpr(expression BinaryExpr) (DataType, error)
 		return DataType{}, fmt.Errorf("error handling nested RHS expression: %w", err)
 	}
 
-	if rhs != lhs {
+	if !rhs.Matches(lhs) {
 		return DataType{}, fmt.Errorf("RHS and LHS should have same type, got %s and %s", rhs, lhs)
 	}
 
@@ -400,7 +403,7 @@ func (tc *TypeChecker) HandleFuncCallExpr(expression FuncCallExpr) (DataType, er
 			return DataType{}, fmt.Errorf("error handling argument expression: %w", err)
 		}
 
-		if expected := subroutine.Arguments[idx].DataType; arg != expected {
+		if expected := subroutine.Arguments[idx].DataType; !arg.Matches(expected) {
 			return DataType{}, fmt.Errorf("error handling arg no. %d, expected %s but got %s", idx, expected, arg)
 		}
 	}

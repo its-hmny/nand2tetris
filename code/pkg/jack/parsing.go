@@ -137,7 +137,7 @@ var (
 	pDot    = pc.Atom(".", "DOT")
 	pSemi   = pc.Atom(";", "SEMI")
 	pComma  = pc.Atom(",", "COMMA")
-	pLParen = pc.Atom("(", "RPAREN")
+	pLParen = pc.Atom("(", "LPAREN")
 	pRParen = pc.Atom(")", "RPAREN")
 	pLBrace = pc.Atom("{", "LBRACE")
 	pRBrace = pc.Atom("}", "RBRACE")
@@ -303,7 +303,7 @@ func (Parser) HandleFieldDecl(node pc.Queryable) ([]Variable, error) {
 		}
 
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := MainType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
+		if builtin := MainType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array {
 			fields = append(fields, Variable{Name: child.GetValue(), VarType: fieldType, DataType: DataType{Main: builtin}})
 			continue
 		}
@@ -338,7 +338,7 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 		argType, argName := child.GetChildren()[0].GetValue(), child.GetChildren()[1].GetValue()
 
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := MainType(argType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
+		if builtin := MainType(argType); builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array {
 			arguments = append(arguments, Variable{Name: argName, VarType: Parameter, DataType: DataType{Main: builtin}})
 			continue
 		}
@@ -452,7 +452,7 @@ func (p *Parser) HandleVarStmt(node pc.Queryable) (Statement, error) {
 			return nil, fmt.Errorf("expected node 'IDENT', got %s", child.GetName())
 		}
 		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := MainType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char {
+		if builtin := MainType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array {
 			variables = append(variables, Variable{Name: child.GetValue(), VarType: Local, DataType: DataType{Main: builtin}})
 			continue
 		}
