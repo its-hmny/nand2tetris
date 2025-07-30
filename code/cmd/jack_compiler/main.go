@@ -95,7 +95,7 @@ func Handler(args []string, options map[string]string) int {
 	if _, enabled := options["typecheck"]; enabled {
 		checker := jack.NewTypeChecker(program)
 		if _, err := checker.Check(); err != nil {
-			fmt.Printf("ERROR: Unable to complete 'typecheck' pass: %s\n", err)
+			fmt.Printf("ERROR: Unable to complete 'typechecking' pass: %s\n", err)
 			return -1
 		}
 	}

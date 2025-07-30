@@ -22,9 +22,8 @@ func (tc *TypeChecker) Check() (bool, error) {
 	for name, class := range tc.program {
 		_, err := tc.HandleClass(class)
 		if err != nil {
-			return false, fmt.Errorf("error handling lowering of class '%s': %w", name, err)
+			return false, fmt.Errorf("error handling typechecking of class '%s': %w", name, err)
 		}
-
 	}
 
 	return true, nil
@@ -72,7 +71,7 @@ func (tc *TypeChecker) HandleSubroutine(subroutine Subroutine) (bool, error) {
 		}
 	}
 
-	return false, fmt.Errorf("not implemented yet")
+	return true, nil
 }
 
 // Generalized function to type-check multiple statements types.
@@ -125,15 +124,37 @@ func (tc *TypeChecker) HandleLetStmt(statement LetStmt) (bool, error) {
 
 	// If it's a VarExpr then we somewhat reuse the same logic as HandleVarExpr, but we need to write memory instead of reading
 	if expr, isVarExpr := statement.Lhs.(VarExpr); isVarExpr {
-		// TODO (hmny): Should check 'rhs' against the type of var
-		return false, fmt.Errorf("VarExpr not supported yet")
+		_, variable, err := tc.scopes.ResolveVariable(expr.Var)
+		if err != nil {
+			return false, fmt.Errorf("error resolving variable '%s' in let expression: %w", expr.Var, err)
+		}
+		if variable.DataType != rhs {
+			return false, fmt.Errorf("expected variable '%s' to be of type %s, got %s", expr.Var, variable.DataType, rhs)
+		}
+
+		return true, nil
 	}
 
 	// For ArrayExpr instead we reuse the pointer + offset logic from HandleArrayExpr but after that we write
 	// a bit of glue code to save the RHS on temporary memory before loading the new address and writing it
 	if expr, isArrayExpr := statement.Lhs.(ArrayExpr); isArrayExpr {
-		// TODO (hmny): Should check 'rhs' against the type of array
-		return false, fmt.Errorf("ArrayExpr not supported yet")
+		_, variable, err := tc.scopes.ResolveVariable(expr.Var)
+		if err != nil {
+			return false, fmt.Errorf("error resolving variable '%s' in let expression: %w", expr.Var, err)
+		}
+		if variable.DataType != (DataType{Main: Object, Subtype: "Array"}) { // TODO (hmny): Array should be its own MainType and not a derived one
+			return false, fmt.Errorf("expected variable '%s' to be of type %s, got %s", expr.Var, variable.DataType, rhs)
+		}
+
+		index, err := tc.HandleExpression(expr.Index)
+		if err != nil {
+			return false, fmt.Errorf("error handling index expression: %w", err)
+		}
+		if index != (DataType{Main: Int}) {
+			return false, fmt.Errorf("array index expression must be 'int', got %s", expr.Index)
+		}
+
+		return true, nil
 	}
 
 	return false, fmt.Errorf("LHS expression must be either a 'VarExpr' or an 'ArrayExpr', got: %T", statement.Lhs)
@@ -244,7 +265,9 @@ func (tc *TypeChecker) HandleExpression(expr Expression) (DataType, error) {
 // Specialized function to extract the DataType of a 'jack.VarExpr'.
 func (tc *TypeChecker) HandleVarExpr(expression VarExpr) (DataType, error) {
 	if expression.Var == "this" {
-		return DataType{Main: Object, Subtype: ""}, nil // TODO (hmny): Should add also the custom type declared by the users
+		// TODO (hmny): Pretty sure this can simplified and made more clear
+		className := strings.Split(tc.scopes.GetScope(), ".")[0] // Get the class name from the scope
+		return DataType{Main: Object, Subtype: className}, nil
 	}
 
 	_, variable, err := tc.scopes.ResolveVariable(expression.Var)
@@ -264,7 +287,7 @@ func (tc *TypeChecker) HandleLiteralExpr(expression LiteralExpr) (DataType, erro
 		if expression.Value != "null" {
 			return DataType{}, fmt.Errorf("object literal are not supported '%s'", expression.Value)
 		}
-		return DataType{Main: Object, Subtype: ""}, nil // TODO (hmny): Should add also the custom type declared by the users
+		return DataType{Main: Object, Subtype: "Null"}, nil // TODO (hmny): Not sure if this is the correct way to handle null literal tbh
 	default:
 		return DataType{}, fmt.Errorf("unrecognized literal expression type: %s", expression.Type)
 	}
@@ -344,17 +367,21 @@ func (tc *TypeChecker) HandleBinaryExpr(expression BinaryExpr) (DataType, error)
 func (tc *TypeChecker) HandleFuncCallExpr(expression FuncCallExpr) (DataType, error) {
 	className := ""
 
-	if expression.IsExtCall {
-		_, variable, _ := tc.scopes.ResolveVariable(expression.Var)
-		if variable != (Variable{}) {
-			return DataType{}, fmt.Errorf("variable %s can't be found in program", expression.Var)
-		}
+	if _, variable, _ := tc.scopes.ResolveVariable(expression.Var); expression.IsExtCall && variable != (Variable{}) {
+		// 1. We're calling a method of a specific object instance (e.g. a variable not a class name)
 		if variable.DataType.Main != Object {
-			return DataType{}, fmt.Errorf("variable '%s' is not an object", expression.Var)
+			return DataType{}, fmt.Errorf("variable '%s' is not an object type", expression.Var)
 		}
 		className = variable.DataType.Subtype
-	} else {
+
+	} else if class, isClass := tc.program[expression.Var]; expression.IsExtCall && isClass {
+		// 2. We're calling a function or constructor (static method) of a specific class
+		className = class.Name
+	} else if !expression.IsExtCall {
+		// 3. Internal call to another method for the same class instance
 		className = strings.Split(tc.scopes.GetScope(), ".")[0]
+	} else {
+		return DataType{}, fmt.Errorf("unsupported function call expression")
 	}
 
 	// Retrieve the current class and current subroutine information (checking for existence)
@@ -364,7 +391,7 @@ func (tc *TypeChecker) HandleFuncCallExpr(expression FuncCallExpr) (DataType, er
 	}
 	subroutine, exists := class.Subroutines.Get(expression.FuncName)
 	if !exists {
-		return DataType{}, fmt.Errorf("routine %s doesn't exists for class %s", expression.FuncName, className)
+		return DataType{}, fmt.Errorf("subroutine %s doesn't exists for class %s", expression.FuncName, className)
 	}
 
 	for idx, expr := range expression.Arguments {
