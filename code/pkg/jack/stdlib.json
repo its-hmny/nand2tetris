@@ -290,8 +290,8 @@
           "Name": "o",
           "VarType": "parameter",
           "DataType": {
-            "Main": "object",
-            "Subtype": "Array"
+            "Main": "Array",
+            "Subtype": ""
           }
         }
       ],

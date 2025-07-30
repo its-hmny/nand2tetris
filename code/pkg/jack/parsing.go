@@ -324,8 +324,14 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 	}
 
 	routineType := SubroutineType(node.GetChildren()[0].GetValue())
-	returnType := MainType(node.GetChildren()[1].GetValue())
 	routineName := node.GetChildren()[2].GetValue()
+
+	returnType, builtin := DataType{}, MainType(node.GetChildren()[1].GetValue())
+	if builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array || builtin == Void {
+		returnType = DataType{Main: MainType(node.GetChildren()[1].GetValue())}
+	} else {
+		returnType = DataType{Main: Object, Subtype: node.GetChildren()[1].GetValue()}
+	}
 
 	// All constructors must be named 'new', so we actively check for that
 	if routineType == Constructor && routineName != "new" {
@@ -360,7 +366,7 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 		}
 	}
 
-	return Subroutine{Name: routineName, Type: routineType, Return: DataType{Main: returnType}, Arguments: arguments, Statements: statements}, nil
+	return Subroutine{Name: routineName, Type: routineType, Return: returnType, Arguments: arguments, Statements: statements}, nil
 }
 
 // Generalized function to dispatch and convert between multiple statements types returning a 'jack.Statement'.
