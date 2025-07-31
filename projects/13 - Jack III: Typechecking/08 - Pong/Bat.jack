@@ -33,7 +33,7 @@ class Bat {
 
     /** Deallocates the object's memory. */
     method void dispose() {
-        do Memory.deAlloc(this);
+        do Memory.deAlloc([Array]this);
         return;
     }
 

@@ -36,7 +36,7 @@ class Ball {
 
     /** Deallocates the Ball's memory. */
     method void dispose() {
-        do Memory.deAlloc(this);
+        do Memory.deAlloc([Array]this);
         return;
     }
 
@@ -166,7 +166,7 @@ class Ball {
         let divLengthy = lengthy / 10;
 	    if (bouncingDirection = 0) { let factor = 10; }
 	    else {
-	        if (((~(lengthx < 0)) & (bouncingDirection = 1)) | ((lengthx < 0) & (bouncingDirection = (-1)))) {
+	        if ([boolean](((~(lengthx < 0)) & (bouncingDirection = 1)) | ((lengthx < 0) & (bouncingDirection = (-1))))) {
                 let factor = 20; // bounce direction is in ball direction
             }
 	        else { let factor = 5; } // bounce direction is against ball direction

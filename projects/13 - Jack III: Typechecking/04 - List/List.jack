@@ -17,7 +17,7 @@ class List {
 
     /** Accessors. */
     method int getData() { return data; }
-    method int getNext() { return next; }
+    method int getNext() { return [int]next; }
 
     /** Prints this list. */
     method void print() {
@@ -26,8 +26,8 @@ class List {
         let current = this;
         while (~(current = null)) {
             do Output.printInt(current.getData());
-            do Output.printChar(32); // prints a space
-            let current = current.getNext();
+            do Output.printChar([char]32); // prints a space
+            let current = [List]current.getNext();
         }
         return;
     }
@@ -39,7 +39,7 @@ class List {
             do next.dispose();
         }
         // Calls an OS routine to free the memory of this object.
-        do Memory.deAlloc(this);
+        do Memory.deAlloc([Array]this);
         return;
     }
 

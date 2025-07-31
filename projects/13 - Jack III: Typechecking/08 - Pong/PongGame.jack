@@ -42,7 +42,7 @@ class PongGame {
     method void dispose() {
         do bat.dispose();
 	    do ball.dispose();
-        do Memory.deAlloc(this);
+        do Memory.deAlloc([Array]this);
         return;
     }
 
@@ -60,12 +60,12 @@ class PongGame {
     /** Starts the game, and handles inputs from the user that control
      *  the bat's movement direction. */
     method void run() {
-        var char key;
+        var int key;
 
         while (~exit) {
             // waits for a key to be pressed.
-            while ((key = 0) & (~exit)) {
-                let key = Keyboard.keyPressed();
+            while ([boolean]((key = 0) & (~exit))) {
+                let key = [int]Keyboard.keyPressed();
                 do bat.move();
                 do moveBall();
                 do Sys.wait(50);
@@ -80,8 +80,8 @@ class PongGame {
             }
 
             // Waits for the key to be released.
-            while ((~(key = 0)) & (~exit)) {
-                let key = Keyboard.keyPressed();
+            while ([boolean]((~(key = 0)) & (~exit))) {
+                let key = [int]Keyboard.keyPressed();
                 do bat.move();
                 do moveBall();
                 do Sys.wait(50);
@@ -107,7 +107,7 @@ class PongGame {
 
         let wall = ball.move();
 
-        if ((wall > 0) & (~(wall = lastWall))) {
+        if ([boolean]((wall > 0) & (~(wall = lastWall)))) {
             let lastWall = wall;
             let bouncingDirection = 0;
             let batLeft = bat.getLeft();
@@ -116,7 +116,7 @@ class PongGame {
             let ballRight = ball.getRight();
   
             if (wall = 4) {
-                let exit = (batLeft > ballRight) | (batRight < ballLeft);
+                let exit = [boolean]((batLeft > ballRight) | (batRight < ballLeft));
                 if (~exit) {
                     if (ballRight < (batLeft + 10)) { let bouncingDirection = -1; }
                     else {

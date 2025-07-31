@@ -41,7 +41,7 @@ class Fraction {
   
    /** Disposes this fraction. */
    method void dispose() {
-      do Memory.deAlloc(this);  // uses an OS routine to recycle the memory held by the object
+      do Memory.deAlloc([Array]this);  // uses an OS routine to recycle the memory held by the object
       return;
    }
    

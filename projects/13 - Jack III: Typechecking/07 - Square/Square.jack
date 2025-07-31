@@ -21,7 +21,7 @@ class Square {
 
    /** Disposes this square. */
    method void dispose() {
-      do Memory.deAlloc(this);
+      do Memory.deAlloc([Array]this);
       return;
    }
 
@@ -43,7 +43,7 @@ class Square {
 
     /** Increments the square size by 2 pixels (if possible). */
    method void incSize() {
-      if (((y + size) < 254) & ((x + size) < 510)) {
+      if ([boolean](((y + size) < 254) & ((x + size) < 510))) {
          do erase();
          let size = size + 2;
          do draw();

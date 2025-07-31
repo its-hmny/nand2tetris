@@ -16,32 +16,28 @@ return
 function List.getNext 0
 push argument 0
 pop pointer 0
-push this 1
 return
 function List.print 1
 push argument 0
 pop pointer 0
 push pointer 0
 pop local 0
-label WHILE_EXP0
+label WHILE_START_0
 push local 0
 push constant 0
 eq
 not
 not
-if-goto WHILE_END0
+if-goto WHILE_END_1
 push local 0
 call List.getData 1
 call Output.printInt 1
 pop temp 0
-push constant 32
 call Output.printChar 1
 pop temp 0
-push local 0
-call List.getNext 1
 pop local 0
-goto WHILE_EXP0
-label WHILE_END0
+goto WHILE_START_0
+label WHILE_END_1
 push constant 0
 return
 function List.dispose 0
@@ -51,14 +47,12 @@ push this 1
 push constant 0
 eq
 not
-if-goto IF_TRUE0
-goto IF_FALSE0
-label IF_TRUE0
+not
+if-goto ELSE_2
 push this 1
 call List.dispose 1
 pop temp 0
-label IF_FALSE0
-push pointer 0
+label ELSE_2
 call Memory.deAlloc 1
 pop temp 0
 push constant 0

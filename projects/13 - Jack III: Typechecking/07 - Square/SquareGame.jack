@@ -30,7 +30,7 @@ class SquareGame {
    /** Disposes this game. */
    method void dispose() {
       do square.dispose();
-      do Memory.deAlloc(this);
+      do Memory.deAlloc([Array]this);
       return;
    }
 
@@ -46,14 +46,14 @@ class SquareGame {
 
    /** Runs the game: handles the user's inputs and moves the square accordingly */
    method void run() {
-      var char key;  // the key currently pressed by the user
+      var int key;  // the key currently pressed by the user
       var boolean exit;
       let exit = false;
       
       while (~exit) {
          // waits for a key to be pressed
          while (key = 0) {
-            let key = Keyboard.keyPressed();
+            let key = [int]Keyboard.keyPressed();
             do moveSquare();
          }
          if (key = 81)  { let exit = true; }     // q key
@@ -66,7 +66,7 @@ class SquareGame {
 
          // waits for the key to be released
          while (~(key = 0)) {
-            let key = Keyboard.keyPressed();
+            let key = [int]Keyboard.keyPressed();
             do moveSquare();
          }
      } // while
