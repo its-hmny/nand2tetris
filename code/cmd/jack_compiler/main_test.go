@@ -144,3 +144,62 @@ func TestAgainstBuiltIn(t *testing.T) {
 		test([]string{base}, base, true, tester)
 	})
 }
+
+// This test checks the typechecking functionality of the Jack Compiler. It runs a fork of the code from
+// Project 09 with some casts (a new expression introduced) here and there to address some typechecking
+// issues that the original code has. Since all of the code is correctly typechecked, the test should pass.
+func TestTypeChecking(t *testing.T) {
+	test := func(inputs []string, output string, stdlib bool, typecheck bool) {
+		options := map[string]string{"stdlib": fmt.Sprint(stdlib), "typecheck": fmt.Sprint(typecheck)}
+
+		status := Handler(inputs, options)
+		if status != 0 {
+			t.Fatalf("Unexpected exit status code: expected 0 got: %d", status)
+		}
+
+		cmd := exec.Command("git", "diff", output)
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("There should be no changes between the expected and actual compilation output")
+		}
+	}
+
+	t.Run("HelloWorld", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/01 - HelloWorld"
+		test([]string{base}, base, true, true)
+	})
+
+	t.Run("Average", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/02 - Average"
+		test([]string{base}, base, true, true)
+	})
+
+	t.Run("Fraction", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/03 - Fraction"
+		test([]string{base}, base, true, true)
+	})
+
+	t.Run("List", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/04 - List"
+		test([]string{base}, base, true, true)
+	})
+
+	t.Run("ConvertToBin", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/05 - ConvertToBin"
+		test([]string{base}, base, true, true)
+	})
+
+	t.Run("ComplexArrays", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/06 - ComplexArrays"
+		test([]string{base}, base, true, true)
+	})
+
+	t.Run("Square", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/07 - Square"
+		test([]string{base}, base, true, true)
+	})
+
+	t.Run("Pong", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/08 - Pong"
+		test([]string{base}, base, true, true)
+	})
+}
