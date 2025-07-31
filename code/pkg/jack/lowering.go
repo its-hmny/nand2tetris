@@ -386,6 +386,8 @@ func (l *Lowerer) HandleExpression(expr Expression) ([]vm.Operation, error) {
 		return l.HandleLiteralExpr(tExpr)
 	case ArrayExpr:
 		return l.HandleArrayExpr(tExpr)
+	case CastExpr:
+		return l.HandleCastExpr(tExpr)
 	case UnaryExpr:
 		return l.HandleUnaryExpr(tExpr)
 	case BinaryExpr:
@@ -495,6 +497,11 @@ func (l *Lowerer) HandleArrayExpr(expression ArrayExpr) ([]vm.Operation, error) 
 		vm.MemoryOp{Operation: vm.Pop, Segment: vm.Pointer, Offset: 1},
 		vm.MemoryOp{Operation: vm.Push, Segment: vm.That, Offset: 0},
 	), nil
+}
+
+// Specialized function to convert a 'jack.CastExpr' to a list of 'vm.Operation'.
+func (l *Lowerer) HandleCastExpr(expression CastExpr) ([]vm.Operation, error) {
+	return nil, nil // Cast are used only at the typecheck level
 }
 
 // Specialized function to convert a 'jack.UnaryExpr' to a list of 'vm.Operation'.

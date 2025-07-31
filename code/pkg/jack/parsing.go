@@ -99,6 +99,8 @@ var (
 
 	pArrayExpr = ast.And("array_expr", nil, pIdent, pc.Atom("[", "RSQUARE"), &pExpr, pc.Atom("]", "LSQUARE"))
 
+	pCastExpr = ast.And("cast_expr", nil, pLSquare, pDataType, pRSquare, &pTerm)
+
 	pUnaryExpr = ast.And("unary_expr", nil,
 		// Unary operations supported by the Jack language (boolean and arithmetic negation)
 		ast.OrdChoice("op", nil, pc.Atom("-", "NEGATION"), pc.Atom("~", "BOOL_NEG")),
@@ -134,13 +136,15 @@ var (
 	// NOTE: An ident cannot begin with a leading digit (a symbol is indeed allowed).
 	pIdent = pc.Token(`[A-Za-z_$:][0-9a-zA-Z_$:]*`, "IDENT")
 
-	pDot    = pc.Atom(".", "DOT")
-	pSemi   = pc.Atom(";", "SEMI")
-	pComma  = pc.Atom(",", "COMMA")
-	pLParen = pc.Atom("(", "LPAREN")
-	pRParen = pc.Atom(")", "RPAREN")
-	pLBrace = pc.Atom("{", "LBRACE")
-	pRBrace = pc.Atom("}", "RBRACE")
+	pDot     = pc.Atom(".", "DOT")
+	pSemi    = pc.Atom(";", "SEMI")
+	pComma   = pc.Atom(",", "COMMA")
+	pLParen  = pc.Atom("(", "LPAREN")
+	pRParen  = pc.Atom(")", "RPAREN")
+	pLBrace  = pc.Atom("{", "LBRACE")
+	pRBrace  = pc.Atom("}", "RBRACE")
+	pLSquare = pc.Atom("[", "LSQUARE")
+	pRSquare = pc.Atom("]", "RSQUARE")
 
 	// Different types of field declarations, each has its own meaning:
 	// - field: For classic OOP-like fields (accessed only by the object instance)
@@ -167,7 +171,7 @@ var (
 func init() {
 	pStatement = ast.OrdChoice("item", nil, pDoStmt, pVarStmt, pLetStmt, pIfStmt, pWhileStmt, pReturnStmt)
 
-	pExpr = ast.OrdChoice("expression", nil, pBinaryExpr, pUnaryExpr, pFunCallExpr, pArrayExpr, pLiteral, pIdent, ast.And("subexpr", nil, pLParen, &pExpr, pRParen))
+	pExpr = ast.OrdChoice("expression", nil, pBinaryExpr, pUnaryExpr, pCastExpr, pFunCallExpr, pArrayExpr, pLiteral, pIdent, ast.And("subexpr", nil, pLParen, &pExpr, pRParen))
 	pTerm = ast.OrdChoice("term", nil, pFunCallExpr, pArrayExpr, pLiteral, pIdent, ast.And("subexpr", nil, pLParen, &pExpr, pRParen))
 }
 
@@ -609,6 +613,13 @@ func (p *Parser) HandleExpression(node pc.Queryable) (Expression, error) {
 		}
 		return expr, nil
 
+	case "cast_expr":
+		expr, err := p.HandleCastExpr(node)
+		if err != nil {
+			return nil, fmt.Errorf("failed to handle 'unary' expression: %w", err)
+		}
+		return expr, nil
+
 	case "unary_expr":
 		expr, err := p.HandleUnaryExpr(node)
 		if err != nil {
@@ -675,6 +686,31 @@ func (p *Parser) HandleArrayExpr(node pc.Queryable) (Expression, error) {
 	}
 
 	return ArrayExpr{Var: array, Index: expr}, nil
+}
+
+// Specialized function to convert a "cast_expr" node to a 'jack.CastExpr'.
+func (p *Parser) HandleCastExpr(node pc.Queryable) (Expression, error) {
+	if node.GetName() != "cast_expr" {
+		return nil, fmt.Errorf("expected node 'cast_expr', got %s", node.GetName())
+	}
+	if len(node.GetChildren()) != 4 {
+		return nil, fmt.Errorf("expected node with 4 leaf, got %d", len(node.GetChildren()))
+	}
+
+	cast, target := DataType{}, node.GetChildren()[1].GetValue()
+	// Primitive data types (int, string, bool) are handled differently than complex objects
+	if builtin := MainType(target); builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array {
+		cast = DataType{Main: MainType(target)}
+	} else {
+		cast = DataType{Main: Object, Subtype: target}
+	}
+
+	rhs, err := p.HandleExpression(node.GetChildren()[3])
+	if err != nil {
+		return nil, fmt.Errorf("failed to handle left-hand side expression: %w", err)
+	}
+
+	return CastExpr{Type: cast, Rhs: rhs}, nil
 }
 
 // Specialized function to convert a "unary_expr" node to a 'jack.UnaryExpr'.

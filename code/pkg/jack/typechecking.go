@@ -251,6 +251,8 @@ func (tc *TypeChecker) HandleExpression(expr Expression) (DataType, error) {
 		return tc.HandleLiteralExpr(tExpr)
 	case ArrayExpr:
 		return tc.HandleArrayExpr(tExpr)
+	case CastExpr:
+		return tc.HandleCastExpr(tExpr)
 	case UnaryExpr:
 		return tc.HandleUnaryExpr(tExpr)
 	case BinaryExpr:
@@ -315,7 +317,17 @@ func (tc *TypeChecker) HandleArrayExpr(expression ArrayExpr) (DataType, error) {
 	return DataType{Main: Wildcard}, nil
 }
 
-// Specialized function to extract the DataType of a 'jack.ArrayExpr'.
+// Specialized function to extract the DataType of a 'jack.CastExpr'.
+func (tc *TypeChecker) HandleCastExpr(expression CastExpr) (DataType, error) {
+	_, err := tc.HandleExpression(expression.Rhs)
+	if err != nil {
+		return DataType{}, fmt.Errorf("error handling nested expression: %w", err)
+	}
+
+	return expression.Type, nil
+}
+
+// Specialized function to extract the DataType of a 'jack.UnaryExpr'.
 func (tc *TypeChecker) HandleUnaryExpr(expression UnaryExpr) (DataType, error) {
 	nested, err := tc.HandleExpression(expression.Rhs)
 	if err != nil {

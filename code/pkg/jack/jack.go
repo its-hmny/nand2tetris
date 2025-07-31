@@ -121,6 +121,11 @@ type ArrayExpr struct { // Extracts the value of a single cell/element for an ar
 	Index Expression // The index of the value we want to extract
 }
 
+type CastExpr struct {
+	Type DataType
+	Rhs  Expression
+}
+
 type UnaryExpr struct { // Applies a transformation to 1 expression to produce a new value
 	Type ExprType   //  Here only 'Minus' and 'BoolNot' are allowed
 	Rhs  Expression // UnaryExpr do only apply to the expr on the Right Hand Side
@@ -189,9 +194,6 @@ type DataType struct {
 func (actual DataType) Matches(expected DataType) bool {
 	if actual.Main == Wildcard || expected.Main == Wildcard {
 		return true
-	}
-	if expected.Main == Array && actual.Main == Object {
-		return true // Allows downcasting from Objects to raw memory cells
 	}
 
 	return actual == expected
