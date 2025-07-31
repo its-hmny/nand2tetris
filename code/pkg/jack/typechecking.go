@@ -370,7 +370,7 @@ func (tc *TypeChecker) HandleBinaryExpr(expression BinaryExpr) (DataType, error)
 	case Plus, Minus, Divide, Multiply:
 		return rhs, nil // Also lhs should be fine since they are the same DataType
 	case BoolOr, BoolAnd, BoolNot:
-		return DataType{Main: Bool}, nil
+		return rhs, nil
 	case Equal, LessThan, GreatThan:
 		return DataType{Main: Bool}, nil
 	default:

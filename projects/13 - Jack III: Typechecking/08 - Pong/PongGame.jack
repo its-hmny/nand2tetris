@@ -64,7 +64,7 @@ class PongGame {
 
         while (~exit) {
             // waits for a key to be pressed.
-            while ([boolean]((key = 0) & (~exit))) {
+            while ((key = 0) & (~exit)) {
                 let key = [int]Keyboard.keyPressed();
                 do bat.move();
                 do moveBall();
@@ -80,7 +80,7 @@ class PongGame {
             }
 
             // Waits for the key to be released.
-            while ([boolean]((~(key = 0)) & (~exit))) {
+            while ((~(key = 0)) & (~exit)) {
                 let key = [int]Keyboard.keyPressed();
                 do bat.move();
                 do moveBall();
@@ -107,7 +107,7 @@ class PongGame {
 
         let wall = ball.move();
 
-        if ([boolean]((wall > 0) & (~(wall = lastWall)))) {
+        if ((wall > 0) & (~(wall = lastWall))) {
             let lastWall = wall;
             let bouncingDirection = 0;
             let batLeft = bat.getLeft();
@@ -116,7 +116,7 @@ class PongGame {
             let ballRight = ball.getRight();
   
             if (wall = 4) {
-                let exit = [boolean]((batLeft > ballRight) | (batRight < ballLeft));
+                let exit = (batLeft > ballRight) | (batRight < ballLeft);
                 if (~exit) {
                     if (ballRight < (batLeft + 10)) { let bouncingDirection = -1; }
                     else {
