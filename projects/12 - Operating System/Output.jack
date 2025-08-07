@@ -16,8 +16,8 @@
  */
 class Output {
 
-    static int cursorX; // Keeps track of where to draw the next char (x-axis)
-    static int cursorY; // Keeps track of where to draw the next char (y-axis)
+    static int cursorX; // Keeps track of in which cell to draw the next char (x-axis)
+    static int cursorY; // Keeps track of in which cell to draw the next char (y-axis)
     static Array charMaps; // Character map for displaying characters (also known as rasterizer)
 
     /** Initializes the screen, and locates the cursor at the screen's top-left. */
@@ -75,7 +75,7 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        do Output.create(65,24,24,70,70,102,195,102,195,195,0,0); // A
+        do Output.create(65,12,30,51,51,63,51,51,51,51,0,0); // A
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
         do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -179,29 +179,34 @@ class Output {
 
     /** Moves the cursor to the j-th column of the i-th row, and erases the character displayed there. */
     function void moveCursor(int i, int j) {
-        let cursorY = i; let cursorX = j; 
+        let cursorY = i; let cursorX = j; // Moves the cursor to the desired position
+        do Output.printChar(32);          // Wipes out the previous char with a blank char
+        let cursorY = i; let cursorX = j; // Restore the cursor position before returning
+
         return;
     }
     
     /** Displays the given character at the cursor location, and advances the cursor one column forward. */
     function void printChar(char c) {
-        var int i, j; var Array bitmap;
-        let i = 0; let j = 0; let bitmap = Output.getMap(c);
+        // Row and column of the bitmap, the bitmask for each pixel ans the bitmap itself
+        var int i, j, mask; var Array bitmap;
+        let i = 0; let j = 0; let mask = 1; let bitmap = Output.getMap(c);
 
         while (i < 11) { // For each row of the bitmap (a row is just a byte)
-            let j = 0;
+            let j = 0; let mask = 1;
             
             while (j < 8) {
-                do Screen.drawPixel(cursorX + j, cursorY + i);
-                let j = j +1;
+                do Screen.setColor((bitmap[i] & mask) > 0);
+                do Screen.drawPixel((cursorX * 8) + j, (cursorY * 11) + i);
+                let j = j +1; let mask = mask * 2;
             }
             
             let i = i + 1;
         }
 
-        do Output.moveCursor(cursorX + 8, cursorY + 11);
+        let cursorY = cursorY; let cursorX = cursorX + 1;
         // We printed the last char available in the row, time to move on to the next
-        if (cursorX > 8 *63) { do Output.println(); }
+        if (cursorX > 63) { do Output.println(); }
 
         return;
     }
@@ -220,8 +225,10 @@ class Output {
     
     /** Displays the given integer starting at the cursor location, and advances the cursor appropriately. */
     function void printInt(int i) {
-        // '65536' is the max number representable in the Hack architecture and is 5 digit long
-        var String converted; let converted = String.new(5);
+        // '65536' is the max number representable in the Hack architecture and is 5 digit
+        // long if we considered signed integer then 6 (counting also the - sign basically).
+        var String converted; let converted = String.new(6);
+        do converted.setInt(i);
         do Output.printString(converted);
         do converted.dispose();
         return;
@@ -230,30 +237,30 @@ class Output {
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
         // We're at the last line of the screen, move back to the 1st one
-        if (cursorY > (22 * 11)) {
-            do Output.moveCursor(0, 0);
+        if ((cursorY > 22) | cursorY = 22) {
+            let cursorY = 0; let cursorX = 0;
             return;
         }
 
-        do Output.moveCursor(cursorY + 11, 0);
+        let cursorY = cursorY + 1; let cursorX = 0;
         return;
     }
     
     /** Moves the cursor one column back. */
     function void backSpace() {
-        if (cursorX = 0 & cursorY = 0) { return; }
+        if ((cursorX = 0) & (cursorY = 0)) { return; }
     
         // We're at the beginning of the line and not the first line
-        if (cursorX = 0 & cursorY > 0) {
-            do Output.moveCursor(cursorY - 11, (64 -1) * 8); // 1st time to wipe the char
-            do Output.printString(32); // Blank character, will wipe the pixel
-            do Output.moveCursor(cursorY - 11, (64 -1) * 8); // 2nd time to allow future overwriting
+        if ((cursorX = 0) & (cursorY > 0)) {
+            let cursorY = cursorY - 1; let cursorX = 63;  // 1st time to wipe the char
+            do Output.printChar(32);                      // Blank character, will wipe the pixel
+            let cursorY = cursorY - 1; let cursorX = 63;  // 2nd time to allow future overwriting
             return;
         }
 
-        do Output.moveCursor(cursorY, cursorX - 8); // 1st time to wipe the char
-        do Output.printString(32); // Blank character, will wipe the pixel
-        do Output.moveCursor(cursorY, cursorX - 8);// 2nd time to allow future overwriting
+        let cursorY = cursorY; let cursorX = cursorX - 1; // 1st time to wipe the char
+        do Output.printChar(32);                          // Blank character, will wipe the pixel
+        let cursorY = cursorY; let cursorX = cursorX - 1; // 2nd time to allow future overwriting
         return;
     }
 }
