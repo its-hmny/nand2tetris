@@ -72,8 +72,8 @@ class Math {
         // will mean that we can support negative number somewhat easily.
         if ((x < 0 & y > 0) | (x > 0 & y < 0)) { let sign = -1; }
 
-        while ((x > y) | (x = y)) {
-            let x  = x - y; let q = q + 1;
+        while ((absX > absY) | (absX = absY)) {
+            let absX  = absX - absY; let q = q + 1;
         }
 
         return q * sign;

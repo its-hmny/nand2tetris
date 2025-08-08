@@ -130,19 +130,19 @@ neg
 pop local 3
 label IF_FALSE1
 label WHILE_EXP0
-push argument 0
-push argument 1
+push local 0
+push local 1
 gt
-push argument 0
-push argument 1
+push local 0
+push local 1
 eq
 or
 not
 if-goto WHILE_END0
-push argument 0
-push argument 1
+push local 0
+push local 1
 sub
-pop argument 0
+pop local 0
 push local 2
 push constant 1
 add
