@@ -10,9 +10,12 @@ add
 pop pointer 1
 push that 0
 return
-function Keyboard.readChar 1
+function Keyboard.readChar 2
 call Keyboard.keyPressed 0
 pop local 0
+push constant 1
+neg
+pop local 1
 label WHILE_EXP0
 push local 0
 push constant 0
@@ -24,14 +27,14 @@ pop local 0
 goto WHILE_EXP0
 label WHILE_END0
 label WHILE_EXP1
-push local 0
+push local 1
 push constant 0
 eq
 not
 not
 if-goto WHILE_END1
 call Keyboard.keyPressed 0
-pop local 0
+pop local 1
 goto WHILE_EXP1
 label WHILE_END1
 push local 0
@@ -42,12 +45,21 @@ goto IF_FALSE0
 label IF_TRUE0
 call Output.backSpace 0
 pop temp 0
-goto IF_END0
 label IF_FALSE0
+push local 0
+call String.newLine 0
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+call Output.println 0
+pop temp 0
+goto IF_END1
+label IF_FALSE1
 push local 0
 call Output.printChar 1
 pop temp 0
-label IF_END0
+label IF_END1
 push local 0
 return
 function Keyboard.readLine 2
@@ -66,12 +78,12 @@ push constant 128
 lt
 push local 1
 call String.length 1
-or
 push constant 128
 eq
+or
 not
 if-goto WHILE_END0
-call Keyboard.keyPressed 0
+call Keyboard.readChar 0
 pop local 0
 push local 0
 call String.newLine 0
@@ -88,6 +100,8 @@ eq
 if-goto IF_TRUE1
 goto IF_FALSE1
 label IF_TRUE1
+call Output.backSpace 0
+pop temp 0
 push local 1
 call String.eraseLastChar 1
 pop temp 0
