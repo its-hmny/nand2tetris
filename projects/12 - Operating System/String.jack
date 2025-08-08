@@ -35,21 +35,21 @@ class String {
     method int length() {
         var int len; let len = 0;
         while (~(buffer[len] = 0)) { let len = len + 1; }
-        return len;
+        return Math.min(len, size);
     }
 
     /** Returns the character at the j-th location of this string. */
     method char charAt(int j) {
-        // out of bounds access to the string
-        if (j < 0 | j > length() | j = length()) { return 0; }
+        // Out of bounds access to the string
+        if ((j < 0) | (j > length()) | (j = length())) { return 0; }
 
         return buffer[j];
     }
 
     /** Sets the character at the j-th location of this string to c. */
     method void setCharAt(int j, char c) {
-        // out of bounds access to the string
-        if (j < 0 | j > length() | j = length()) { return; }
+        // Out of bounds access to the string
+        if ((j < 0) | (j > length()) | (j = length())) { return; }
 
         let buffer[j] = c;
         return;
@@ -90,33 +90,40 @@ class String {
 
     /** Sets this string to hold a representation of the given value. */
     method void setInt(int val) {
-        // The 2nd let statement is a poor-man remainder op (read it as val % 10)
-        var int i, digit; let i = 0; let digit = val - ((val / 10) * 10);
+        var int i; let i = length() - 1;
+        while ((i > 0) | (i = 0)) { let buffer[i] = 0; let i = i - 1; } // Wipes the previous string
 
-        if (val < 0) {
-            let i = 1; // start writing from the second char
-            let val = -val; // convert the value to be positive 
-            let buffer[0] = 45; // set the first char of the string to '-'
-        }
+        if (val < 0) { do appendChar(45); } // Set the first char of the string to '-'
+        
+        do setPositiveInt(Math.abs(val));  // Starts writing the positive part
+        return;
+    }
+
+    // Helper method  to convert an int to string
+    method void setPositiveInt(int val) {
+        // A poor-man remainder op (read it as val % 10)
+        var int digit, tmp;
 
         if (val < 10) {
-            let buffer[i] = val + 48; // convert the digit to its ASCII code
-            return; // no need to continue if the value is a single digit
-        }
+            do appendChar(val + 48); // Converts the digit to its ASCII code
+            return; // No need to continue if the value is just a single digit
+        } else {
+            do setPositiveInt(val / 10); // Recursively call to set the next digit
+        } 
 
-        do setInt(val / 10); // recursively call to set the next digit
+        let digit = val - ((val / 10) * 10);
         do appendChar(digit + 48); // append the current digit as a char
         return;
     }
 
     /** Returns the new line character. */
     function char newLine() {
-        return 10; // ASCII code for newline
+        return 128; // ASCII code for newline
     }
 
     /** Returns the backspace character. */
     function char backSpace() {
-        return 8; // ASCII code for backspace
+        return 129; // ASCII code for backspace
     }
 
     /** Returns the double quote (") character. */

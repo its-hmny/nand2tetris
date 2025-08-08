@@ -40,6 +40,8 @@ pop local 0
 goto WHILE_EXP0
 label WHILE_END0
 push local 0
+push this 0
+call Math.min 2
 return
 function String.charAt 0
 push argument 0
@@ -48,15 +50,15 @@ push argument 1
 push constant 0
 lt
 push argument 1
-or
 push pointer 0
 call String.length 1
 gt
-push argument 1
 or
+push argument 1
 push pointer 0
 call String.length 1
 eq
+or
 if-goto IF_TRUE0
 goto IF_FALSE0
 label IF_TRUE0
@@ -76,15 +78,15 @@ push argument 1
 push constant 0
 lt
 push argument 1
-or
 push pointer 0
 call String.length 1
 gt
-push argument 1
 or
+push argument 1
 push pointer 0
 call String.length 1
 eq
+or
 if-goto IF_TRUE0
 goto IF_FALSE0
 label IF_TRUE0
@@ -213,11 +215,82 @@ push local 2
 push local 1
 call Math.multiply 2
 return
-function String.setInt 2
+function String.setInt 1
 push argument 0
 pop pointer 0
-push constant 0
+push pointer 0
+call String.length 1
+push constant 1
+sub
 pop local 0
+label WHILE_EXP0
+push local 0
+push constant 0
+gt
+push local 0
+push constant 0
+eq
+or
+not
+if-goto WHILE_END0
+push local 0
+push this 1
+add
+push constant 0
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 0
+push constant 1
+sub
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push argument 1
+push constant 0
+lt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push pointer 0
+push constant 45
+call String.appendChar 2
+pop temp 0
+label IF_FALSE0
+push pointer 0
+push argument 1
+call Math.abs 1
+call String.setPositiveInt 2
+pop temp 0
+push constant 0
+return
+function String.setPositiveInt 2
+push argument 0
+pop pointer 0
+push argument 1
+push constant 10
+lt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push pointer 0
+push argument 1
+push constant 48
+add
+call String.appendChar 2
+pop temp 0
+push constant 0
+return
+goto IF_END0
+label IF_FALSE0
+push pointer 0
+push argument 1
+push constant 10
+call Math.divide 2
+call String.setPositiveInt 2
+pop temp 0
+label IF_END0
 push argument 1
 push argument 1
 push constant 10
@@ -225,54 +298,9 @@ call Math.divide 2
 push constant 10
 call Math.multiply 2
 sub
-pop local 1
-push argument 1
-push constant 0
-lt
-if-goto IF_TRUE0
-goto IF_FALSE0
-label IF_TRUE0
-push constant 1
 pop local 0
-push argument 1
-neg
-pop argument 1
-push constant 0
-push this 1
-add
-push constant 45
-pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
-label IF_FALSE0
-push argument 1
-push constant 10
-lt
-if-goto IF_TRUE1
-goto IF_FALSE1
-label IF_TRUE1
+push pointer 0
 push local 0
-push this 1
-add
-push argument 1
-push constant 48
-add
-pop temp 0
-pop pointer 1
-push temp 0
-pop that 0
-push constant 0
-return
-label IF_FALSE1
-push pointer 0
-push argument 1
-push constant 10
-call Math.divide 2
-call String.setInt 2
-pop temp 0
-push pointer 0
-push local 1
 push constant 48
 add
 call String.appendChar 2
@@ -280,10 +308,10 @@ pop temp 0
 push constant 0
 return
 function String.newLine 0
-push constant 10
+push constant 128
 return
 function String.backSpace 0
-push constant 8
+push constant 129
 return
 function String.doubleQuote 0
 push constant 34
