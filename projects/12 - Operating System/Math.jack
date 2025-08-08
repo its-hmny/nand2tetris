@@ -61,9 +61,9 @@ class Math {
      *  Thus, x/y and Math.divide(x,y) return the same value.
      */
     function int divide(int x, int y) {
-        var int absX, absY, q, sign;
+        // TODO I want the basic fucking division algorithm
+        var int absX, absY, q, sign; let sign = 1; let q = 0;
         let absX = Math.abs(x); let absY = Math.abs(y); 
-        let sign = 1; let q = 0;
         
         if (absY > absX) { return 0; } // Early return in recursive calls
 
@@ -72,12 +72,11 @@ class Math {
         // will mean that we can support negative number somewhat easily.
         if ((x < 0 & y > 0) | (x > 0 & y < 0)) { let sign = -1; }
 
-        let q = Math.divide(absX, absY + absY);  // Instead of 'q * 2' to avoid stack overflow
-        if ((absX - (2 * (q * absY))) < absY) {
-            return (q + q) * sign; // Instead of 'q * 2' to avoid stack overflow
-        } else {
-           return ((q + q) + 1) * sign;  // Instead of 'q * 2' to avoid stack overflow
+        while ((x > y) | (x = y)) {
+            let x  = x - y; let q = q + 1;
         }
+
+        return q * sign;
     }
 
     /** Returns the integer part of the square root of x. */
