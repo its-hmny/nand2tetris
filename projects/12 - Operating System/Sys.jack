@@ -13,8 +13,8 @@ class Sys {
     /** Performs all the initializations required by the OS. */
     function void init() {
         // Initializes the OS helper libraries and device managers 
-        do Math.init(); do Output.init(); do Memory.init();
-        do Screen.init(); do Keyboard.init();
+        do Screen.init(); do Keyboard.init(); // I/O devices
+        do Memory.init(); do Math.init(); do Output.init();
 
         do Main.main(); // Gives control to the main class (also user program)
         
