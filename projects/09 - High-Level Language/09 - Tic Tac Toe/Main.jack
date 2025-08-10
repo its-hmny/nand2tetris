@@ -1,0 +1,46 @@
+class Main {
+    static Grid grid;
+    static Cursor cursor;
+    static int player, key;
+    
+    function void main() {
+        let player = 1; let key = 0;
+        let grid = Grid.new(20, 20, 60); let cursor = Cursor.new(20, 20, 15);
+        
+        while (true) {
+            do Screen.clearScreen(); do Screen.setColor(true);
+            do grid.render(); do cursor.render();
+            
+            do Output.moveCursor(20,30);
+            do Output.printString("Player: ");
+            do Output.printInt(player);
+
+            let key = Keyboard.keyPressed();
+            if (key = 130) { do cursor.move(0, -1); }  // Left
+            if (key = 131) { do cursor.move(-1, 0); }  // Up
+            if (key = 132) { do cursor.move(0, 1); }   // Right
+            if (key = 133) { do cursor.move(1, 0); }   // Down
+            if (key = 128) { do Main.mark(); }         // Enter
+            
+            do Sys.wait(250);
+        }
+
+        return;
+    }
+
+    function void mark() {
+        var int row, column;
+        let row = cursor.getRow(); let column = cursor.getCol();
+        if (~(grid.getCell(row, column) = 0)) {
+            // TODO: Print something here, like an error message
+            return; 
+        }
+
+        do grid.setCell(row, column, player);
+        
+        if (player = 1) { let player = 2; }
+        else { let player = 1; }
+
+        return;
+    }
+}

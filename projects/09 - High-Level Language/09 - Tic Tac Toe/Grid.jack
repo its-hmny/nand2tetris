@@ -1,0 +1,55 @@
+class Grid {
+    field Array cells; // 0 = empty, 1 = player X, 2 = player O
+    field int x, y, gridSize;
+
+    constructor Grid new(int centerX, int centerY, int size) {
+        let cells = Array.new(9);
+        let x = centerX; let y = centerY; let gridSize = size;
+        do clear();
+        
+        return this;
+    }
+
+    method int getCell(int row, int col) { return cells[(row * 3) + col]; }
+    
+    method void clear() {
+        var int i; let i = 0;
+        while (i < 9) { let cells[i] = 0; let i = i + 1; }
+        return;
+    }
+
+    method void setCell(int row, int col, int player) {
+        let cells[(row * 3) + col] = player;
+        return;
+    }
+
+    method void render() {
+        var int row, col, x, y, val;
+        let row = 0; let col = 0;
+        
+        while (row < 3) {
+            let col = 0;
+        
+            while (col < 3) {
+                // ? let x = x + (col * gridSize);
+                // ? let y = y + (row * gridSize);
+                // ? do Screen.drawRectangle(x, y, x + gridSize, y + gridSize);
+                
+                // let val = getCell(row, col);
+                // if (val = 1) {
+                //     do Screen.drawLine(x, y, x + gridSize, y + gridSize);
+                //     do Screen.drawLine(x + gridSize, y, x, y + gridSize);
+                // }
+                // if (val = 2) {
+                //     do Screen.drawCircle(x + (gridSize / 2), y + (gridSize / 2), gridSize / 2 - 2);
+                // }
+                
+                let col = col + 1;
+            }
+            
+            let row = row + 1;
+        }
+
+        return;
+    }
+}
