@@ -1,0 +1,118 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+
+/** A library of commonly used mathematical functions.
+ *  All functions runs in O(n), where n is the number of bits used
+ *  for representing a two's complement integer value (16 in the Hack computer). 
+ *  Note: Jack compilers implement multiplication and division
+ *  using calls to OS functions in this class.
+ */
+class Math {
+    static int n;             // Number of bits used for representing a two's complement integer
+    static Array powersOfTwo; // Stores 2^0, 2^1, 2^2,..., 2^(n-1)
+
+    // Initializes the Math library.
+    function void init() {
+        var int i, pow; let i = 0; let pow = 1;
+
+        // Number of bits in the Hack computer (also word size in the Hack architecture)
+        let n = 16; let powersOfTwo = Array.new(n);
+      
+        while (i < n) {
+            let powersOfTwo[i] = pow;
+            let pow = pow + pow;
+            let i = i + 1;
+        }
+        
+        return;
+    }
+
+    /** 
+     *  Returns the product of x and y. 
+     *  When a Jack compiler detects the multiplication operator '*'
+     *  in an expression, it handles it by invoking this method. 
+     *  Thus, in Jack, x * y and Math.multiply(x,y) return the same value.
+     */
+    function int multiply(int x, int y) {
+        var int j, sum, shiftedX;
+        let j = 0; let sum = 0; let shiftedX =  x;
+        
+        if (x = 0 | y = 0) { return 0; }
+
+        while (j < n) {
+            if (y & powersOfTwo[j])  {
+                let sum = sum + shiftedX;   
+            }
+            // There's no Math.pow nor Math.multiply, nor bitshifting operatins at this level
+            // leaving as only option for multiplication by two the classic addition.
+            let shiftedX = shiftedX + shiftedX;
+            let j = j + 1;
+        }
+
+        return sum;
+    }
+
+    /** 
+     *  Returns the integer part of x / y.
+     *  When a Jack compiler detects the division operator '/'
+     *  an an expression, it handles it by invoking this method.
+     *  Thus, x/y and Math.divide(x,y) return the same value.
+     */
+    function int divide(int x, int y) {
+        // TODO I want the basic fucking division algorithm
+        var int absX, absY, q, sign; let sign = 1; let q = 0;
+        let absX = Math.abs(x); let absY = Math.abs(y); 
+        
+        if (absY > absX) { return 0; } // Early return in recursive calls
+
+        // When the sign is discordant we revert the sign variable and move forward with the
+        // absolute values. Before returning we will revert back to the final sign. Doing so
+        // will mean that we can support negative number somewhat easily.
+        if ((x < 0 & y > 0) | (x > 0 & y < 0)) { let sign = -1; }
+
+        while ((absX > absY) | (absX = absY)) {
+            let absX  = absX - absY; let q = q + 1;
+        }
+
+        return q * sign;
+    }
+
+    /** Returns the integer part of the square root of x. */
+    function int sqrt(int x) {
+        var int y, j, tmp, squared_tmp;
+        let y = 0; let j = (n / 2) - 1;
+
+        while ((j > 0) | (j = 0)) {
+            // Get the current candidate of two (candadate for the square root)
+            let tmp = y + powersOfTwo[j]; let squared_tmp = tmp * tmp;
+            // The first check is against integer overflow that may happen
+            if ((squared_tmp > 0) & ((squared_tmp < x) | (squared_tmp = x))) { 
+                let y = y + powersOfTwo[j];
+            }
+            
+            let j = j -1;
+        }
+
+        return y;
+    }
+
+    /** Returns the greater value. */
+    function int max(int a, int b) {
+        if (a > b) { return a; } 
+        return b;
+    }
+
+    /** Returns the smaller value. */
+    function int min(int a, int b) {
+        if (a < b) { return a; }
+        return b;
+    }
+
+    /** Returns the absolute value of x */
+    function int abs(int x) {
+        if (x < 0) { return -x; }
+        return x;
+    }
+}

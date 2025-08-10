@@ -1,0 +1,143 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Screen.jack
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 512 rows (indexed 0..511, top to bottom)
+ * of 256 pixels each (indexed 0..255, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+
+    static Array screen; // The screen memory, where each pixel is represented by a bit
+    static boolean color; // The current color, true for black, false for white 
+
+    /** Initializes the Screen. */
+    function void init() {
+        let screen = 16384; // Base address of the memory mapped Screen
+        let color = true; // Default color is black
+        return;
+    }
+
+    /** Erases the entire screen. */
+    function void clearScreen() {
+        var int cursor; let cursor = 0;
+        
+        while (cursor < 8192) {
+            let screen[cursor] = 0; // Set the pixel to white (background color)
+            let cursor = cursor + 1;
+        }
+        
+        return;
+    }
+
+    /** 
+     *  Sets the current color, to be used for all subsequent drawXXX commands.
+     *  Black is represented by true, white by false.
+     */
+    function void setColor(boolean b) {
+        let color = b;
+        return;
+    }
+
+    /** Draws the (x,y) pixel, using the current color. */
+    function void drawPixel(int x, int y) {
+        var int address, bit, bitmask, i;
+        // 1) The address of the word that contains the pixel
+        let address = (32 * y) + (x / 16);
+        // 2) The specific nth bit of the word to set (w/ poor-man remainder op)
+        let bit = x - ((x / 16) * 16);
+        
+        // 3 Create the bitmask so that by setting to 1 the nth bit
+        let bitmask = 1; let i = 0;
+        while (~(i = bit)) {
+            let bitmask = bitmask * 2; // Shift left
+            let i = i + 1;
+        }
+
+        // In one case we want to light up the bit in the other we want to turn it off
+        if (color) { let screen[address] = screen[address] | bitmask; }
+        else { let screen[address] = screen[address] & ~bitmask; }
+
+        return;
+    }
+
+    /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+        var int minX, minY, maxX, maxY, dx, dy, a, b, c, ma, mb;
+        // Without this, we would not be able to draw lines when the coordinates are unsorted
+        let minX = Math.min(x1, x2); let minY = Math.min(y1, y2);
+        let maxX = Math.max(x1, x2); let maxY = Math.max(y1, y2);
+        // Without this, we would not be able to draw oblique lines
+        let dx = x2 - x1; let dy = y2 - y1; let a = 0; let b = 0; let c = 0;
+
+        if (y1 = y2) { // Straight horizontal line (optimization)
+            while ((minX < maxX) | (minX = maxX)) {
+                do Screen.drawPixel(minX, y1);
+                let minX = minX + 1;
+            }
+
+            return;
+        }
+
+        if (x1 = x2) { // Straight vertical line (optimization)
+            while ((minY < maxY) | (minY = maxY)) {
+                do Screen.drawPixel(x1, minY);
+                let minY = minY + 1;
+            }
+
+            return;
+        }
+
+        if (dx > 0) { let ma = 1; }  // Positive slope on the x axis
+        if (dx < 0) { let ma = -1; } // Negative slope on the x axis
+        if (dy > 0) { let mb = 1; }  // Positive slope on the y axis
+        if (dy < 0) { let mb = -1; } // Negative slope on the y axis
+
+        // This is a performance optimization, from this point onwards the sign is not needed and
+        // actively problematic for the execution, this allows to avoid lots of call to Math.abs(). 
+        let dx = Math.abs(dx); let dy = Math.abs(dy);
+
+        while ((~(a > dx)) & (~(b > dy))) {
+            do Screen.drawPixel(x1 + (a * ma), y1 + (b * mb));
+            // If the x coordinate is more than the y coordinate
+            if (c < 0) { let a = a + 1; let c = c + dy; } // Increment x
+            else { let b = b + 1; let c = c - dx; }       // Increment y
+        }
+        
+        return;
+    }
+
+    /** 
+     * Draws a filled rectangle whose top left corner is (x1, y1)
+     * and bottom right corner is (x2,y2), using the current color.
+     */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+        while (x1 < x2) {
+            do Screen.drawLine(x1, y1, x1, y2);
+            let x1 = x1 + 1;
+        }
+
+        return;
+    }
+
+    /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+    function void drawCircle(int x, int y, int r) {
+        var int dx, dy; let dx = 0; let dy = -r; 
+        
+        if  (r > 181) { return; } // Radius out of bounds
+        
+        // This is the 'printer algorithm': basically we print multiple horizontal
+        // lines stacked one after the other of varying lengths (based on the radius)
+        // and how deep in the iteration we are (dy).
+        while ((dy < r) | (dy = r)) {
+            let dx = Math.sqrt((r * r) - (dy * dy));
+            do Screen.drawLine(x - dx, y + dy, x + dx, y + dy);
+            let dy = dy + 1; // Goes the the next line
+        }
+
+        return;
+    }
+}
