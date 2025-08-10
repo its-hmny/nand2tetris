@@ -16,7 +16,7 @@ class Screen {
 
     /** Initializes the Screen. */
     function void init() {
-        let screen = 16384; // Base address of the memory mapped Screen
+        let screen = [Array]16384; // Base address of the memory mapped Screen
         let color = true; // Default color is black
         return;
     }

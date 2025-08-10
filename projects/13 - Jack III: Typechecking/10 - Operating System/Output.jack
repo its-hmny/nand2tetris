@@ -171,16 +171,17 @@ class Output {
     // If the given character is invalid or non-printable, returns the
     // character map of a black square.
     function Array getMap(char c) {
-        if ((c < 32) | (c > 126)) {
-            let c = 0;
+        var int i; let i = [int]c; // Convert char to int index
+        if ((i < 32) | (i > 126)) {
+            let i = 0;
         }
-        return charMaps[c];
+        return charMaps[i];
     }
 
     /** Moves the cursor to the j-th column of the i-th row, and erases the character displayed there. */
     function void moveCursor(int i, int j) {
         let cursorY = i; let cursorX = j; // Moves the cursor to the desired position
-        do Output.printChar(32);          // Wipes out the previous char with a blank char
+        do Output.printChar([char]32);          // Wipes out the previous char with a blank char
         let cursorY = i; let cursorX = j; // Restore the cursor position before returning
 
         return;
@@ -254,13 +255,13 @@ class Output {
         // We're at the beginning of the line and not the first line
         if ((cursorX = 0) & (cursorY > 0)) {
             let cursorY = cursorY - 1; let cursorX = 63;  // 1st time to wipe the char
-            do Output.printChar(32);                      // Blank character, will wipe the pixel
+            do Output.printChar([char]32);                      // Blank character, will wipe the pixel
             let cursorY = cursorY - 1; let cursorX = 63;  // 2nd time to allow future overwriting
             return;
         }
 
         let cursorY = cursorY; let cursorX = cursorX - 1; // 1st time to wipe the char
-        do Output.printChar(32);                          // Blank character, will wipe the pixel
+        do Output.printChar([char]32);                          // Blank character, will wipe the pixel
         let cursorY = cursorY; let cursorX = cursorX - 1; // 2nd time to allow future overwriting
         return;
     }

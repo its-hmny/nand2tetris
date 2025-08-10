@@ -12,7 +12,7 @@ class Keyboard {
 
     /** Initializes the keyboard. */
     function void init() {
-        let key = 24576; // Memory address for keyboard input
+        let key = [Array]24576; // Memory address for keyboard input
         return;
     } 
 
@@ -46,12 +46,12 @@ class Keyboard {
     * of the pressed key.
     */
     function char readChar() {
-        var char c, zero; let c = Keyboard.keyPressed(); let zero = -1;
+        var char c; var int zero; let c = Keyboard.keyPressed(); let zero = -1;
 
         // Wait until a key is pressed
-        while (c = 0) { let c = Keyboard.keyPressed(); }
+        while (c = ([char]0)) { let c = Keyboard.keyPressed(); }
         // Wait until the key is released
-        while (~(zero = 0)) { let zero = Keyboard.keyPressed(); }
+        while (~(zero = 0)) { let zero = [int]Keyboard.keyPressed(); }
         
         // Echo the character to the screen
         if (c = String.backSpace()) { do Output.backSpace(); }
@@ -71,7 +71,7 @@ class Keyboard {
         
         do Output.printString(message);
 
-        let c = 0; let text = String.new(128); // Assuming a max length of 128 characters
+        let c = [char]0; let text = String.new(128); // Assuming a max length of 128 characters
 
         while ((text.length() < 128) | (text.length() = 128)) {
             let c = Keyboard.readChar();

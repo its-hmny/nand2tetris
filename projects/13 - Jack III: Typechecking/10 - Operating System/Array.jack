@@ -15,12 +15,17 @@ class Array {
 
     /** Constructs a new Array of the given size. */
     function Array new(int size) {
-        return Memory.alloc(size);
+        return [Array]Memory.alloc(size);
     }
 
     /** Disposes this array. */
     method void dispose() {
-        do Memory.deAlloc(this);
+        // The conversion here is required because the compiler assumes the class is an (Object, "Array")
+        // while the Memory.deAlloc method expects an (Array, "") datatype. There's no real workaround for
+        // this situation in my opinion given the fact that  we're implementing low level primitive for the
+        // Jack language into itself w/o having in place the proper abstractions (the boundary between the
+        // language and the operating system are way too thin and sometimes even overlapping) 
+        do Memory.deAlloc([Array]this);
         return;
     }
 }

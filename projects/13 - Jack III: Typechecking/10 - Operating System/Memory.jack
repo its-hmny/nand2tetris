@@ -15,7 +15,7 @@ class Memory {
 
     /** Initializes the class. */
     function void init() {
-        let ram = 0; let heap = 2048;
+        let ram = [Array]0; let heap = [Array]2048;
         return;
     }
 
@@ -36,8 +36,8 @@ class Memory {
 
     /** Finds an available RAM block of the given size and returns a reference to its base address. */
     function int alloc(int size) {
-        var int pointer; let pointer = heap; // TODO (hmny): This just a temporary bump allocator a more long term solution will come in due time
-        let heap = heap + size;
+        var int pointer; let pointer = [int]heap; // TODO (hmny): This just a temporary bump allocator a more long term solution will come in due time
+        let heap = [Array](([int]heap) + size);
         return pointer;
     }
 

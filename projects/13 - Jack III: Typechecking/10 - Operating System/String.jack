@@ -21,7 +21,7 @@ class String {
      */
     constructor String new(int maxLength) {
         let size = maxLength;
-        let buffer = Memory.alloc(maxLength);
+        let buffer = [Array]Memory.alloc(maxLength);
         return this;
     }
 
@@ -41,7 +41,7 @@ class String {
     /** Returns the character at the j-th location of this string. */
     method char charAt(int j) {
         // Out of bounds access to the string
-        if ((j < 0) | ((j > length()) | (j = length()))) { return 0; }
+        if ((j < 0) | ((j > length()) | (j = length()))) { return [char]0; }
 
         return buffer[j];
     }
@@ -71,7 +71,7 @@ class String {
 
     /** Returns the integer value of this string, until a non-digit character is detected. */
     method int intValue() {
-        var int i, val, sign; let i = 0; let val = 0; let sign = 1;
+        var int i, c, val, sign; let i = 0; let c = [int]charAt(i); let val = 0; let sign = 1;
 
         // Skips the 1st char when 'parsing' and set the sign to negative
         if (buffer[0] = 45) {
@@ -80,9 +80,9 @@ class String {
         
         // '/' and ':' are the ASCII codes for 47 and 58, respectively,
         // we can use them to check the range of digits is between 0 and 9
-        while ((i < length()) & ((charAt(i) > 47) & (charAt(i) < 58))) {
-            let val = (val * 10) + (charAt(i) - 48);
-            let i = i + 1;
+        while ((i < length()) & ((c > 47) & (c < 58))) {
+            let val = (val * 10) + (c - 48);
+            let i = i + 1; let c = [int]charAt(i);
         }
 
         return sign * val;
@@ -93,7 +93,7 @@ class String {
         var int i; let i = length() - 1;
         while ((i > 0) | (i = 0)) { let buffer[i] = 0; let i = i - 1; } // Wipes the previous string
 
-        if (val < 0) { do appendChar(45); } // Set the first char of the string to '-'
+        if (val < 0) { do appendChar([char]45); } // Set the first char of the string to '-'
         
         do setPositiveInt(Math.abs(val));  // Starts writing the positive part
         return;
@@ -105,29 +105,29 @@ class String {
         var int digit, tmp;
 
         if (val < 10) {
-            do appendChar(val + 48); // Converts the digit to its ASCII code
+            do appendChar([char](val + 48)); // Converts the digit to its ASCII code
             return; // No need to continue if the value is just a single digit
         } else {
             do setPositiveInt(val / 10); // Recursively call to set the next digit
         } 
 
         let digit = val - ((val / 10) * 10);
-        do appendChar(digit + 48); // append the current digit as a char
+        do appendChar([char](digit + 48)); // append the current digit as a char
         return;
     }
 
     /** Returns the new line character. */
     function char newLine() {
-        return 128; // ASCII code for newline
+        return [char]128; // ASCII code for newline
     }
 
     /** Returns the backspace character. */
     function char backSpace() {
-        return 129; // ASCII code for backspace
+        return [char]129; // ASCII code for backspace
     }
 
     /** Returns the double quote (") character. */
     function char doubleQuote() {
-        return 34; // ASCII code for double quote
+        return [char]34; // ASCII code for double quote
     }
 }

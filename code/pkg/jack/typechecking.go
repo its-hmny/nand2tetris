@@ -344,10 +344,7 @@ func (tc *TypeChecker) HandleUnaryExpr(expression UnaryExpr) (DataType, error) {
 		}
 		return DataType{Main: Int}, nil
 	case BoolNot:
-		if !nested.Matches(DataType{Main: Bool}) {
-			return DataType{}, fmt.Errorf("nested expression must be 'bool', got %s", nested)
-		}
-		return DataType{Main: Bool}, nil
+		return nested, nil
 	default:
 		return DataType{}, fmt.Errorf("unrecognized unary expression type: %s", expression.Type)
 	}
