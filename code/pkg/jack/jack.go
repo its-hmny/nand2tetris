@@ -208,7 +208,6 @@ const (
 	Bool   MainType = "boolean"
 	Array  MainType = "Array"
 	Object MainType = "Object"
-	String MainType = "String"
 
 	Wildcard MainType = "*" // Used to skip/ignore typechecking validation (e.g. on null literals or array access)
 )

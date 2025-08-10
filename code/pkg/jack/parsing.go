@@ -306,9 +306,9 @@ func (Parser) HandleFieldDecl(node pc.Queryable) ([]Variable, error) {
 			return nil, fmt.Errorf("expected node 'IDENT', got %s", child.GetName())
 		}
 
-		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := MainType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array {
-			fields = append(fields, Variable{Name: child.GetValue(), VarType: fieldType, DataType: DataType{Main: builtin}})
+		// Primitive data types (int, char, bool) are handled differently than complex objects
+		if primitive := MainType(dataType); primitive == Int || primitive == Bool || primitive == Char || primitive == Array {
+			fields = append(fields, Variable{Name: child.GetValue(), VarType: fieldType, DataType: DataType{Main: primitive}})
 			continue
 		}
 
@@ -330,8 +330,8 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 	routineType := SubroutineType(node.GetChildren()[0].GetValue())
 	routineName := node.GetChildren()[2].GetValue()
 
-	returnType, builtin := DataType{}, MainType(node.GetChildren()[1].GetValue())
-	if builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array || builtin == Void {
+	returnType, primitive := DataType{}, MainType(node.GetChildren()[1].GetValue())
+	if primitive == Int || primitive == Bool || primitive == Char || primitive == Array || primitive == Void {
 		returnType = DataType{Main: MainType(node.GetChildren()[1].GetValue())}
 	} else {
 		returnType = DataType{Main: Object, Subtype: node.GetChildren()[1].GetValue()}
@@ -347,9 +347,9 @@ func (p *Parser) HandleSubroutineDecl(node pc.Queryable) (Subroutine, error) {
 	for _, child := range nested {
 		argType, argName := child.GetChildren()[0].GetValue(), child.GetChildren()[1].GetValue()
 
-		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := MainType(argType); builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array {
-			arguments = append(arguments, Variable{Name: argName, VarType: Parameter, DataType: DataType{Main: builtin}})
+		// Primitive data types (int, char, bool) are handled differently than complex objects
+		if primitive := MainType(argType); primitive == Int || primitive == Bool || primitive == Char || primitive == Array {
+			arguments = append(arguments, Variable{Name: argName, VarType: Parameter, DataType: DataType{Main: primitive}})
 			continue
 		}
 
@@ -461,9 +461,9 @@ func (p *Parser) HandleVarStmt(node pc.Queryable) (Statement, error) {
 		if child.GetName() != "IDENT" {
 			return nil, fmt.Errorf("expected node 'IDENT', got %s", child.GetName())
 		}
-		// Primitive data types (int, string, bool) are handled differently than complex objects
-		if builtin := MainType(dataType); builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array {
-			variables = append(variables, Variable{Name: child.GetValue(), VarType: Local, DataType: DataType{Main: builtin}})
+		// Primitive data types (int, char, bool) are handled differently than complex objects
+		if primitive := MainType(dataType); primitive == Int || primitive == Bool || primitive == Char || primitive == Array {
+			variables = append(variables, Variable{Name: child.GetValue(), VarType: Local, DataType: DataType{Main: primitive}})
 			continue
 		}
 
@@ -659,10 +659,10 @@ func (p *Parser) HandleExpression(node pc.Queryable) (Expression, error) {
 		return LiteralExpr{Type: DataType{Main: Char}, Value: node.GetValue()}, nil
 	case "TRUE", "FALSE":
 		return LiteralExpr{Type: DataType{Main: Bool}, Value: node.GetValue()}, nil
-	case "STRING":
-		return LiteralExpr{Type: DataType{Main: String}, Value: strings.Trim(node.GetValue(), `"`)}, nil
 	case "NULL":
 		return LiteralExpr{Type: DataType{Main: Object}, Value: node.GetValue()}, nil
+	case "STRING":
+		return LiteralExpr{Type: DataType{Main: Object, Subtype: "String"}, Value: strings.Trim(node.GetValue(), `"`)}, nil
 
 	default:
 		return nil, fmt.Errorf("unrecognized node '%s' in expression", node.GetName())
@@ -698,8 +698,8 @@ func (p *Parser) HandleCastExpr(node pc.Queryable) (Expression, error) {
 	}
 
 	cast, target := DataType{}, node.GetChildren()[1].GetValue()
-	// Primitive data types (int, string, bool) are handled differently than complex objects
-	if builtin := MainType(target); builtin == Int || builtin == String || builtin == Bool || builtin == Char || builtin == Array {
+	// Primitive data types (int, char, bool) are handled differently than complex objects
+	if primitive := MainType(target); primitive == Int || primitive == Bool || primitive == Char || primitive == Array {
 		cast = DataType{Main: MainType(target)}
 	} else {
 		cast = DataType{Main: Object, Subtype: target}

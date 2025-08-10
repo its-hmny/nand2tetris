@@ -452,25 +452,27 @@ func (l *Lowerer) HandleLiteralExpr(expression LiteralExpr) ([]vm.Operation, err
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(expression.Value[0])}}, nil
 
 	case Object:
+		if expression.Type.Subtype == "String" {
+			ops := []vm.Operation{
+				// Reserves/Allocates enough space for the entire string literal via the constructor
+				vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(len(expression.Value))},
+				vm.FuncCallOp{Name: "String.new", NArgs: 1},
+			}
+
+			for _, char := range expression.Value {
+				// Set each character in the string literal one by one until completion
+				ops = append(ops, vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(char)})
+				ops = append(ops, vm.FuncCallOp{Name: "String.appendChar", NArgs: 2})
+			}
+
+			return ops, nil
+		}
+
 		if expression.Value != "null" {
 			return nil, fmt.Errorf("object literal are not supported '%s'", expression.Value)
 		}
+
 		return []vm.Operation{vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: 0}}, nil
-
-	case String:
-		ops := []vm.Operation{
-			// Reserves/Allocates enough space for the entire string literal via the constructor
-			vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(len(expression.Value))},
-			vm.FuncCallOp{Name: "String.new", NArgs: 1},
-		}
-
-		for _, char := range expression.Value {
-			// Set each character in the string literal one by one until completion
-			ops = append(ops, vm.MemoryOp{Operation: vm.Push, Segment: vm.Constant, Offset: uint16(char)})
-			ops = append(ops, vm.FuncCallOp{Name: "String.appendChar", NArgs: 2})
-		}
-
-		return ops, nil
 
 	default:
 		return nil, fmt.Errorf("unrecognized literal expression type: %s", expression.Type)

@@ -26,13 +26,13 @@ func TestClassScope(t *testing.T) {
 
 		// Register a field variable and a static variable
 		st.RegisterVariable(jack.Variable{Name: "test_field", VarType: jack.Field, DataType: jack.DataType{Main: jack.Int}})
-		st.RegisterVariable(jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.String}})
+		st.RegisterVariable(jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}})
 		st.RegisterVariable(jack.Variable{Name: "test_field_2", VarType: jack.Field, DataType: jack.DataType{Main: jack.Char}})
 		st.RegisterVariable(jack.Variable{Name: "test_static_2", VarType: jack.Static, DataType: jack.DataType{Main: jack.Bool}})
 
 		// All of these variables should be found and resolved correctly
 		test(st, "test_field", jack.Variable{Name: "test_field", VarType: jack.Field, DataType: jack.DataType{Main: jack.Int}}, 0, false)
-		test(st, "test_static", jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.String}}, 0, false)
+		test(st, "test_static", jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}}, 0, false)
 		test(st, "test_field_2", jack.Variable{Name: "test_field_2", VarType: jack.Field, DataType: jack.DataType{Main: jack.Char}}, 1, false)
 		test(st, "test_static_2", jack.Variable{Name: "test_static_2", VarType: jack.Static, DataType: jack.DataType{Main: jack.Bool}}, 1, false)
 
@@ -49,7 +49,7 @@ func TestClassScope(t *testing.T) {
 
 		// Register a field variable and a static variable
 		st.RegisterVariable(jack.Variable{Name: "test_field", VarType: jack.Field, DataType: jack.DataType{Main: jack.Int}})
-		st.RegisterVariable(jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.String}})
+		st.RegisterVariable(jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}})
 		st.RegisterVariable(jack.Variable{Name: "test_class", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "AnotherClass"}})
 		// These two variables should shadow the previous ones
 		st.RegisterVariable(jack.Variable{Name: "test_field", VarType: jack.Field, DataType: jack.DataType{Main: jack.Char}})
@@ -75,13 +75,13 @@ func TestClassScope(t *testing.T) {
 		// Register a field variable and a static variable
 		st.RegisterVariable(jack.Variable{Name: "test_field", VarType: jack.Field, DataType: jack.DataType{Main: jack.Int}})
 		st.RegisterVariable(jack.Variable{Name: "test_field_2", VarType: jack.Field, DataType: jack.DataType{Main: jack.Char}})
-		st.RegisterVariable(jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.String}})
+		st.RegisterVariable(jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}})
 		st.RegisterVariable(jack.Variable{Name: "test_static_2", VarType: jack.Static, DataType: jack.DataType{Main: jack.Bool}})
 
 		// All of these variables should be found and resolved correctly
 		test(st, "test_field", jack.Variable{Name: "test_field", VarType: jack.Field, DataType: jack.DataType{Main: jack.Int}}, 0, false)
 		test(st, "test_field_2", jack.Variable{Name: "test_field_2", VarType: jack.Field, DataType: jack.DataType{Main: jack.Char}}, 1, false)
-		test(st, "test_static", jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.String}}, 0, false)
+		test(st, "test_static", jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}}, 0, false)
 		test(st, "test_static_2", jack.Variable{Name: "test_static_2", VarType: jack.Static, DataType: jack.DataType{Main: jack.Bool}}, 1, false)
 
 		st.PopClassScope() // Deallocates the current class scope
@@ -90,7 +90,7 @@ func TestClassScope(t *testing.T) {
 		test(st, "test_field", jack.Variable{}, 0, true)
 		test(st, "test_field_2", jack.Variable{}, 0, true)
 		// All of these variables should found and resolved correctly since they are static and span all scopes
-		test(st, "test_static", jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.String}}, 0, false)
+		test(st, "test_static", jack.Variable{Name: "test_static", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}}, 0, false)
 		test(st, "test_static_2", jack.Variable{Name: "test_static_2", VarType: jack.Static, DataType: jack.DataType{Main: jack.Bool}}, 1, false)
 	})
 }
@@ -116,13 +116,13 @@ func TestSubroutineScope(t *testing.T) {
 
 		// Register a field variable and a static variable
 		st.RegisterVariable(jack.Variable{Name: "test_local", VarType: jack.Local, DataType: jack.DataType{Main: jack.Int}})
-		st.RegisterVariable(jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.String}})
+		st.RegisterVariable(jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}})
 		st.RegisterVariable(jack.Variable{Name: "test_local_2", VarType: jack.Local, DataType: jack.DataType{Main: jack.Char}})
 		st.RegisterVariable(jack.Variable{Name: "test_parameter_2", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.Bool}})
 
 		// All of these variables should be found and resolved correctly
 		test(st, "test_local", jack.Variable{Name: "test_local", VarType: jack.Local, DataType: jack.DataType{Main: jack.Int}}, 0, false)
-		test(st, "test_parameter", jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.String}}, 0, false)
+		test(st, "test_parameter", jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}}, 0, false)
 		test(st, "test_local_2", jack.Variable{Name: "test_local_2", VarType: jack.Local, DataType: jack.DataType{Main: jack.Char}}, 1, false)
 		test(st, "test_parameter_2", jack.Variable{Name: "test_parameter_2", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.Bool}}, 1, false)
 
@@ -140,7 +140,7 @@ func TestSubroutineScope(t *testing.T) {
 
 		// Register a field variable and a static variable
 		st.RegisterVariable(jack.Variable{Name: "test_local", VarType: jack.Local, DataType: jack.DataType{Main: jack.Int}})
-		st.RegisterVariable(jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.String}})
+		st.RegisterVariable(jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}})
 		st.RegisterVariable(jack.Variable{Name: "test_class", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.Object, Subtype: "AnotherClass"}})
 		// These two variables should shadow the previous ones
 		st.RegisterVariable(jack.Variable{Name: "test_local", VarType: jack.Local, DataType: jack.DataType{Main: jack.Char}})
@@ -166,11 +166,11 @@ func TestSubroutineScope(t *testing.T) {
 
 		// Register a field variable and a static variable
 		st.RegisterVariable(jack.Variable{Name: "test_local", VarType: jack.Local, DataType: jack.DataType{Main: jack.Int}})
-		st.RegisterVariable(jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.String}})
+		st.RegisterVariable(jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}})
 
 		// All of these variables should be found and resolved correctly
 		test(st, "test_local", jack.Variable{Name: "test_local", VarType: jack.Local, DataType: jack.DataType{Main: jack.Int}}, 0, false)
-		test(st, "test_parameter", jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.String}}, 0, false)
+		test(st, "test_parameter", jack.Variable{Name: "test_parameter", VarType: jack.Parameter, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}}, 0, false)
 
 		st.PopSubroutineScope() // Deallocates the current subroutine scope
 
@@ -185,7 +185,7 @@ func TestSubroutineScope(t *testing.T) {
 
 		// Register variables on the class scope
 		st.RegisterVariable(jack.Variable{Name: "test1", VarType: jack.Field, DataType: jack.DataType{Main: jack.Int}})
-		st.RegisterVariable(jack.Variable{Name: "test2", VarType: jack.Static, DataType: jack.DataType{Main: jack.String}})
+		st.RegisterVariable(jack.Variable{Name: "test2", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}})
 
 		st.PushSubRoutineScope("TestSubroutine") // Push a new subroutine scope before doing anything
 
@@ -201,7 +201,7 @@ func TestSubroutineScope(t *testing.T) {
 
 		// All of these variables should be found and resolved correctly
 		test(st, "test1", jack.Variable{Name: "test1", VarType: jack.Field, DataType: jack.DataType{Main: jack.Int}}, 0, false)
-		test(st, "test2", jack.Variable{Name: "test2", VarType: jack.Static, DataType: jack.DataType{Main: jack.String}}, 0, false)
+		test(st, "test2", jack.Variable{Name: "test2", VarType: jack.Static, DataType: jack.DataType{Main: jack.Object, Subtype: "String"}}, 0, false)
 	})
 }
 

@@ -73,8 +73,8 @@
           "Name": "message",
           "VarType": "parameter",
           "DataType": {
-            "Main": "String",
-            "Subtype": ""
+            "Main": "Object",
+            "Subtype": "String"
           }
         }
       ],
@@ -84,16 +84,16 @@
       "Name": "readLine",
       "Type": "function",
       "Return": {
-        "Main": "String",
-        "Subtype": ""
+        "Main": "Object",
+        "Subtype": "String"
       },
       "Arguments": [
         {
           "Name": "message",
           "VarType": "parameter",
           "DataType": {
-            "Main": "String",
-            "Subtype": ""
+            "Main": "Object",
+            "Subtype": "String"
           }
         }
       ],
@@ -588,8 +588,8 @@
           "Name": "s",
           "VarType": "parameter",
           "DataType": {
-            "Main": "String",
-            "Subtype": ""
+            "Main": "Object",
+            "Subtype": "String"
           }
         }
       ],
@@ -800,8 +800,8 @@
       "Name": "appendChar",
       "Type": "method",
       "Return": {
-        "Main": "String",
-        "Subtype": ""
+        "Main": "Object",
+        "Subtype": "String"
       },
       "Arguments": [
         {
@@ -898,8 +898,8 @@
       "Name": "new",
       "Type": "constructor",
       "Return": {
-        "Main": "String",
-        "Subtype": ""
+        "Main": "Object",
+        "Subtype": "String"
       },
       "Arguments": [
         {

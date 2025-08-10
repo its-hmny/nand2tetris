@@ -283,9 +283,12 @@ func (tc *TypeChecker) HandleVarExpr(expression VarExpr) (DataType, error) {
 // Specialized function to extract the DataType of a 'jack.LiteralExpr'.
 func (tc *TypeChecker) HandleLiteralExpr(expression LiteralExpr) (DataType, error) {
 	switch expression.Type.Main {
-	case Int, Bool, Char, String:
-		return expression.Type, nil // Classic passthrough for built-in data types
+	case Int, Bool, Char:
+		return expression.Type, nil // Classic passthrough for primitive data types
 	case Object:
+		if expression.Type.Subtype == "String" {
+			return expression.Type, nil
+		}
 		if expression.Value != "null" {
 			return DataType{}, fmt.Errorf("object literal are not supported '%s'", expression.Value)
 		}
