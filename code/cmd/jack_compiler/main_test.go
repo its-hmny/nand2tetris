@@ -202,4 +202,9 @@ func TestTypeChecking(t *testing.T) {
 		base := "../../../projects/13 - Jack III: Typechecking/08 - Pong"
 		test([]string{base}, base, true, true)
 	})
+
+	t.Run("OperatingSystem", func(t *testing.T) {
+		base := "../../../projects/13 - Jack III: Typechecking/10 - Operating System"
+		test([]string{base}, base, false, true) // No need to link the stdlib here
+	})
 }

@@ -1,0 +1,10 @@
+function Output.println 0
+function Output.create 0
+function Output.getMap 0
+function Output.backSpace 0
+function Output.init 0
+function Output.initMap 0
+function Output.moveCursor 0
+function Output.printChar 0
+function Output.printInt 0
+function Output.printString 0
