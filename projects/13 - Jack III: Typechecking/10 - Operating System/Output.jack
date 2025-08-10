@@ -192,7 +192,8 @@ class Output {
         var int i, j, mask; var Array bitmap;
         let i = 0; let j = 0; let mask = 1; let bitmap = Output.getMap(c);
 
-        while (i < 11) { // For each row of the bitmap (a row is just a byte)
+        // For each row of the bitmap (a row is just a byte)
+        while (i < 11) { 
             let j = 0; let mask = 1;
             
             while (j < 8) {
@@ -237,7 +238,7 @@ class Output {
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
         // We're at the last line of the screen, move back to the 1st one
-        if ((cursorY > 22) | cursorY = 22) {
+        if ((cursorY > 22) | (cursorY = 22)) {
             let cursorY = 0; let cursorX = 0;
             return;
         }

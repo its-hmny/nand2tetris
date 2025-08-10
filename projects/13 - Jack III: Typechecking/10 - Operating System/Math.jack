@@ -39,7 +39,7 @@ class Math {
         var int j, sum, shiftedX;
         let j = 0; let sum = 0; let shiftedX =  x;
         
-        if (x = 0 | y = 0) { return 0; }
+        if ((x = 0) | (y = 0)) { return 0; }
 
         while (j < n) {
             if (y & powersOfTwo[j])  {
@@ -70,7 +70,7 @@ class Math {
         // When the sign is discordant we revert the sign variable and move forward with the
         // absolute values. Before returning we will revert back to the final sign. Doing so
         // will mean that we can support negative number somewhat easily.
-        if ((x < 0 & y > 0) | (x > 0 & y < 0)) { let sign = -1; }
+        if (((x < 0) & (y > 0)) | ((x > 0) & (y < 0))) { let sign = -1; }
 
         while ((absX > absY) | (absX = absY)) {
             let absX  = absX - absY; let q = q + 1;

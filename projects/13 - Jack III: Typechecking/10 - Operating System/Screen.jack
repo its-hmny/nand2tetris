@@ -57,9 +57,9 @@ class Screen {
             let i = i + 1;
         }
 
-        // In one case we want to light up the bit in the other we want to turn it off
+        // // In one case we want to light up the bit in the other we want to turn it off
         if (color) { let screen[address] = screen[address] | bitmask; }
-        else { let screen[address] = screen[address] & ~bitmask; }
+        else { let screen[address] = screen[address] & (~bitmask); }
 
         return;
     }
@@ -73,7 +73,8 @@ class Screen {
         // Without this, we would not be able to draw oblique lines
         let dx = x2 - x1; let dy = y2 - y1; let a = 0; let b = 0; let c = 0;
 
-        if (y1 = y2) { // Straight horizontal line (optimization)
+        if (y1 = y2) { 
+            // Straight horizontal line (optimization)
             while ((minX < maxX) | (minX = maxX)) {
                 do Screen.drawPixel(minX, y1);
                 let minX = minX + 1;
@@ -82,7 +83,8 @@ class Screen {
             return;
         }
 
-        if (x1 = x2) { // Straight vertical line (optimization)
+        if (x1 = x2) { 
+            // Straight vertical line (optimization)
             while ((minY < maxY) | (minY = maxY)) {
                 do Screen.drawPixel(x1, minY);
                 let minY = minY + 1;
@@ -101,10 +103,11 @@ class Screen {
         let dx = Math.abs(dx); let dy = Math.abs(dy);
 
         while ((~(a > dx)) & (~(b > dy))) {
-            do Screen.drawPixel(x1 + (a * ma), y1 + (b * mb));
-            // If the x coordinate is more than the y coordinate
-            if (c < 0) { let a = a + 1; let c = c + dy; } // Increment x
-            else { let b = b + 1; let c = c - dx; }       // Increment y
+            // do Screen.drawPixel(x1 + (a * ma), y1 + (b * mb));
+            // // If the x coordinate is more than the y coordinate
+            // then increment x else we will increment y instead
+            if (c < 0) { let a = a + 1; let c = c + dy; }
+            else { let b = b + 1; let c = c - dx; }
         }
         
         return;

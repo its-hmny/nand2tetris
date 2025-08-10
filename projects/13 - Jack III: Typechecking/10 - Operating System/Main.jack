@@ -1,0 +1,8 @@
+// This class is just here to make the compilation work. Without it the lowering pass of 'Sys.jack'
+// will fail because we're unable to resolve the 'Main.main' method to which delegate the program flow.
+class Main {
+    function void main() {
+        do Output.printString("Hello world!");        
+        return;
+    }
+}

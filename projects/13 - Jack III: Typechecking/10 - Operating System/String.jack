@@ -41,7 +41,7 @@ class String {
     /** Returns the character at the j-th location of this string. */
     method char charAt(int j) {
         // Out of bounds access to the string
-        if ((j < 0) | (j > length()) | (j = length())) { return 0; }
+        if ((j < 0) | ((j > length()) | (j = length()))) { return 0; }
 
         return buffer[j];
     }
@@ -49,7 +49,7 @@ class String {
     /** Sets the character at the j-th location of this string to c. */
     method void setCharAt(int j, char c) {
         // Out of bounds access to the string
-        if ((j < 0) | (j > length()) | (j = length())) { return; }
+        if ((j < 0) | ((j > length()) | (j = length()))) { return; }
 
         let buffer[j] = c;
         return;
@@ -80,7 +80,7 @@ class String {
         
         // '/' and ':' are the ASCII codes for 47 and 58, respectively,
         // we can use them to check the range of digits is between 0 and 9
-        while ((i < length()) & (charAt(i) > 47) & (charAt(i) < 58)) {
+        while ((i < length()) & ((charAt(i) > 47) & (charAt(i) < 58))) {
             let val = (val * 10) + (charAt(i) - 48);
             let i = i + 1;
         }

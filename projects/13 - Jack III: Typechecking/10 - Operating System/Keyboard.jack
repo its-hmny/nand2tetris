@@ -76,8 +76,10 @@ class Keyboard {
         while ((text.length() < 128) | (text.length() = 128)) {
             let c = Keyboard.readChar();
 
-            if (c = String.newLine()) { return text; } // Newline character
-            if (c = String.backSpace()) { do Output.backSpace(); do text.eraseLastChar(); } // Backspace character
+            // Newline character
+            if (c = String.newLine()) { return text; } 
+            // Backspace character
+            if (c = String.backSpace()) { do Output.backSpace(); do text.eraseLastChar(); }
             else { do text.appendChar(c); } 
         }
 
