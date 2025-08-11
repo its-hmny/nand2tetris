@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: "Checkout source code"
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: "Setup Go environment"
       uses: actions/setup-go@v5
@@ -27,7 +27,7 @@ jobs:
 
     steps:
     - name: "Checkout source code"
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: "Setup Java environment"
       uses: actions/setup-java@v4
