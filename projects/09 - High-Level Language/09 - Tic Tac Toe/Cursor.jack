@@ -1,20 +1,19 @@
 class Cursor {
-    field int row, col;
-    field int startX, startY, cellSize;
+    field int row, col, cursorS, cellS;
 
-    constructor Cursor new(int sx, int sy, int size) {
-        let row = 0; let col = 0;
-        let startX = sx; let startY = sy; let cellSize = size;
+    constructor Cursor new(int cursorSize, int cellSize) {
+        let row = 0; let col = 0; 
+        let cursorS = cursorSize; let cellS = cellSize;
         
         return this;
     }
 
-    method int getRow() { return row; }
-    method int getCol() { return col; }
+    method int getRow() { return row + 1; }
+    method int getCol() { return col + 1; }
 
     method void move(int dr, int dc) {
-        if (((row + dr) < 0) | ((row + dr) > 2)) { return; }
-        if (((col + dc) < 0) | ((col + dc) > 2)) { return; }
+        if (((row + dr) < -1) | ((row + dr) > 1)) { return; }
+        if (((col + dc) < -1) | ((col + dc) > 1)) { return; }
         
         let row = row + dr; let col = col + dc;        
         
@@ -22,11 +21,8 @@ class Cursor {
     }
 
     method void render() {
-        var int x, y;
-        let x = startX + (col * cellSize);
-        let y = startY + (row * cellSize);
-        
-        do Screen.drawRectangle(x, y, x + cellSize, y + cellSize);
+        var int sx, sy; let sx = 256 + (row * cellS); let sy = (128 - 20) + (col * cellS);
+        do Screen.drawRectangle(sx - cursorS, sy - cursorS, sx + cursorS, sy + cursorS);
         
         return;
     }

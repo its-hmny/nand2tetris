@@ -7,7 +7,7 @@ class Main {
         var String msg; let msg = "Player: X";
 
         let player = 1; let key = 0;
-        let grid = Grid.new(2, 50); let cursor = Cursor.new(30);
+        let grid = Grid.new(2, 50); let cursor = Cursor.new(10, 50);
         
         while (true) {
             do Screen.clearScreen(); do Screen.setColor(true);
@@ -18,10 +18,10 @@ class Main {
             do Main.print(msg, 0); // Prints it on the screen (bottom)
             
             let key = Keyboard.keyPressed();
-            if (key = 130) { do cursor.move(0, -1); }  // Left
-            if (key = 131) { do cursor.move(-1, 0); }  // Up
-            if (key = 132) { do cursor.move(0, 1); }   // Right
-            if (key = 133) { do cursor.move(1, 0); }   // Down
+            if (key = 130) { do cursor.move(-1, 0); }  // Left
+            if (key = 131) { do cursor.move(0, -1); }  // Up
+            if (key = 132) { do cursor.move(1, 0); }   // Right
+            if (key = 133) { do cursor.move(0, 1); }   // Down
             if (key = 128) { do Main.mark(); }         // Enter
             
             do Sys.wait(250);
