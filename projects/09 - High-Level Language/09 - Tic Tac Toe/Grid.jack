@@ -20,6 +20,8 @@ class Grid {
     }
 
     method void render() {
+        var int row, col, player;
+
         do Screen.drawRectangle(  x - line,               y - (cell * 3),         x,               y  );
         do Screen.drawRectangle(  x - line - cell,        y - (cell * 3),         x - cell,        y  );
         do Screen.drawRectangle(  x - line - (cell * 2),  y - (cell * 3),         x - (cell * 2),  y  );
@@ -30,32 +32,36 @@ class Grid {
         do Screen.drawRectangle(  x - (cell * 3),  y - line - (cell * 2),  x,  y - (cell * 2)  );
         do Screen.drawRectangle(  x - (cell * 3),  y - line - (cell * 3),  x,  y - (cell * 3)  );
         
-        return;
-    }
         
-        while (row < 3) {
-            let col = 0;
+
+        let row = 0; while (row < 3) {
+            let col = 0; while (col < 3) {
+                let player = getCell(row, col);
         
-            while (col < 3) {
-                // ? let x = x + (col * gridSize);
-                // ? let y = y + (row * gridSize);
-                // ? do Screen.drawRectangle(x, y, x + gridSize, y + gridSize);
-                
-                // let val = getCell(row, col);
-                // if (val = 1) {
-                //     do Screen.drawLine(x, y, x + gridSize, y + gridSize);
-                //     do Screen.drawLine(x + gridSize, y, x, y + gridSize);
-                // }
-                // if (val = 2) {
-                //     do Screen.drawCircle(x + (gridSize / 2), y + (gridSize / 2), gridSize / 2 - 2);
-                // }
-                
+                if (player = 1) { do renderPlayer1(row - 1, col - 1); }
+                if (player = 2) { do renderPlayer2(row - 1, col - 1); }
+
                 let col = col + 1;
             }
-            
-            let row = row + 1;
-        }
 
+            let row = row + 1;
+        } 
+
+        return;
+    }
+
+    method void renderPlayer1(int row, int col) {
+        var int sx, sy; let sx = 256 + (row * cell); let sy = (128 - 20) + (col * cell);
+        do Screen.drawLine(sx - 10 , sy - 10, sx + 10 , sy + 10);
+        do Screen.drawLine(sx - 10 , sy + 10, sx + 10 , sy - 10);
+
+        return;
+    }
+    
+    method void renderPlayer2(int row, int col) {
+        var int sx, sy; let sx = 256 + (row * cell); let sy = (128 - 20) + (col * cell);
+        do Screen.drawCircle(sx, sy, 10);
+        
         return;
     }
 }
