@@ -1,22 +1,18 @@
 class Grid {
     field Array cells; // 0 = empty, 1 = player X, 2 = player O
-    field int x, y, gridSize;
+    field int x, y, line, cell;
 
-    constructor Grid new(int centerX, int centerY, int size) {
-        let cells = Array.new(9);
-        let x = centerX; let y = centerY; let gridSize = size;
-        do clear();
+    constructor Grid new(int lineStroke, int cellSize) {
+        var int r;  let r = (lineStroke * 2) + ((cellSize * 3) / 2);
         
+        let cells = Array.new(9);
+        let x = 256 + r; let y = 128 - 20 + r; // The initial coords to draw the grid at
+        let line = lineStroke; let cell = cellSize; // Cell width and line stroke settings
+
         return this;
     }
 
     method int getCell(int row, int col) { return cells[(row * 3) + col]; }
-    
-    method void clear() {
-        var int i; let i = 0;
-        while (i < 9) { let cells[i] = 0; let i = i + 1; }
-        return;
-    }
 
     method void setCell(int row, int col, int player) {
         let cells[(row * 3) + col] = player;
@@ -24,8 +20,18 @@ class Grid {
     }
 
     method void render() {
-        var int row, col, x, y, val;
-        let row = 0; let col = 0;
+        do Screen.drawRectangle(  x - line,               y - (cell * 3),         x,               y  );
+        do Screen.drawRectangle(  x - line - cell,        y - (cell * 3),         x - cell,        y  );
+        do Screen.drawRectangle(  x - line - (cell * 2),  y - (cell * 3),         x - (cell * 2),  y  );
+        do Screen.drawRectangle(  x - line - (cell * 3),  y - (cell * 3),  x - (cell * 3),  y  );
+
+        do Screen.drawRectangle(  x - (cell * 3),  y - line,               x,  y               );
+        do Screen.drawRectangle(  x - (cell * 3),  y - line - cell,        x,  y - cell        );
+        do Screen.drawRectangle(  x - (cell * 3),  y - line - (cell * 2),  x,  y - (cell * 2)  );
+        do Screen.drawRectangle(  x - (cell * 3),  y - line - (cell * 3),  x,  y - (cell * 3)  );
+        
+        return;
+    }
         
         while (row < 3) {
             let col = 0;

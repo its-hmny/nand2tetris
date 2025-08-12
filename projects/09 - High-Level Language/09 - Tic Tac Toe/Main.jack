@@ -4,17 +4,19 @@ class Main {
     static int player, key;
     
     function void main() {
+        var String msg; let msg = "Player: X";
+
         let player = 1; let key = 0;
-        let grid = Grid.new(20, 20, 60); let cursor = Cursor.new(20, 20, 15);
+        let grid = Grid.new(2, 50); let cursor = Cursor.new(30);
         
         while (true) {
             do Screen.clearScreen(); do Screen.setColor(true);
             do grid.render(); do cursor.render();
-            
-            do Output.moveCursor(20,30);
-            do Output.printString("Player: ");
-            do Output.printInt(player);
 
+            // Removes the placeholder and puts the actual player number
+            do msg.eraseLastChar(); do msg.appendChar(player + 48);
+            do Main.print(msg, 0); // Prints it on the screen (bottom)
+            
             let key = Keyboard.keyPressed();
             if (key = 130) { do cursor.move(0, -1); }  // Left
             if (key = 131) { do cursor.move(-1, 0); }  // Up
@@ -32,7 +34,7 @@ class Main {
         var int row, column;
         let row = cursor.getRow(); let column = cursor.getCol();
         if (~(grid.getCell(row, column) = 0)) {
-            // TODO: Print something here, like an error message
+            do Main.print("Cell already occupied", 1);
             return; 
         }
 
@@ -42,5 +44,16 @@ class Main {
         else { let player = 1; }
 
         return;
+    }
+    
+    function void print(String msg, int line) {
+        // Center coordinate of the Hack computer screen
+        var int row, column; let row = 20; let column  = 32;
+
+        do Output.moveCursor(row + line, column - (msg.length() / 2));
+        do Output.printString(msg);
+        
+        return;
+
     }
 }
