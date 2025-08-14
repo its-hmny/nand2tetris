@@ -164,7 +164,35 @@ test_computer_architecture() {
     done
 }
 
-functions=("test_logic_gates" "test_boolean_arithmetic" "test_sequential_logic" "test_machine_language" "test_computer_architecture")
+# Function to test '12 - Operating System' folder
+test_operating_system() {
+    echo -e "${blue}${bold}Testing '12 - Operating System'...${reset}"
+
+    # Change to the directory of the script
+    cd "$SCRIPT_DIR" || exit
+
+    # Iterate over each .tst file and run HardwareSimulator.sh
+    for tst_path in ./12\ -\ Operating\ System/**/*.tst; do
+        tst_name=$(basename "$tst_path")
+
+        # Copy all .vm files from the root of "./12 Operating System" into the tst_path's root folder
+        tst_dir=$(dirname "$tst_path")
+        for vm_file in ./12\ -\ Operating\ System/*.vm; do
+            cp --remove-destination "$vm_file" "$tst_dir"
+        done
+        
+        echo -e "${bold}${yellow}- Running test: '$tst_name'...${reset}"
+        ../tools/VMEmulator.sh "$tst_path" > /dev/null
+
+        if [ $? -eq 0 ]; then
+            echo -e "${green}${bold}  Success: '$tst_name' completed${reset}"
+        else
+            echo -e "${red}${bold}  Error: '$tst_name' failed${reset}"
+        fi
+    done
+}
+
+functions=("test_logic_gates" "test_boolean_arithmetic" "test_sequential_logic" "test_machine_language" "test_computer_architecture" "test_operating_system")
 
 # Iterate over the array and call each function
 for func in "${functions[@]}"; do
