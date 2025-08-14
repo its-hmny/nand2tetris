@@ -12,6 +12,12 @@ class Grid {
         return this;
     }
 
+    method void dispose() {
+        do Memory.deAlloc(cells);
+        do Memory.deAlloc(this);
+        return;
+    }
+
     method int getCell(int row, int col) { return cells[(row * 3) + col]; }
 
     method void setCell(int row, int col, int player) {

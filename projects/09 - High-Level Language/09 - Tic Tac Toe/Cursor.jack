@@ -8,6 +8,8 @@ class Cursor {
         return this;
     }
 
+    method void dispose() { do Memory.deAlloc(this); return; }
+
     method int getRow() { return row + 1; }
     method int getCol() { return col + 1; }
 

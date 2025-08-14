@@ -1,0 +1,326 @@
+function Main.main 1
+push constant 9
+call String.new 1
+push constant 80
+call String.appendChar 2
+push constant 108
+call String.appendChar 2
+push constant 97
+call String.appendChar 2
+push constant 121
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 58
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 88
+call String.appendChar 2
+pop local 0
+push constant 1
+pop static 2
+push constant 0
+pop static 3
+push constant 2
+push constant 50
+call Grid.new 2
+pop static 0
+push constant 10
+push constant 50
+call Cursor.new 2
+pop static 1
+label WHILE_EXP0
+call Main.isDone 0
+not
+not
+if-goto WHILE_END0
+call Screen.clearScreen 0
+pop temp 0
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push static 0
+call Grid.render 1
+pop temp 0
+push static 1
+call Cursor.render 1
+pop temp 0
+push local 0
+call String.eraseLastChar 1
+pop temp 0
+push local 0
+push static 2
+push constant 48
+add
+call String.appendChar 2
+pop temp 0
+push local 0
+push constant 0
+call Main.print 2
+pop temp 0
+call Keyboard.keyPressed 0
+pop static 3
+push static 3
+push constant 130
+eq
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push static 1
+push constant 1
+neg
+push constant 0
+call Cursor.move 3
+pop temp 0
+label IF_FALSE0
+push static 3
+push constant 131
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push static 1
+push constant 0
+push constant 1
+neg
+call Cursor.move 3
+pop temp 0
+label IF_FALSE1
+push static 3
+push constant 132
+eq
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push static 1
+push constant 1
+push constant 0
+call Cursor.move 3
+pop temp 0
+label IF_FALSE2
+push static 3
+push constant 133
+eq
+if-goto IF_TRUE3
+goto IF_FALSE3
+label IF_TRUE3
+push static 1
+push constant 0
+push constant 1
+call Cursor.move 3
+pop temp 0
+label IF_FALSE3
+push static 3
+push constant 128
+eq
+if-goto IF_TRUE4
+goto IF_FALSE4
+label IF_TRUE4
+call Main.mark 0
+pop temp 0
+label IF_FALSE4
+push constant 250
+call Sys.wait 1
+pop temp 0
+goto WHILE_EXP0
+label WHILE_END0
+push static 0
+call Grid.dispose 1
+pop temp 0
+push static 1
+call Cursor.dispose 1
+pop temp 0
+push constant 14
+call String.new 1
+push constant 71
+call String.appendChar 2
+push constant 97
+call String.appendChar 2
+push constant 109
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 102
+call String.appendChar 2
+push constant 105
+call String.appendChar 2
+push constant 110
+call String.appendChar 2
+push constant 105
+call String.appendChar 2
+push constant 115
+call String.appendChar 2
+push constant 104
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 100
+call String.appendChar 2
+push constant 33
+call String.appendChar 2
+push constant 2
+call Main.print 2
+pop temp 0
+push constant 0
+return
+function Main.isDone 2
+push constant 0
+pop local 0
+push constant 0
+pop local 1
+label WHILE_EXP0
+push local 0
+push constant 3
+lt
+not
+if-goto WHILE_END0
+push constant 0
+pop local 1
+label WHILE_EXP1
+push local 1
+push constant 3
+lt
+not
+if-goto WHILE_END1
+push static 0
+push local 0
+push local 1
+call Grid.getCell 3
+push constant 0
+eq
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+return
+label IF_FALSE0
+push local 1
+push constant 1
+add
+pop local 1
+goto WHILE_EXP1
+label WHILE_END1
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+not
+return
+function Main.mark 2
+push static 1
+call Cursor.getRow 1
+pop local 0
+push static 1
+call Cursor.getCol 1
+pop local 1
+push static 0
+push local 0
+push local 1
+call Grid.getCell 3
+push constant 0
+eq
+not
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 21
+call String.new 1
+push constant 67
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 108
+call String.appendChar 2
+push constant 108
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 97
+call String.appendChar 2
+push constant 108
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 97
+call String.appendChar 2
+push constant 100
+call String.appendChar 2
+push constant 121
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 99
+call String.appendChar 2
+push constant 99
+call String.appendChar 2
+push constant 117
+call String.appendChar 2
+push constant 112
+call String.appendChar 2
+push constant 105
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 100
+call String.appendChar 2
+push constant 1
+call Main.print 2
+pop temp 0
+push constant 0
+return
+label IF_FALSE0
+push static 0
+push local 0
+push local 1
+push static 2
+call Grid.setCell 4
+pop temp 0
+push static 2
+push constant 1
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push constant 2
+pop static 2
+goto IF_END1
+label IF_FALSE1
+push constant 1
+pop static 2
+label IF_END1
+push constant 0
+return
+function Main.print 2
+push constant 20
+pop local 0
+push constant 32
+pop local 1
+push local 0
+push argument 1
+add
+push local 1
+push argument 0
+call String.length 1
+push constant 2
+call Math.divide 2
+sub
+call Output.moveCursor 2
+pop temp 0
+push argument 0
+call Output.printString 1
+pop temp 0
+push constant 0
+return

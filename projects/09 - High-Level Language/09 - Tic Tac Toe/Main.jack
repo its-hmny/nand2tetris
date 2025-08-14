@@ -8,8 +8,8 @@ class Main {
 
         let player = 1; let key = 0;
         let grid = Grid.new(2, 50); let cursor = Cursor.new(10, 50);
-        
-        while (true) {
+
+        while (~(Main.isDone())) {
             do Screen.clearScreen(); do Screen.setColor(true);
             do grid.render(); do cursor.render();
 
@@ -27,7 +27,26 @@ class Main {
             do Sys.wait(250);
         }
 
+        do grid.dispose(); do cursor.dispose();
+        do Main.print("Game finished!", 2); // Prints it on the screen (bottom)
+
         return;
+    }
+
+    function boolean isDone() {
+        var int i, j; 
+        
+        let i = 0; let j = 0; while (i < 3) {
+            let j = 0; while(j < 3) {
+                // If any cell is empty, the game is not done
+                if (grid.getCell(i, j) = 0) { return false; }
+                let j = j + 1;
+            }
+
+            let i = i + 1;
+        }
+
+        return true;
     }
 
     function void mark() {
